@@ -78,6 +78,7 @@ node .\scripts\check.mjs
 - Native engine adapter exposes plugin-host scanning through `scanPluginHosts`
 - Desktop readiness reports plugin-host scan method availability separately from plugin-host capability
 - Topbar plugin scan chip calls native `scanPluginHosts` when available and shows scan count
+- Topbar and project zip previews show plugin scan formats and scan freshness when available
 - Project zip manifests include sanitized plugin-host scan summary metadata
 - Desktop readiness checks required audio engine capabilities before native handoff
 - Desktop readiness reports native latency statistics and buffer-size control availability

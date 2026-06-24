@@ -106,6 +106,8 @@
 - scanPluginHosts 지원 여부와 pluginHost capability 상태를 desktop readiness에서 분리 표시
 - Plugin scan status chip 1차
 - topbar에서 scanPluginHosts 사용 가능 여부와 최근 scan count를 작은 상태 칩으로 표시
+- Plugin scan freshness summary 1차
+- topbar tooltip과 project zip preview에 plugin scan format/count/scannedAt 요약을 표시
 - Plugin scan manifest summary 1차
 - project zip manifest에 plugin scan 가능 여부, scan 시각, format, count를 경로 없이 요약 저장
 - Native fixture mode 1차

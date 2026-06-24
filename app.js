@@ -454,11 +454,22 @@ function renderPluginScanStatus(desktopReadiness = window.PunchLabDesktop?.getRe
   els.pluginScanStatusText.textContent = state.isPluginScanning
     ? "Scanning"
     : resultCount === null ? "Plugin" : `Plugin ${resultCount}`;
-  els.pluginScanStatus.title = scanAvailable
-    ? resultCount === null
-      ? "Scan VST3/AU plugins"
-      : `${resultCount} plugin(s) found`
-    : `Plugin scan unavailable: ${(pluginHost.missingMethods || ["scanPluginHosts"]).join(", ")}`;
+  els.pluginScanStatus.title = formatPluginScanStatusTitle({ pluginHost, scanAvailable, resultCount });
+}
+
+function formatPluginScanStatusTitle({ pluginHost = {}, scanAvailable = false, resultCount = null }) {
+  if (!scanAvailable) {
+    return `Plugin scan unavailable: ${(pluginHost.missingMethods || ["scanPluginHosts"]).join(", ")}`;
+  }
+  if (resultCount === null) {
+    return "Scan VST3/AU plugins";
+  }
+
+  const formats = Array.isArray(state.pluginScanResult?.formats) && state.pluginScanResult.formats.length
+    ? ` / ${state.pluginScanResult.formats.join(", ")}`
+    : "";
+  const scannedAt = formatDisplayTimestamp(state.pluginScanResult?.scannedAt);
+  return `${resultCount} plugin(s) found${formats}${scannedAt ? ` / ${scannedAt}` : ""}`;
 }
 
 async function scanPluginHosts() {
@@ -474,7 +485,11 @@ async function scanPluginHosts() {
     renderPluginScanStatus(desktopReadiness);
     els.sessionState.textContent = "Scanning plugins";
     const result = await window.PunchLabEngine.scanPluginHosts();
-    state.pluginScanResult = result || { plugins: [] };
+    state.pluginScanResult = {
+      ...(result || {}),
+      plugins: Array.isArray(result?.plugins) ? result.plugins : [],
+      scannedAt: result?.scannedAt || new Date().toISOString(),
+    };
     const count = Array.isArray(state.pluginScanResult.plugins) ? state.pluginScanResult.plugins.length : 0;
     els.sessionState.textContent = `Plugin scan ${count}`;
   } catch (error) {
@@ -1239,6 +1254,7 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
   const bpm = settings.bpm || Number(els.bpmInput.value) || 140;
   const key = settings.key || els.keySelect.value || "C minor";
   const exportSettings = manifest.exportSettings || {};
+  const pluginHost = manifest.pluginHost || {};
   const nativeAudio = manifest.nativeAudio || {};
   const desktopReadiness = manifest.desktopReadiness || {};
   const takes = [...manifest.takes].sort(
@@ -1369,6 +1385,7 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
           <span>${escapeHtml(String(bpm))} BPM</span>
           <span>${escapeHtml(key)}</span>
           <span>${escapeHtml(formatPreviewExportSettings(exportSettings))}</span>
+          <span>${escapeHtml(formatPreviewPluginHostScan(pluginHost))}</span>
           <span>${escapeHtml(formatPreviewNativeAudio(nativeAudio))}</span>
           <span>${escapeHtml(formatPreviewDesktopReadiness(desktopReadiness))}</span>
           <span>${takes.length} takes</span>
@@ -1530,6 +1547,19 @@ function formatPreviewNativeAudio(nativeAudio = {}) {
     parts.push(updatedText);
   }
   return parts.join(" / ");
+}
+
+function formatPreviewPluginHostScan(pluginHost = {}) {
+  if (!pluginHost.scanAvailable) {
+    return "Plugin scan unavailable";
+  }
+  if (!pluginHost.scanned) {
+    return "Plugin scan ready / not scanned";
+  }
+
+  const formats = Array.isArray(pluginHost.formats) && pluginHost.formats.length ? pluginHost.formats.join(", ") : "formats unknown";
+  const scannedAt = formatDisplayTimestamp(pluginHost.scannedAt);
+  return [`Plugin ${pluginHost.pluginCount || 0}`, formats, scannedAt].filter(Boolean).join(" / ");
 }
 
 function formatPreviewDesktopReadiness(desktopReadiness = {}) {
