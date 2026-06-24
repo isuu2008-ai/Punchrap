@@ -155,6 +155,10 @@ if (!appSource.includes("loadedProjectEnvironment") || !readFileSync("src/projec
   console.error("Project load/autosave must preserve native audio environment summary.");
   failed = true;
 }
+if (!appSource.includes("loadedProjectEnvironment?.nativeAudio?.preferredBufferSize")) {
+  console.error("Project load must restore native buffer size from saved environment fallback.");
+  failed = true;
+}
 if (!appSource.includes("manifest.json includes nativeAudio")) {
   console.error("Project zip README must describe the native audio manifest summary.");
   failed = true;

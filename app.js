@@ -1924,7 +1924,9 @@ function applyProjectSettings(settings = {}) {
   els.inputGainSlider.value = settings.inputGain || 2;
   state.audioInputDeviceId = settings.audioInputDeviceId || "";
   state.audioOutputDeviceId = settings.audioOutputDeviceId || "";
-  state.nativeBufferSize = normalizeNativeBufferSize(settings.nativeBufferSize);
+  state.nativeBufferSize = normalizeNativeBufferSize(
+    settings.nativeBufferSize ?? state.loadedProjectEnvironment?.nativeAudio?.preferredBufferSize,
+  );
   els.nativeBufferSizeSelect.value = String(state.nativeBufferSize);
   applyNativeBufferSize();
   els.audioInputSelect.value = state.audioInputDeviceId;
