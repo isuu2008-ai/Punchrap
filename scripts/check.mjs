@@ -299,8 +299,8 @@ if (!appSource.includes("getAudibleCompTakes") || !appSource.includes("const has
   console.error("Comp vocal export counts and button state must respect audible track routing.");
   failed = true;
 }
-if (!exportPlanSource.includes("window.PunchLabExportPlan") || !exportPlanSource.includes("buildStemExportGroups") || !exportPlanSource.includes("buildSingleExportGroup") || !exportPlanSource.includes("formatExportRowCount") || !exportPlanSource.includes("getExportJobStatusLabel") || !appSource.includes("PunchLabExportPlan.buildStemExportGroups") || !appSource.includes("PunchLabExportPlan.buildSingleExportGroup") || !appSource.includes("PunchLabExportPlan.formatExportRowCount") || !appSource.includes("PunchLabExportPlan.getExportJobStatusLabel")) {
-  console.error("Export filename, stem group, compressed format, and queue display planning must be separated from the app controller.");
+if (!exportPlanSource.includes("window.PunchLabExportPlan") || !exportPlanSource.includes("buildStemExportGroups") || !exportPlanSource.includes("buildSingleExportGroup") || !exportPlanSource.includes("buildExportWavOptions") || !exportPlanSource.includes("normalizeExportBitDepth") || !exportPlanSource.includes("formatExportRowCount") || !exportPlanSource.includes("getExportJobStatusLabel") || !appSource.includes("PunchLabExportPlan.buildStemExportGroups") || !appSource.includes("PunchLabExportPlan.buildSingleExportGroup") || !appSource.includes("PunchLabExportPlan.buildExportWavOptions") || !appSource.includes("PunchLabExportPlan.normalizeExportBitDepth") || !appSource.includes("PunchLabExportPlan.formatExportRowCount") || !appSource.includes("PunchLabExportPlan.getExportJobStatusLabel")) {
+  console.error("Export filename, stem group, WAV option, compressed format, and queue display planning must be separated from the app controller.");
   failed = true;
 }
 const timelineSource = readFileSync("src/timeline.js", "utf8");

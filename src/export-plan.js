@@ -48,6 +48,16 @@
     };
   }
 
+  function normalizeExportBitDepth(bitDepth) {
+    return Number(bitDepth) === 24 ? 24 : 16;
+  }
+
+  function buildExportWavOptions({ bitDepth = 16 } = {}) {
+    return {
+      bitDepth: normalizeExportBitDepth(bitDepth),
+    };
+  }
+
   function normalizeCompressedFormat(format) {
     return String(format || "").toLowerCase() === "m4a" ? "m4a" : "mp3";
   }
@@ -88,6 +98,7 @@
   }
 
   window.PunchLabExportPlan = {
+    buildExportWavOptions,
     buildSingleExportGroup,
     buildStemExportGroups,
     formatExportRowCount,
@@ -96,6 +107,7 @@
     makeExportBaseSlug,
     makeMixFilename,
     normalizeCompressedFormat,
+    normalizeExportBitDepth,
     replaceAudioExtension,
     slugify,
   };

@@ -4944,13 +4944,13 @@ function getExportBitDepth() {
 }
 
 function normalizeExportBitDepth(bitDepth) {
-  return Number(bitDepth) === 24 ? 24 : 16;
+  return window.PunchLabExportPlan.normalizeExportBitDepth(bitDepth);
 }
 
 function getExportWavOptions() {
-  return {
+  return window.PunchLabExportPlan.buildExportWavOptions({
     bitDepth: getExportBitDepth(),
-  };
+  });
 }
 
 function getMixSourceSignature() {
