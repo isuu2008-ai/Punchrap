@@ -167,7 +167,7 @@ node .\scripts\check.mjs
 - Project zip preview header summaries for export, plugin scan, native audio, and desktop readiness are formatted in `src/project-zip.js`
 - Export mastering finalize logic for loudness normalize, peak normalize, and true-peak ceiling lives in `src/export-mastering.js`
 - Export filename, single group, stem group, compressed-format, and job-detail planning lives in `src/export-plan.js`
-- Timeline snap and marker normalization policy lives in `src/timeline.js`
+- Timeline snap, grid, marker normalization, and percent mapping policy lives in `src/timeline.js`
 - Project zip preview beat, marker, and comp rows are formatted in `src/project-zip.js`
 - Project zip comp lane rows show best/version/preset/tune context for selected vocal takes
 - Project zip preview take cards and their processed-chain summaries are formatted in `src/project-zip.js`

@@ -292,7 +292,7 @@ if (!exportPlanSource.includes("window.PunchLabExportPlan") || !exportPlanSource
   failed = true;
 }
 const timelineSource = readFileSync("src/timeline.js", "utf8");
-if (!timelineSource.includes("window.PunchLabTimeline") || !timelineSource.includes("normalizeTimelineSnapMode") || !appSource.includes("PunchLabTimeline.snapTimelineTime") || !appSource.includes("PunchLabTimeline.normalizeMarkers")) {
+if (!timelineSource.includes("window.PunchLabTimeline") || !timelineSource.includes("normalizeTimelineSnapMode") || !timelineSource.includes("makeTimelineGridLines") || !timelineSource.includes("timelinePercent") || !appSource.includes("PunchLabTimeline.snapTimelineTime") || !appSource.includes("PunchLabTimeline.normalizeMarkers") || !appSource.includes("PunchLabTimeline.makeTimelineTicks")) {
   console.error("Timeline snap and marker normalization policy must live in src/timeline.js and be used by app.js.");
   failed = true;
 }

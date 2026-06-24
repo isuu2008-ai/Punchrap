@@ -5575,43 +5575,21 @@ function getTimelineEndPosition() {
 }
 
 function makeTimelineTicks(end) {
-  const surfaceWidth = els.timelineRuler?.clientWidth || 800;
-  const minTickWidth = surfaceWidth < 520 ? 92 : 64;
-  const targetTickCount = Math.max(2, Math.floor(surfaceWidth / minTickWidth));
-  const rawStep = end / targetTickCount;
-  const step = getTimelineTickStep(rawStep);
-  const ticks = [];
-  for (let time = 0; time <= end; time += step) {
-    ticks.push(time);
-  }
-  return ticks;
+  return window.PunchLabTimeline.makeTimelineTicks({
+    end,
+    surfaceWidth: els.timelineRuler?.clientWidth || 800,
+  });
 }
 
 function getTimelineTickStep(rawStep) {
-  return [1, 2, 5, 10, 15, 30, 60, 120].find((step) => step >= rawStep) || 240;
+  return window.PunchLabTimeline.getTimelineTickStep(rawStep);
 }
 
 function makeTimelineGridLines(end) {
-  const beatDuration = getBeatDuration();
-  const maxLines = 192;
-  const beatCount = Math.min(maxLines, Math.ceil(end / beatDuration) + 1);
-  const lines = [];
-
-  for (let beat = 0; beat < beatCount; beat += 1) {
-    const time = beat * beatDuration;
-    if (time > end + 0.001) {
-      break;
-    }
-
-    const isBar = beat % 4 === 0;
-    lines.push({
-      time,
-      isBar,
-      label: isBar ? String(Math.floor(beat / 4) + 1) : "",
-    });
-  }
-
-  return lines;
+  return window.PunchLabTimeline.makeTimelineGridLines({
+    bpm: getTimelineBpm(),
+    end,
+  });
 }
 
 function updateTimelineGridMeta() {
@@ -5629,7 +5607,7 @@ function updateTimelineGridMeta() {
 }
 
 function timelinePercent(value, end) {
-  return Math.max(0, Math.min(100, (value / Math.max(1, end)) * 100));
+  return window.PunchLabTimeline.timelinePercent(value, end);
 }
 
 function getBeatDuration() {

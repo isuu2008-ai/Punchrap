@@ -7,6 +7,51 @@
     return 60 / (Number(bpm) || 140);
   }
 
+  function makeTimelineTicks({ end = 16, surfaceWidth = 800 } = {}) {
+    const safeEnd = Math.max(1, Number(end) || 16);
+    const safeWidth = Math.max(1, Number(surfaceWidth) || 800);
+    const minTickWidth = safeWidth < 520 ? 92 : 64;
+    const targetTickCount = Math.max(2, Math.floor(safeWidth / minTickWidth));
+    const rawStep = safeEnd / targetTickCount;
+    const step = getTimelineTickStep(rawStep);
+    const ticks = [];
+    for (let time = 0; time <= safeEnd; time += step) {
+      ticks.push(time);
+    }
+    return ticks;
+  }
+
+  function getTimelineTickStep(rawStep = 1) {
+    return [1, 2, 5, 10, 15, 30, 60, 120].find((step) => step >= rawStep) || 240;
+  }
+
+  function makeTimelineGridLines({ end = 16, bpm = 140, maxLines = 192 } = {}) {
+    const safeEnd = Math.max(1, Number(end) || 16);
+    const beatDuration = getBeatDuration(bpm);
+    const beatCount = Math.min(Math.max(1, Number(maxLines) || 192), Math.ceil(safeEnd / beatDuration) + 1);
+    const lines = [];
+
+    for (let beat = 0; beat < beatCount; beat += 1) {
+      const time = beat * beatDuration;
+      if (time > safeEnd + 0.001) {
+        break;
+      }
+
+      const isBar = beat % 4 === 0;
+      lines.push({
+        time,
+        isBar,
+        label: isBar ? String(Math.floor(beat / 4) + 1) : "",
+      });
+    }
+
+    return lines;
+  }
+
+  function timelinePercent(value = 0, end = 1) {
+    return Math.max(0, Math.min(100, (Number(value || 0) / Math.max(1, Number(end) || 1)) * 100));
+  }
+
   function getTimelineSnapStep({ mode = "off", bpm = 140 } = {}) {
     const snapMode = normalizeTimelineSnapMode(mode);
     if (snapMode === "off") {
@@ -61,10 +106,14 @@
   window.PunchLabTimeline = {
     getBeatDuration,
     getTimelineSnapStep,
+    getTimelineTickStep,
+    makeTimelineGridLines,
+    makeTimelineTicks,
     normalizeMarkers,
     normalizeTimelineSnapMode,
     nudgeTimelineTime,
     snapTimelineTime,
     snapToInputPrecision,
+    timelinePercent,
   };
 })();
