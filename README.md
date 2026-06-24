@@ -54,8 +54,8 @@ node .\scripts\check.mjs
 - BPM-based timeline grid with optional beat/bar snap for markers and region starts
 - Region rename, clip gain, and fade in/out controls persisted in project files
 - Timeline undo/redo for marker and region edits
-- Export tab for track stems, dry vocals, and tuned vocals
-- Export queue with sequential job status for mix, stems, dry vocals, and tuned vocals
+- Export tab for track stems, vocal stem, dry vocals, and tuned vocals
+- Export queue with sequential job status for mix, stems, vocal stem, dry vocals, and tuned vocals
 - WAV export metadata for artist, title, BPM, key, and software
 - Export preview playback from completed queue jobs
 - Project zip export containing the `.punchlab.json` bundle, manifest, README, beat asset, and take audio assets
