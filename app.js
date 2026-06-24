@@ -1322,7 +1322,7 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
               <div><dt>Version</dt><dd>${escapeHtml(formatPreviewRenderVersion(take))}</dd></div>
               <div><dt>Source</dt><dd>${escapeHtml(formatPreviewSourceTake(take))}</dd></div>
               <div><dt>Gain</dt><dd>${escapeHtml(formatPreviewGain(take.volume, take.clipGain))}</dd></div>
-              <div><dt>Chain</dt><dd>${escapeHtml(formatAutomationStateSummary(take.automationState))}</dd></div>
+              <div><dt>Chain</dt><dd>${escapeHtml(formatAutomationStateSummary(take.automationState, automationManifest))}</dd></div>
             </dl>
             <audio controls src="${escapeHtml(take.path)}"></audio>
           </article>`,
@@ -1827,9 +1827,28 @@ function summarizeAutomationState(automationState) {
   };
 }
 
-function formatAutomationStateSummary(automationState) {
+function formatAutomationStateSummary(automationState, automationManifest = null) {
   const count = automationState?.parameters?.length || 0;
-  return count ? `${count} params` : "None";
+  if (!count) {
+    return "None";
+  }
+
+  const schema = new Map((automationManifest?.parameters || []).map((parameter) => [parameter.id, parameter]));
+  const highlights = ["retuneSpeed", "humanize", "formant", "comp"]
+    .map((id) => automationState.parameters.find((parameter) => parameter.id === id))
+    .filter(Boolean)
+    .map((parameter) => formatAutomationParameterValue(parameter, schema.get(parameter.id)))
+    .filter(Boolean);
+
+  return highlights.length ? `${count} params / ${highlights.join(" / ")}` : `${count} params`;
+}
+
+function formatAutomationParameterValue(parameter, schema = null) {
+  const label = schema?.label || parameter.id || parameter.automationId || "Param";
+  const unit = schema?.unit || "";
+  const value = Number(parameter.value);
+  const displayValue = Number.isFinite(value) ? value : 0;
+  return `${label} ${displayValue}${unit}`;
 }
 
 function escapeScriptJson(value) {

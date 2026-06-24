@@ -187,6 +187,10 @@ if (!appSource.includes("Automation Schema") || !appSource.includes("buildPrevie
   console.error("Project zip preview must display the vocal chain automation parameter schema.");
   failed = true;
 }
+if (!appSource.includes("formatAutomationParameterValue") || !appSource.includes("formatAutomationStateSummary(take.automationState, automationManifest)")) {
+  console.error("Project zip preview must summarize processed take automation values with schema labels.");
+  failed = true;
+}
 if (!appSource.includes("formatPreviewNativeAudio")) {
   console.error("Project zip preview must display the native audio environment summary.");
   failed = true;
