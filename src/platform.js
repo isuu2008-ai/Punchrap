@@ -87,6 +87,17 @@
     return result ? { supported: !result.unsupported, method: "native", native: result } : null;
   }
 
+  async function setBufferSize(bufferSize = 128) {
+    const bridge = window.PunchLabNativeBridge;
+    const status = bridge?.getStatus?.();
+    if (!status?.available || status.missingOptionalMethods?.includes("setBufferSize")) {
+      return null;
+    }
+
+    const result = await bridge.callOptionalNative("setBufferSize", { bufferSize });
+    return result ? { supported: !result.unsupported, method: "native", native: result } : null;
+  }
+
   function blobToDataUrl(blob) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -115,6 +126,7 @@
     platform,
     registerServiceWorker,
     saveProjectFile,
+    setBufferSize,
     setOutputDevice,
   };
 

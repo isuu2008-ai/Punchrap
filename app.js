@@ -37,6 +37,7 @@ const state = {
   inputGain: 2,
   audioInputDeviceId: "",
   audioOutputDeviceId: "",
+  nativeBufferSize: 128,
   monitorEnabled: false,
   isExportingMix: false,
   isExportingAssets: false,
@@ -1823,6 +1824,7 @@ function getProjectSettings() {
     inputGain: state.inputGain,
     audioInputDeviceId: state.audioInputDeviceId,
     audioOutputDeviceId: state.audioOutputDeviceId,
+    nativeBufferSize: state.nativeBufferSize,
     armedTrackId: state.armedTrackId,
     trackFolderCollapsed: normalizeTrackFolderCollapsed(state.trackFolderCollapsed),
     selectedPresetId: state.selectedPresetId,
@@ -1861,6 +1863,8 @@ function applyProjectSettings(settings = {}) {
   els.inputGainSlider.value = settings.inputGain || 2;
   state.audioInputDeviceId = settings.audioInputDeviceId || "";
   state.audioOutputDeviceId = settings.audioOutputDeviceId || "";
+  state.nativeBufferSize = normalizeNativeBufferSize(settings.nativeBufferSize);
+  applyNativeBufferSize();
   els.audioInputSelect.value = state.audioInputDeviceId;
   els.audioOutputSelect.value = state.audioOutputDeviceId;
   state.armedTrackId = tracks.some((track) => track.id === settings.armedTrackId)
@@ -1957,6 +1961,24 @@ function updatePunchFromInputs() {
 function updateRecordLatency() {
   state.recordLatencyMs = Math.max(0, Number(els.recordLatencyInput.value) || 0);
   scheduleAutosave();
+}
+
+async function applyNativeBufferSize() {
+  try {
+    const result = await window.PunchLabPlatform?.setBufferSize?.(state.nativeBufferSize);
+    if (result?.supported) {
+      renderEngineStatus();
+    }
+    return Boolean(result?.supported);
+  } catch (error) {
+    console.error(error);
+    return false;
+  }
+}
+
+function normalizeNativeBufferSize(value) {
+  const size = Number(value || 128);
+  return [64, 128, 256, 512, 1024].includes(size) ? size : 128;
 }
 
 function setPunchPoint(point) {

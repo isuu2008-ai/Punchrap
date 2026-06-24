@@ -34,6 +34,8 @@
 - Native latency/buffer readiness 1차
 - getLatencyStats와 setBufferSize 지원 여부를 desktop readiness에서 분리 표시
 - getLatencyStats와 setBufferSize를 optional native method로 분리하고 engine adapter에서 호출 가능하게 연결
+- Native buffer size project setting 1차
+- 프로젝트 설정에 native buffer size 선호값을 저장하고 복원 시 setBufferSize native handoff로 적용
 - Native adapter 1차
 - `src/native-adapter.js`가 native host bridge를 swappable engine interface로 연결
 - Desktop wrapper manifest 1차
