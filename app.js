@@ -366,7 +366,7 @@ function renderEngineStatus() {
       `Desktop ${desktopReadiness.summary}`,
       desktopReadiness.wrapper?.summary || "wrapper pending",
       `Buffer ${desktopReadiness.nativeAudioEngine?.preferredRuntimeBufferSize || state.nativeBufferSize} samples`,
-      formatRuntimeLatency(desktopReadiness.nativeAudioEngine?.runtimeRoundTripLatencyMs),
+      formatRuntimeLatency(getDisplayRoundTripLatency(desktopReadiness)),
       desktopReadiness.nativeAudioEngine?.detail || "",
     ].filter(Boolean).join(" / ")
     : descriptor.title;
@@ -376,6 +376,12 @@ function renderEngineStatus() {
 function formatRuntimeLatency(value) {
   const latencyMs = Number(value);
   return Number.isFinite(latencyMs) ? `Latency ${Math.round(latencyMs)} ms` : "";
+}
+
+function getDisplayRoundTripLatency(desktopReadiness) {
+  return desktopReadiness?.nativeAudioEngine?.runtimeRoundTripLatencyMs
+    ?? state.loadedProjectEnvironment?.nativeAudio?.roundTripLatencyMs
+    ?? null;
 }
 
 function renderPluginScanStatus(desktopReadiness = window.PunchLabDesktop?.getReadiness?.()) {

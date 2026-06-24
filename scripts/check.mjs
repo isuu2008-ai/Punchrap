@@ -143,6 +143,10 @@ if (!appSource.includes("formatRuntimeLatency") || !appSource.includes("runtimeR
   console.error("app.js must surface runtime round-trip latency in the engine status.");
   failed = true;
 }
+if (!appSource.includes("getDisplayRoundTripLatency") || !appSource.includes("loadedProjectEnvironment?.nativeAudio?.roundTripLatencyMs")) {
+  console.error("Engine status must fall back to loaded project round-trip latency.");
+  failed = true;
+}
 if (!appSource.includes("summarizeNativeAudioEnvironment") || !appSource.includes("nativeAudio: summarizeNativeAudioEnvironment()")) {
   console.error("Project zip manifest must include native audio environment summary.");
   failed = true;
