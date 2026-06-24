@@ -364,6 +364,7 @@ function renderEngineStatus() {
       descriptor.title,
       `Desktop ${desktopReadiness.summary}`,
       desktopReadiness.wrapper?.summary || "wrapper pending",
+      `Buffer ${desktopReadiness.nativeAudioEngine?.preferredRuntimeBufferSize || state.nativeBufferSize} samples`,
       desktopReadiness.nativeAudioEngine?.detail || "",
     ].filter(Boolean).join(" / ")
     : descriptor.title;

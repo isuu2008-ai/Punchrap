@@ -135,6 +135,10 @@ if (!appSource.includes("nativeAudioEngine?.detail")) {
   console.error("app.js must surface native audio engine readiness detail in the engine status.");
   failed = true;
 }
+if (!appSource.includes("preferredRuntimeBufferSize")) {
+  console.error("app.js must surface the preferred native buffer size in the engine status.");
+  failed = true;
+}
 if (!appSource.includes("nativeBufferSize") || !appSource.includes("applyNativeBufferSize") || !appSource.includes("changeNativeBufferSize")) {
   console.error("app.js must persist and apply the native buffer-size preference.");
   failed = true;

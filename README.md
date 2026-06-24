@@ -85,6 +85,7 @@ node .\scripts\check.mjs
 - Project settings persist a native buffer-size preference and apply it through `setBufferSize` when available
 - Record setup includes a compact native buffer-size selector for future desktop low-latency tuning
 - Desktop readiness includes the selected native buffer-size preference for runtime diagnostics
+- Engine status tooltip shows the selected native buffer size alongside desktop readiness
 - Desktop contract check enforces native audio engine sample-rate, buffer-size, and latency targets
 - Desktop readiness exposes native audio engine performance contract status at runtime
 - Engine status tooltip includes native audio engine readiness detail without adding another visible panel
