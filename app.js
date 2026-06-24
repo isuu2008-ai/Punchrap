@@ -181,6 +181,12 @@ const els = {
   takesList: document.querySelector("#takesList"),
   playQueueButton: document.querySelector("#playQueueButton"),
   playCompButton: document.querySelector("#playCompButton"),
+  compLaneList: document.querySelector("#compLaneList"),
+  compPoolList: document.querySelector("#compPoolList"),
+  compLaneMeta: document.querySelector("#compLaneMeta"),
+  compPoolMeta: document.querySelector("#compPoolMeta"),
+  compPlayButton: document.querySelector("#compPlayButton"),
+  compClearButton: document.querySelector("#compClearButton"),
   exportMixButton: document.querySelector("#exportMixButton"),
   downloadLatestButton: document.querySelector("#downloadLatestButton"),
   timelineLength: document.querySelector("#timelineLength"),
@@ -260,6 +266,8 @@ function bindEvents() {
   els.beatAudio.addEventListener("timeupdate", maintainLoopPlayback);
   els.playQueueButton.addEventListener("click", () => toggleTakeQueue("all"));
   els.playCompButton.addEventListener("click", () => toggleTakeQueue("comp"));
+  els.compPlayButton.addEventListener("click", () => toggleTakeQueue("comp"));
+  els.compClearButton.addEventListener("click", clearCompLane);
   els.exportMixButton.addEventListener("click", exportFullMix);
   els.downloadLatestButton.addEventListener("click", downloadLatestTake);
   els.retuneSpeedSlider.addEventListener("input", () => {
@@ -362,7 +370,7 @@ function handleGlobalShortcut(event) {
     return;
   }
 
-  if (/^Digit[1-7]$/.test(event.code)) {
+  if (/^Digit[1-8]$/.test(event.code)) {
     const index = Number(event.code.replace("Digit", "")) - 1;
     const tab = Array.from(els.viewTabs)[index];
     if (tab) {
@@ -387,6 +395,9 @@ function setActiveView(view) {
   });
   if (view === "timeline") {
     renderTimeline();
+  }
+  if (view === "comp") {
+    renderCompView();
   }
 }
 
@@ -2651,9 +2662,77 @@ function renderTakes() {
 
   updateQueueButton();
   updateExportButtons();
+  renderCompView();
   renderVocalPanel();
   renderTimeline();
   renderExportPanel();
+}
+
+function renderCompView() {
+  if (!els.compLaneList || !els.compPoolList) {
+    return;
+  }
+
+  const compTakes = getCompTakes();
+  const poolTakes = getAllTakes().filter((take) => !take.compSelected);
+  els.compLaneMeta.textContent = `${compTakes.length} take${compTakes.length === 1 ? "" : "s"}`;
+  els.compPoolMeta.textContent = `${poolTakes.length} available`;
+  els.compPlayButton.disabled = !state.isQueuePlaying && compTakes.length === 0;
+  els.compClearButton.disabled = compTakes.length === 0;
+  els.compPlayButton.classList.toggle("queue-active", state.isQueuePlaying && state.queueMode === "comp");
+  els.compPlayButton.querySelector(".button-label").textContent =
+    state.isQueuePlaying && state.queueMode === "comp" ? "Stop comp" : "Play comp";
+
+  els.compLaneList.innerHTML = compTakes.length
+    ? compTakes
+      .map((take, index) => renderCompLaneRow(take, index, compTakes.length))
+      .join("")
+    : `<span class="empty-takes">Select takes from the pool or Takes tab.</span>`;
+
+  els.compPoolList.innerHTML = poolTakes.length
+    ? poolTakes.map((take, index) => renderCompPoolRow(take, index)).join("")
+    : `<span class="empty-takes">No unselected takes.</span>`;
+
+  els.compLaneList.querySelectorAll("[data-comp-move]").forEach((button) => {
+    button.addEventListener("click", () => moveCompTake(button.dataset.compMove, Number(button.dataset.delta)));
+  });
+  els.compLaneList.querySelectorAll("[data-comp-remove]").forEach((button) => {
+    button.addEventListener("click", () => removeCompTake(button.dataset.compRemove));
+  });
+  els.compPoolList.querySelectorAll("[data-comp-add]").forEach((button) => {
+    button.addEventListener("click", () => addCompTake(button.dataset.compAdd));
+  });
+}
+
+function renderCompLaneRow(take, index, total) {
+  const isPlaying = take.id === state.currentTakeId || state.sessionPlayingTakeIds.has(take.id);
+  return `
+    <div class="comp-row ${isPlaying ? "active" : ""}">
+      <div class="comp-order">${index + 1}</div>
+      <div class="comp-row-main">
+        <strong>${escapeHtml(getTakeTitle(take, index))}</strong>
+        <small>${escapeHtml(getTakeSubtitle(take))}</small>
+        ${renderTakeWaveform(take)}
+      </div>
+      <div class="comp-row-actions">
+        <button class="mini-button" type="button" data-comp-move="${take.id}" data-delta="-1" ${index === 0 ? "disabled" : ""}>Up</button>
+        <button class="mini-button" type="button" data-comp-move="${take.id}" data-delta="1" ${index === total - 1 ? "disabled" : ""}>Down</button>
+        <button class="mini-button danger" type="button" data-comp-remove="${take.id}">Remove</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderCompPoolRow(take, index) {
+  return `
+    <div class="comp-pool-row">
+      <div>
+        <strong>${escapeHtml(getTakeTitle(take, index))}</strong>
+        <small>${escapeHtml(getTakeSubtitle(take))}</small>
+      </div>
+      <button class="mini-button" type="button" data-comp-add="${take.id}">Add</button>
+    </div>
+  `;
 }
 
 function renderTakeWaveform(take) {
@@ -3530,10 +3609,77 @@ function toggleCompTake(takeId) {
     return;
   }
 
-  take.compSelected = !take.compSelected;
-  els.sessionState.textContent = take.compSelected ? "Added to comp" : "Removed from comp";
+  if (take.compSelected) {
+    removeCompTake(takeId);
+    return;
+  }
+
+  addCompTake(takeId);
+}
+
+function addCompTake(takeId) {
+  const take = findTake(takeId);
+  if (!take) {
+    return;
+  }
+
+  take.compSelected = true;
+  take.compOrder = getNextCompOrder();
+  normalizeCompOrder();
+  els.sessionState.textContent = "Added to comp";
   renderTakes();
   scheduleAutosave();
+}
+
+function removeCompTake(takeId) {
+  const take = findTake(takeId);
+  if (!take) {
+    return;
+  }
+
+  take.compSelected = false;
+  take.compOrder = null;
+  normalizeCompOrder();
+  els.sessionState.textContent = "Removed from comp";
+  renderTakes();
+  scheduleAutosave();
+}
+
+function moveCompTake(takeId, delta) {
+  const compTakes = getCompTakes();
+  const index = compTakes.findIndex((take) => take.id === takeId);
+  const nextIndex = index + delta;
+  if (index < 0 || nextIndex < 0 || nextIndex >= compTakes.length) {
+    return;
+  }
+
+  [compTakes[index], compTakes[nextIndex]] = [compTakes[nextIndex], compTakes[index]];
+  compTakes.forEach((take, order) => {
+    take.compOrder = order + 1;
+  });
+  els.sessionState.textContent = "Comp order updated";
+  renderTakes();
+  scheduleAutosave();
+}
+
+function clearCompLane() {
+  getCompTakes().forEach((take) => {
+    take.compSelected = false;
+    take.compOrder = null;
+  });
+  els.sessionState.textContent = "Comp cleared";
+  renderTakes();
+  scheduleAutosave();
+}
+
+function normalizeCompOrder() {
+  getCompTakes().forEach((take, index) => {
+    take.compOrder = index + 1;
+  });
+}
+
+function getNextCompOrder() {
+  return getCompTakes().reduce((max, take) => Math.max(max, Number(take.compOrder) || 0), 0) + 1;
 }
 
 function deleteTake(takeId) {
@@ -3551,6 +3697,7 @@ function deleteTake(takeId) {
   const take = track.takes.find((item) => item.id === takeId);
   URL.revokeObjectURL(take.url);
   track.takes = track.takes.filter((item) => item.id !== takeId);
+  normalizeCompOrder();
   state.latestTake = getAllTakes().at(-1) || null;
   state.recordWaveform = state.latestTake?.waveform ? [...state.latestTake.waveform] : [];
   if (state.selectedVocalTakeId === takeId) {
@@ -3616,7 +3763,11 @@ function getAllTakes() {
 function getCompTakes() {
   return getAllTakes()
     .filter((take) => take.compSelected)
-    .sort((a, b) => (a.startTime || 0) - (b.startTime || 0) || a.createdAt.getTime() - b.createdAt.getTime());
+    .sort((a, b) => {
+      const leftOrder = Number.isFinite(Number(a.compOrder)) ? Number(a.compOrder) : Number.POSITIVE_INFINITY;
+      const rightOrder = Number.isFinite(Number(b.compOrder)) ? Number(b.compOrder) : Number.POSITIVE_INFINITY;
+      return leftOrder - rightOrder || (a.startTime || 0) - (b.startTime || 0) || a.createdAt.getTime() - b.createdAt.getTime();
+    });
 }
 
 function getSelectedPreset() {
@@ -3825,6 +3976,19 @@ function updateQueueButton() {
     if (compLabel) {
       compLabel.textContent = isCompQueue ? "Stop comp" : "Play comp";
     }
+  }
+
+  if (els.compPlayButton) {
+    const compPanelLabel = els.compPlayButton.querySelector(".button-label");
+    els.compPlayButton.disabled = !state.isQueuePlaying && compTakes.length === 0;
+    els.compPlayButton.classList.toggle("queue-active", isCompQueue);
+    if (compPanelLabel) {
+      compPanelLabel.textContent = isCompQueue ? "Stop comp" : "Play comp";
+    }
+  }
+
+  if (els.compClearButton) {
+    els.compClearButton.disabled = compTakes.length === 0;
   }
 }
 

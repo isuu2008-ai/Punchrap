@@ -2,7 +2,7 @@
 
 이 문서는 PunchLab을 단순한 브라우저 녹음 장난감이 아니라, 실제로 쓸 수 있는 랩 녹음 스튜디오로 키우기 위한 체크리스트입니다.
 
-현재 PunchLab은 브라우저 기반 프로토타입입니다. 이미 녹음, 여러 트랙, take 관리, pitch 분석, frame-level 튠 렌더, 보컬 체인, 전체 믹스 export, A/B 비교, batch render, minor/chromatic/custom 튠 모드, manual pitch lane, timeline undo/redo, render/export queue, take comping 기본형, WAV export metadata, export preview, project zip export 기본형, waveform recording view, export peak normalize까지 들어가 있습니다. 지금 단계에서는 브라우저로 계속 빠르게 기능을 검증하는 것이 맞습니다.
+현재 PunchLab은 브라우저 기반 프로토타입입니다. 이미 녹음, 여러 트랙, take 관리, pitch 분석, frame-level 튠 렌더, 보컬 체인, 전체 믹스 export, A/B 비교, batch render, minor/chromatic/custom 튠 모드, manual pitch lane, timeline undo/redo, render/export queue, take comping 기본형, comp lane editing, WAV export metadata, export preview, project zip export 기본형, waveform recording view, export peak normalize까지 들어가 있습니다. 지금 단계에서는 브라우저로 계속 빠르게 기능을 검증하는 것이 맞습니다.
 
 현재 추가 완료:
 
@@ -28,7 +28,7 @@
 - Storage Layer `src/storage.js` 분리
 - BPM 기반 metronome toggle
 - recording/session playback 중 metronome tick
-- Keyboard shortcuts: Space 재생, R 녹음, S 정지, M metronome, 1-7 탭 이동
+- Keyboard shortcuts: Space 재생, R 녹음, S 정지, M metronome, 1-8 탭 이동
 - 입력칸 포커스 중 shortcut 비활성화
 - Recording latency compensation
 - 새 take 저장 시 latency ms만큼 start time 자동 보정
@@ -58,6 +58,11 @@
 - take별 Comp 선택/해제
 - 선택한 comp take만 순서대로 Play comp 재생
 - Comp 선택 프로젝트 저장/복원
+- Comp lane editing 기본형
+- Comp 탭 추가
+- take pool에서 comp lane으로 add/remove
+- comp lane 순서 up/down 편집
+- comp order 프로젝트 저장/복원
 - Export metadata 기본형
 - Artist/Title 입력 프로젝트 저장/복원
 - WAV RIFF INFO chunk에 title, artist, BPM, key, software 기록
@@ -418,12 +423,12 @@ VST3/AU 플러그인은 마지막에 가는 것이 맞습니다.
 5. stem export
 6. latency compensation
 7. pitch engine 개선
-8. comp lane editing
-9. project bundle zip 고도화
-10. LUFS loudness analysis
-11. DSP 모듈 추가 분리
+8. project bundle zip 고도화
+9. LUFS loudness analysis
+10. DSP 모듈 추가 분리
+11. formant-aware pitch shifting
 12. desktop wrapper
 13. native audio engine
 14. VST3/AU plugin
 
-현재는 1-8번의 기본선과 timeline undo/redo, render/export queue, custom scale editor, take comping, export metadata, export preview, project zip export, waveform recording view, export peak normalize 기본형이 들어온 상태입니다. 다음으로는 comp lane editing, project bundle zip 고도화, LUFS loudness analysis가 중요합니다.
+현재는 1-8번의 기본선과 timeline undo/redo, render/export queue, custom scale editor, take comping, comp lane editing, export metadata, export preview, project zip export, waveform recording view, export peak normalize 기본형이 들어온 상태입니다. 다음으로는 project bundle zip 고도화, LUFS loudness analysis, formant-aware pitch shifting이 중요합니다.

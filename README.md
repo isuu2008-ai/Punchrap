@@ -49,6 +49,7 @@ Then open `http://localhost:4173`.
 - Manual pitch lane edits for analyzed vocal frames, persisted in project files
 - Custom scale editor with 12 pitch-class toggles
 - Take comp selection with a dedicated comp playlist review button
+- Dedicated Comp view for comp lane ordering, take-pool add/remove, and persisted comp order
 
 ## Planning
 
@@ -56,7 +57,7 @@ See [COMMERCIAL_STUDIO_ROADMAP.md](./COMMERCIAL_STUDIO_ROADMAP.md) for the comme
 
 ## Next DSP Steps
 
-- Comp lane editing
+- Project bundle zip upgrade
+- LUFS loudness analysis
 - Formant-aware pitch shifting
 - Better EQ, compressor, delay, reverb, and limiter controls
-- Project bundle zip upgrade

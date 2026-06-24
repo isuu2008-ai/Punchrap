@@ -539,6 +539,99 @@ h1 {
   color: var(--red);
 }
 
+.comp-grid {
+  min-height: 590px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 320px);
+  gap: 14px;
+}
+
+.comp-panel {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.comp-lane-list,
+.comp-pool-list,
+.comp-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.comp-lane-list {
+  align-content: start;
+  padding: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.comp-row,
+.comp-pool-row {
+  display: grid;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  background: #0f1411;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.comp-row {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.comp-pool-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.comp-row.active {
+  border-color: rgba(200, 255, 77, 0.55);
+}
+
+.comp-order {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  color: #050706;
+  background: var(--lime);
+  border-radius: 6px;
+  font-weight: 900;
+}
+
+.comp-row-main,
+.comp-pool-row > div {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.comp-row-main strong,
+.comp-pool-row strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.comp-row-main small,
+.comp-pool-row small {
+  color: var(--muted);
+}
+
+.comp-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.comp-side {
+  min-height: 590px;
+  overflow: auto;
+}
+
+.comp-actions {
+  margin-bottom: 14px;
+}
+
 .panel-heading.padded {
   padding: 14px;
   margin-bottom: 0;
@@ -1550,6 +1643,7 @@ textarea:focus {
   .lyrics-grid,
   .export-grid,
   .timeline-grid,
+  .comp-grid,
   .vocal-grid {
     grid-template-columns: 1fr;
   }
@@ -1588,8 +1682,26 @@ textarea:focus {
   .lyrics-grid,
   .export-grid,
   .timeline-grid,
+  .comp-grid,
   .vocal-grid {
     grid-template-columns: 1fr;
+  }
+
+  .comp-row,
+  .comp-pool-row {
+    grid-template-columns: 1fr;
+  }
+
+  .comp-order {
+    width: 100%;
+  }
+
+  .comp-row-actions {
+    justify-content: stretch;
+  }
+
+  .comp-row-actions .mini-button {
+    flex: 1;
   }
 
   .chain-route {

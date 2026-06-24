@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PunchLab</title>
     <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="./styles.css?v=20260624-24" />
+    <link rel="stylesheet" href="./styles.css?v=20260624-25" />
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
-    <script src="./src/dsp.js?v=20260624-24" defer></script>
-    <script src="./src/audio.js?v=20260624-24" defer></script>
-    <script src="./src/project.js?v=20260624-24" defer></script>
-    <script src="./src/storage.js?v=20260624-24" defer></script>
-    <script src="./app.js?v=20260624-24" defer></script>
+    <script src="./src/dsp.js?v=20260624-25" defer></script>
+    <script src="./src/audio.js?v=20260624-25" defer></script>
+    <script src="./src/project.js?v=20260624-25" defer></script>
+    <script src="./src/storage.js?v=20260624-25" defer></script>
+    <script src="./app.js?v=20260624-25" defer></script>
   </head>
   <body>
     <main class="studio-shell">
@@ -30,6 +30,7 @@
           <button class="view-tab" type="button" data-view="timeline">Timeline</button>
           <button class="view-tab" type="button" data-view="vocal">Vocal</button>
           <button class="view-tab" type="button" data-view="takes">Takes</button>
+          <button class="view-tab" type="button" data-view="comp">Comp</button>
           <button class="view-tab" type="button" data-view="export">Export</button>
           <button class="view-tab" type="button" data-view="lyrics">Lyrics</button>
         </nav>
@@ -359,6 +360,36 @@
               </div>
               <div class="export-list" id="exportList"></div>
             </section>
+          </section>
+        </section>
+
+        <section class="view-panel" data-view-panel="comp">
+          <section class="comp-grid">
+            <section class="center-panel full-panel comp-panel">
+              <div class="panel-heading padded">
+                <span>Comp lane</span>
+                <span id="compLaneMeta">0 takes</span>
+              </div>
+              <div id="compLaneList" class="comp-lane-list"></div>
+            </section>
+
+            <aside class="panel comp-side">
+              <div class="panel-heading">
+                <span>Take pool</span>
+                <span id="compPoolMeta">0 available</span>
+              </div>
+              <div class="comp-actions">
+                <button id="compPlayButton" class="icon-button wide" type="button" disabled>
+                  <i data-lucide="list-checks"></i>
+                  <span class="button-label">Play comp</span>
+                </button>
+                <button id="compClearButton" class="icon-button wide" type="button" disabled>
+                  <i data-lucide="eraser"></i>
+                  Clear comp
+                </button>
+              </div>
+              <div id="compPoolList" class="comp-pool-list"></div>
+            </aside>
           </section>
         </section>
 
