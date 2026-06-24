@@ -150,6 +150,11 @@ h1 {
   border-color: rgba(255, 183, 74, 0.42);
 }
 
+.plugin-status[data-scan="pending"] {
+  color: var(--muted);
+  border-color: rgba(255, 183, 74, 0.24);
+}
+
 .plugin-status:disabled {
   cursor: default;
   opacity: 0.78;

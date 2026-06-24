@@ -58,6 +58,7 @@
       return {
         formats: ["VST3", "AU"],
         plugins: [],
+        pluginHostReady: false,
         scannedAt: new Date().toISOString(),
         fixture: true,
       };

@@ -289,6 +289,9 @@ if (!desktopSource.includes("getNativeBridgeDetail") || !desktopSource.includes(
 if (!desktopSource.includes("const compressedExportReady = hasCompressedExportMethod && capabilities.compressedAudioExport === true") || !desktopSource.includes("ready: compressedExportReady")) {
   fail("Desktop readiness must separate compressed export method availability from compressedAudioExport capability.");
 }
+if (!desktopSource.includes("const pluginHostReady = hasPluginScan && capabilities.pluginHost === true") || !desktopSource.includes("methodAvailable: hasPluginScan") || !desktopSource.includes("ready: pluginHostReady")) {
+  fail("Desktop readiness must separate plugin scan method availability from pluginHost capability readiness.");
+}
 if (!desktopSource.includes("packageManifestPath")) {
   fail("Desktop runtime manifest must expose the desktop package manifest path.");
 }

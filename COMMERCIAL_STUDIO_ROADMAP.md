@@ -124,6 +124,8 @@
 - `setOutputDevice` method availability와 실제 `audioOutputRouting` capability readiness를 desktop readiness에서 분리
 - Compressed export readiness split 보강
 - `exportCompressedAudio` method availability와 실제 `compressedAudioExport` capability readiness를 desktop readiness에서 분리
+- Plugin scan readiness split 보강
+- `scanPluginHosts` method availability와 실제 `pluginHost` capability readiness를 desktop readiness에서 분리
 - Tauri capability contract check 1차
 - `tauri.conf.json` security.capabilities, capability permissions, package/wrapper manifest 정합성을 검증
 - Tauri file association scaffold 1차

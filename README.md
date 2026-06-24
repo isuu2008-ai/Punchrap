@@ -99,6 +99,7 @@ node .\scripts\check.mjs
 - Desktop readiness separates latency method availability from measured native latency readiness
 - Desktop readiness separates native output-routing method availability from audioOutputRouting capability readiness
 - Desktop readiness separates compressed export method availability from compressedAudioExport capability readiness
+- Desktop readiness separates plugin scan method availability from pluginHost capability readiness
 - Desktop contract check validates selected Tauri capabilities and local-only main-window permissions
 - Desktop contract check verifies HTML manifest meta tags and host contract file paths
 - Tauri file associations register `.punchlab.json` projects and `.punchlab.zip` archives as PunchLab-owned editor types

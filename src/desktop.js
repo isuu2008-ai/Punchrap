@@ -158,6 +158,7 @@
     const compressedExportReady = hasCompressedExportMethod && capabilities.compressedAudioExport === true;
     const missingPluginMethods = getMissingOptionalMethods(bridgeStatus, ["scanPluginHosts"]);
     const hasPluginScan = missingPluginMethods.length === 0;
+    const pluginHostReady = hasPluginScan && capabilities.pluginHost === true;
     const nativeAudioContract = getNativeAudioContractStatus(capabilities);
     const latencyStats = normalizeLatencyStats(platform.latencyStats);
     const latencyStatsAvailable = hasMeasuredLatencyStats(latencyStats);
@@ -246,10 +247,12 @@
       makeCheck(
         "plugin-host-scan",
         "Plugin host scan",
-        hasPluginScan ? "ready" : "fallback",
-        hasPluginScan
-          ? "Native host can scan installed VST3/AU plugin locations."
-          : "Plugin scan waits for native scanPluginHosts support.",
+        pluginHostReady ? "ready" : hasPluginScan ? "pending" : "fallback",
+        pluginHostReady
+          ? "Native host can scan and host installed VST3/AU plugins."
+          : hasPluginScan
+            ? "Native host can scan plugin locations; plugin hosting capability is pending."
+            : "Plugin scan waits for native scanPluginHosts support.",
       ),
     ];
     const readyCount = checks.filter((check) => check.status === "ready").length;
@@ -297,9 +300,16 @@
       },
       pluginHost: {
         scanAvailable: hasPluginScan,
+        methodAvailable: hasPluginScan,
+        ready: pluginHostReady,
         missingMethods: missingPluginMethods,
         capabilityReady: capabilities.pluginHost === true,
         manifestPath: getManifest().pluginHostManifestPath,
+        summary: pluginHostReady
+          ? "Plugin host ready."
+          : hasPluginScan
+            ? "Plugin scan handoff ready; plugin hosting pending."
+            : "Plugin scan handoff pending.",
       },
       tauriBridge: window.PunchLabTauriBridge?.getStatus?.() || null,
       wrapper: {

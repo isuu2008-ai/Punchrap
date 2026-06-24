@@ -797,10 +797,11 @@ ${getProjectZipPreviewPlayerScript()}
     const scannedAt = formatTimestamp(pluginHost.scannedAt) || "Not scanned";
     return buildDescriptionListRows([
       ["Scan", pluginHost.scanAvailable ? pluginHost.scanned ? "Scanned" : "Ready" : "Unavailable"],
+      ["Host", pluginHost.hostReady ? "Ready" : pluginHost.capabilityReady ? "Capability ready" : "Pending"],
       ["Formats", formats],
       ["Plugins", String(pluginHost.pluginCount || 0)],
       ["Freshness", scannedAt],
-      ["Source", pluginHost.fixture ? "Fixture" : "Native"],
+      ["Source", pluginHost.source || (pluginHost.fixture ? "Fixture" : "Native")],
     ]);
   }
 
@@ -876,7 +877,8 @@ ${getProjectZipPreviewPlayerScript()}
 
     const formats = Array.isArray(pluginHost.formats) && pluginHost.formats.length ? pluginHost.formats.join(", ") : "formats unknown";
     const scannedAt = formatTimestamp(pluginHost.scannedAt);
-    return [`Plugin ${pluginHost.pluginCount || 0}`, formats, scannedAt].filter(Boolean).join(" / ");
+    const hostState = pluginHost.hostReady ? "host ready" : "host pending";
+    return [`Plugin ${pluginHost.pluginCount || 0}`, formats, hostState, scannedAt].filter(Boolean).join(" / ");
   }
 
   function formatProjectZipPreviewNativeAudio(nativeAudio = {}) {
@@ -910,7 +912,7 @@ ${getProjectZipPreviewPlayerScript()}
     const pluginHost = desktopReadiness.pluginHost || {};
     const parts = [desktopReadiness.desktopReady ? "Desktop ready" : "Desktop pending"];
     parts.push(nativeAudio.ready ? "Native audio ready" : "Native audio pending");
-    parts.push(pluginHost.scanAvailable ? "Plugin scan ready" : "Plugin scan pending");
+    parts.push(pluginHost.ready ? "Plugin host ready" : pluginHost.scanAvailable ? "Plugin scan ready" : "Plugin scan pending");
     return parts.join(" / ");
   }
 

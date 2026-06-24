@@ -451,28 +451,30 @@ function renderPluginScanStatus(desktopReadiness = window.PunchLabDesktop?.getRe
 
   const pluginHost = desktopReadiness?.pluginHost || {};
   const scanAvailable = Boolean(pluginHost.scanAvailable);
+  const pluginHostReady = Boolean(pluginHost.ready);
   const resultCount = Array.isArray(state.pluginScanResult?.plugins) ? state.pluginScanResult.plugins.length : null;
   els.pluginScanStatus.disabled = !scanAvailable || state.isPluginScanning;
-  els.pluginScanStatus.dataset.scan = scanAvailable ? "ready" : "fallback";
+  els.pluginScanStatus.dataset.scan = pluginHostReady ? "ready" : scanAvailable ? "pending" : "fallback";
   els.pluginScanStatusText.textContent = state.isPluginScanning
     ? "Scanning"
     : resultCount === null ? "Plugin" : `Plugin ${resultCount}`;
-  els.pluginScanStatus.title = formatPluginScanStatusTitle({ pluginHost, scanAvailable, resultCount });
+  els.pluginScanStatus.title = formatPluginScanStatusTitle({ pluginHost, scanAvailable, pluginHostReady, resultCount });
 }
 
-function formatPluginScanStatusTitle({ pluginHost = {}, scanAvailable = false, resultCount = null }) {
+function formatPluginScanStatusTitle({ pluginHost = {}, scanAvailable = false, pluginHostReady = false, resultCount = null }) {
   if (!scanAvailable) {
     return `Plugin scan unavailable: ${(pluginHost.missingMethods || ["scanPluginHosts"]).join(", ")}`;
   }
   if (resultCount === null) {
-    return "Scan VST3/AU plugins";
+    return pluginHostReady ? "Scan VST3/AU plugins" : "Scan VST3/AU locations; plugin hosting pending";
   }
 
   const formats = Array.isArray(state.pluginScanResult?.formats) && state.pluginScanResult.formats.length
     ? ` / ${state.pluginScanResult.formats.join(", ")}`
     : "";
   const scannedAt = formatDisplayTimestamp(state.pluginScanResult?.scannedAt);
-  return `${resultCount} plugin(s) found${formats}${scannedAt ? ` / ${scannedAt}` : ""}`;
+  const hostState = state.pluginScanResult?.pluginHostReady || pluginHostReady ? " / Host ready" : " / Host pending";
+  return `${resultCount} plugin(s) found${formats}${scannedAt ? ` / ${scannedAt}` : ""}${hostState}`;
 }
 
 async function scanPluginHosts() {
@@ -491,6 +493,7 @@ async function scanPluginHosts() {
     state.pluginScanResult = {
       ...(result || {}),
       plugins: Array.isArray(result?.plugins) ? result.plugins : [],
+      pluginHostReady: Boolean(result?.pluginHostReady),
       scannedAt: result?.scannedAt || new Date().toISOString(),
     };
     const count = Array.isArray(state.pluginScanResult.plugins) ? state.pluginScanResult.plugins.length : 0;
@@ -1359,9 +1362,13 @@ function summarizePluginHostScan() {
   return {
     manifest: "plugin-host-manifest.json",
     scanAvailable: Boolean(window.PunchLabDesktop?.getReadiness?.()?.pluginHost?.scanAvailable),
+    methodAvailable: Boolean(window.PunchLabDesktop?.getReadiness?.()?.pluginHost?.methodAvailable),
+    capabilityReady: Boolean(window.PunchLabDesktop?.getReadiness?.()?.pluginHost?.capabilityReady),
+    hostReady: Boolean(result?.pluginHostReady || window.PunchLabDesktop?.getReadiness?.()?.pluginHost?.ready),
     scanned: Boolean(result),
     scannedAt: result?.scannedAt || null,
     fixture: Boolean(result?.fixture),
+    source: result?.source || (result?.fixture ? "fixture" : "runtime"),
     formats: formats.map((format) => String(format)),
     pluginCount: plugins.length,
   };
@@ -1442,6 +1449,9 @@ function summarizeDesktopReadinessEnvironment() {
     pluginHost: readiness.pluginHost
       ? {
         scanAvailable: Boolean(readiness.pluginHost.scanAvailable),
+        methodAvailable: Boolean(readiness.pluginHost.methodAvailable),
+        ready: Boolean(readiness.pluginHost.ready),
+        capabilityReady: Boolean(readiness.pluginHost.capabilityReady),
         summary: readiness.pluginHost.summary || null,
       }
       : null,

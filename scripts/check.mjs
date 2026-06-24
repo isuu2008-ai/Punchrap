@@ -395,6 +395,10 @@ if (!projectZipSource.includes("Plugin Host") || !projectZipSource.includes("bui
   console.error("Project zip preview must include a plugin host detail section.");
   failed = true;
 }
+if (!projectZipSource.includes("pluginHost.hostReady") || !appSource.includes("pluginHostReady: Boolean(result?.pluginHostReady)") || !appSource.includes("capabilityReady: Boolean(window.PunchLabDesktop?.getReadiness?.()?.pluginHost?.capabilityReady)")) {
+  console.error("Plugin scan summaries must preserve method, capability, and host readiness separately.");
+  failed = true;
+}
 if (!appSource.includes("formatPluginScanStatusTitle") || !appSource.includes("scannedAt: result?.scannedAt || new Date().toISOString()")) {
   console.error("Topbar plugin scan status must expose scan freshness.");
   failed = true;
@@ -445,6 +449,10 @@ if (!readFileSync("src/desktop.js", "utf8").includes("methodAvailable: hasOutput
 }
 if (!readFileSync("src/desktop.js", "utf8").includes("const compressedExportReady = hasCompressedExportMethod && capabilities.compressedAudioExport === true") || !readFileSync("src/desktop.js", "utf8").includes("ready: compressedExportReady")) {
   console.error("Desktop readiness must separate compressed export method availability from compressedAudioExport capability.");
+  failed = true;
+}
+if (!readFileSync("src/desktop.js", "utf8").includes("const pluginHostReady = hasPluginScan && capabilities.pluginHost === true") || !readFileSync("src/desktop.js", "utf8").includes("methodAvailable: hasPluginScan") || !readFileSync("src/desktop.js", "utf8").includes("ready: pluginHostReady")) {
+  console.error("Desktop readiness must separate plugin scan method availability from pluginHost capability readiness.");
   failed = true;
 }
 if (!readFileSync("src/desktop.js", "utf8").includes("fixture: Boolean(capabilities.nativeFixture)") || !appSource.includes("Native fixture")) {
