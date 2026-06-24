@@ -57,6 +57,23 @@
     return `${base}.${normalizeCompressedFormat(extension)}`;
   }
 
+  function getExportJobStatusLabel(status) {
+    return {
+      queued: "Queued",
+      running: "Running",
+      done: "Done",
+      failed: "Failed",
+    }[status] || "Idle";
+  }
+
+  function formatExportRowCount(row = {}) {
+    if (typeof row.count === "string") {
+      return row.count;
+    }
+
+    return `${row.count} ${row.unit}${row.count === 1 ? "" : "s"}`;
+  }
+
   function formatExportJobDetail(job = {}, fallbackStatus = "Idle") {
     const detail = job.previewName || job.detail || fallbackStatus;
     return [detail, job.compressedStatus].filter(Boolean).join(" / ");
@@ -73,7 +90,9 @@
   window.PunchLabExportPlan = {
     buildSingleExportGroup,
     buildStemExportGroups,
+    formatExportRowCount,
     formatExportJobDetail,
+    getExportJobStatusLabel,
     makeExportBaseSlug,
     makeMixFilename,
     normalizeCompressedFormat,

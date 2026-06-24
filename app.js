@@ -4824,11 +4824,7 @@ function getClippingRisk(report, stale = false) {
 }
 
 function formatExportRowCount(row) {
-  if (typeof row.count === "string") {
-    return row.count;
-  }
-
-  return `${row.count} ${row.unit}${row.count === 1 ? "" : "s"}`;
+  return window.PunchLabExportPlan.formatExportRowCount(row);
 }
 
 function getCompressedExportStatus() {
@@ -6101,17 +6097,11 @@ function cleanupExportJob(job) {
 }
 
 function getExportJobStatusLabel(status) {
-  return {
-    queued: "Queued",
-    running: "Running",
-    done: "Done",
-    failed: "Failed",
-  }[status] || "Idle";
+  return window.PunchLabExportPlan.getExportJobStatusLabel(status);
 }
 
 function formatExportJobDetail(job = {}) {
-  return window.PunchLabExportPlan?.formatExportJobDetail?.(job, getExportJobStatusLabel(job.status))
-    || [job.previewName || job.detail || getExportJobStatusLabel(job.status), job.compressedStatus].filter(Boolean).join(" / ");
+  return window.PunchLabExportPlan.formatExportJobDetail(job, getExportJobStatusLabel(job.status));
 }
 
 async function renderTakeMixBlob(takes, includeBeat = false) {

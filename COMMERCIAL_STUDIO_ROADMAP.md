@@ -214,6 +214,8 @@
 - export filename, stem group, compressed format, queue detail planning을 `src/export-plan.js`로 분리
 - Export single group plan split 1차
 - beat/vocal/comp/dry/tuned 단일 WAV export group 계획을 `src/export-plan.js`로 분리
+- Export queue display policy split 1차
+- export row count, queue status label, job detail 표시 정책을 `src/export-plan.js`로 분리
 - Audible export source alignment 1차
 - comp/dry/tuned export count, button state, render 대상이 audible track routing을 따르도록 정렬
 - Timeline policy module split 1차
