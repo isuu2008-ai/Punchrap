@@ -128,6 +128,19 @@
     };
   }
 
+  function applyTruePeakCeiling(audioBuffer, ceilingDb = -1) {
+    const channels = audioBuffer.numberOfChannels;
+    const safeCeilingDb = Number.isFinite(Number(ceilingDb)) ? Math.min(0, Number(ceilingDb)) : -1;
+    const targetPeak = dbToAmplitude(safeCeilingDb);
+    const truePeak = getTruePeak(audioBuffer, channels);
+
+    if (truePeak <= targetPeak || truePeak <= 0.000001) {
+      return audioBuffer;
+    }
+
+    return cloneAudioBufferWithGain(audioBuffer, targetPeak / truePeak);
+  }
+
   function getLoudnessBlocks(channelData, sampleRate) {
     const blockSize = Math.max(1, Math.round(sampleRate * 0.4));
     const hopSize = Math.max(1, Math.round(sampleRate * 0.1));
@@ -249,7 +262,7 @@
     return peak;
   }
 
-  function getTruePeak(audioBuffer, channels) {
+  function getTruePeak(audioBuffer, channels, oversample = 4) {
     let peak = 0;
     for (let channel = 0; channel < channels; channel += 1) {
       const data = audioBuffer.getChannelData(channel);
@@ -262,13 +275,38 @@
         const previous = data[index - 1];
         const current = data[index];
         peak = Math.max(peak, Math.abs(current));
-        for (let step = 1; step < 4; step += 1) {
-          const t = step / 4;
+        for (let step = 1; step < oversample; step += 1) {
+          const t = step / oversample;
           peak = Math.max(peak, Math.abs(previous + (current - previous) * t));
         }
       }
     }
     return peak;
+  }
+
+  function cloneAudioBufferWithGain(audioBuffer, gain) {
+    const output = createAudioBufferLike(audioBuffer);
+    for (let channel = 0; channel < audioBuffer.numberOfChannels; channel += 1) {
+      const input = audioBuffer.getChannelData(channel);
+      const target = output.getChannelData(channel);
+      for (let index = 0; index < input.length; index += 1) {
+        target[index] = input[index] * gain;
+      }
+    }
+    return output;
+  }
+
+  function createAudioBufferLike(audioBuffer) {
+    if (typeof AudioBuffer === "function") {
+      return new AudioBuffer({
+        length: audioBuffer.length,
+        numberOfChannels: audioBuffer.numberOfChannels,
+        sampleRate: audioBuffer.sampleRate,
+      });
+    }
+
+    return new OfflineAudioContext(audioBuffer.numberOfChannels, audioBuffer.length, audioBuffer.sampleRate)
+      .createBuffer(audioBuffer.numberOfChannels, audioBuffer.length, audioBuffer.sampleRate);
   }
 
   function countClippingSamples(audioBuffer, channels) {
@@ -300,8 +338,13 @@
     return amplitude > 0 ? 20 * Math.log10(amplitude) : Number.NEGATIVE_INFINITY;
   }
 
+  function dbToAmplitude(db) {
+    return Math.pow(10, db / 20);
+  }
+
   window.PunchLabAudio = {
     analyzeLoudness,
+    applyTruePeakCeiling,
     downloadBlob,
     encodeWav,
   };

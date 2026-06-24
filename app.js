@@ -4081,7 +4081,7 @@ function exportFullMix() {
 }
 
 async function renderFullMixBlob() {
-  return encodeWav(applyExportNormalize(await renderFullMixBuffer()), getExportMetadata());
+  return encodeWav(applyExportFinalize(await renderFullMixBuffer()), getExportMetadata());
 }
 
 async function renderFullMixBuffer() {
@@ -4385,7 +4385,7 @@ async function renderTakeMixBlob(takes, includeBeat = false) {
     takes: takeBuffers.map(makeMixTakeSource),
   });
 
-  return encodeWav(applyExportNormalize(renderedBuffer), getExportMetadata());
+  return encodeWav(applyExportFinalize(renderedBuffer), getExportMetadata());
 }
 
 function makeMixTakeSource({ take, track, buffer }) {
@@ -4452,6 +4452,16 @@ function applyExportNormalize(audioBuffer) {
     }
   }
   return audioBuffer;
+}
+
+function applyExportFinalize(audioBuffer) {
+  return applyTruePeakCeiling(applyExportNormalize(audioBuffer), -1);
+}
+
+function applyTruePeakCeiling(audioBuffer, ceilingDb) {
+  return window.PunchLabAudio?.applyTruePeakCeiling
+    ? window.PunchLabAudio.applyTruePeakCeiling(audioBuffer, ceilingDb)
+    : audioBuffer;
 }
 
 function getAudioBufferPeak(audioBuffer) {

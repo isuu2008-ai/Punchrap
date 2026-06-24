@@ -5,6 +5,7 @@
     pitchAnalysis: true,
     wavExport: true,
     loudnessAnalysis: true,
+    truePeakLimiter: true,
     realtimeNativeMonitoring: false,
     pluginHost: false,
   };
@@ -30,6 +31,7 @@
       nativeBridge: bridgeStatus || null,
       capabilities: { ...WEB_AUDIO_CAPABILITIES },
       analyzeLoudness: window.PunchLabAudio.analyzeLoudness,
+      applyTruePeakCeiling: window.PunchLabAudio.applyTruePeakCeiling,
       analyzeTakePitch: window.PunchLabVocal.analyzeTakePitch,
       decodeTakeBuffer: window.PunchLabVocal.decodeTakeBuffer,
       downloadBlob: window.PunchLabAudio.downloadBlob,
@@ -57,6 +59,7 @@
       return getDriver().id;
     },
     analyzeLoudness: (...args) => requireMethod("analyzeLoudness")(...args),
+    applyTruePeakCeiling: (...args) => requireMethod("applyTruePeakCeiling")(...args),
     analyzeTakePitch: (...args) => requireMethod("analyzeTakePitch")(...args),
     decodeTakeBuffer: (...args) => requireMethod("decodeTakeBuffer")(...args),
     downloadBlob: (...args) => requireMethod("downloadBlob")(...args),

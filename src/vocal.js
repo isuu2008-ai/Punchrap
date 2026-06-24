@@ -16,15 +16,16 @@
     sourceBuffer ||= await decodeTakeBuffer(sourceTake);
     const renderPreset = getEffectivePreset(preset, tuneSettings);
     const renderedBuffer = await window.PunchLabDSP.renderVocalBuffer(sourceBuffer, renderPreset, pitchPlan, tuneSettings);
-    const pitchAnalysis = window.PunchLabDSP.analyzePitchBuffer(renderedBuffer);
-    const blob = window.PunchLabAudio.encodeWav(renderedBuffer);
+    const safeBuffer = window.PunchLabAudio.applyTruePeakCeiling(renderedBuffer, renderPreset.limiterCeiling);
+    const pitchAnalysis = window.PunchLabDSP.analyzePitchBuffer(safeBuffer);
+    const blob = window.PunchLabAudio.encodeWav(safeBuffer);
 
     return {
       blob,
-      duration: renderedBuffer.duration,
+      duration: safeBuffer.duration,
       pitchAnalysis,
       renderPreset,
-      waveform: makeWaveformFromAudioBuffer(renderedBuffer, waveformLength),
+      waveform: makeWaveformFromAudioBuffer(safeBuffer, waveformLength),
     };
   }
 
