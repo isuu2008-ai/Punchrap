@@ -37,6 +37,9 @@
 - 마이크 신호를 monitor gain node를 통해 destination으로 라우팅
 - Custom vocal preset 저장
 - 저장한 preset 프로젝트 저장/복원
+- Vocal gate slider
+- Vocal de-ess slider
+- Gate/De-ess 값 custom preset과 render chain에 반영
 
 ## 결론부터
 

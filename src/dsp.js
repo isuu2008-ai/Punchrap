@@ -9,6 +9,7 @@
     const context = new OfflineAudioContext(2, frameCount, sampleRate);
     const source = context.createBufferSource();
     const highPass = context.createBiquadFilter();
+    const deEsser = context.createBiquadFilter();
     const presence = context.createBiquadFilter();
     const air = context.createBiquadFilter();
     const compressor = context.createDynamicsCompressor();
@@ -20,14 +21,22 @@
     const retuneAmount = (tuneSettings.retuneSpeed || 0) / 100;
     const humanizeAmount = (tuneSettings.humanize || 0) / 100;
     const formantAmount = (tuneSettings.formant || 0) / 50;
+    const gateAmount = (tuneSettings.gate || 0) / 100;
+    const deEssAmount = (tuneSettings.deEss || 0) / 100;
     const spaceAmount = preset.space / 100;
     const widthAmount = preset.width / 100;
-    const tunedBuffer = createTunedBuffer(context, sourceBuffer, pitchPlan, retuneAmount, humanizeAmount);
+    const gatedBuffer = createNoiseGateBuffer(context, sourceBuffer, gateAmount);
+    const tunedBuffer = createTunedBuffer(context, gatedBuffer, pitchPlan, retuneAmount, humanizeAmount);
 
     source.buffer = tunedBuffer;
     highPass.type = "highpass";
     highPass.frequency.value = 70 + retuneAmount * 55;
     highPass.Q.value = 0.7;
+
+    deEsser.type = "peaking";
+    deEsser.frequency.value = 6800;
+    deEsser.Q.value = 2.4;
+    deEsser.gain.value = -deEssAmount * 9;
 
     presence.type = "peaking";
     presence.frequency.value = 2600;
@@ -67,6 +76,7 @@
 
     source
       .connect(highPass)
+      .connect(deEsser)
       .connect(presence)
       .connect(air)
       .connect(formantBody)
@@ -130,6 +140,36 @@
 
         const tuned = tunedSum[index] / weight[index];
         outputData[index] = input[index] * (1 - wet) + tuned * wet;
+      }
+    }
+
+    return output;
+  }
+
+  function createNoiseGateBuffer(context, sourceBuffer, amount) {
+    if (amount < 0.02) {
+      return sourceBuffer;
+    }
+
+    const channelCount = sourceBuffer.numberOfChannels;
+    const output = context.createBuffer(channelCount, sourceBuffer.length, sourceBuffer.sampleRate);
+    const threshold = 0.006 + amount * 0.035;
+    const floor = clamp(1 - amount * 0.82, 0.12, 1);
+    const attack = 1 - Math.exp(-1 / (sourceBuffer.sampleRate * 0.004));
+    const release = 1 - Math.exp(-1 / (sourceBuffer.sampleRate * 0.075));
+
+    for (let channel = 0; channel < channelCount; channel += 1) {
+      const input = sourceBuffer.getChannelData(channel);
+      const outputData = output.getChannelData(channel);
+      let envelope = 0;
+      let gain = 1;
+
+      for (let index = 0; index < input.length; index += 1) {
+        const level = Math.abs(input[index]);
+        envelope += (level - envelope) * (level > envelope ? attack : release);
+        const targetGain = envelope < threshold ? floor : 1;
+        gain += (targetGain - gain) * (targetGain > gain ? attack : release);
+        outputData[index] = input[index] * gain;
       }
     }
 

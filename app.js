@@ -73,12 +73,12 @@ const tracks = [
 ];
 
 const presets = [
-  { id: "trap-hard", name: "Trap Hard", retune: 88, humanize: 10, formant: 10, comp: 72, space: 18, width: 42 },
-  { id: "drill-dark", name: "Drill Dark", retune: 72, humanize: 18, formant: -12, comp: 82, space: 12, width: 28 },
-  { id: "clean-rap", name: "Clean Rap", retune: 22, humanize: 60, formant: 0, comp: 62, space: 8, width: 18 },
-  { id: "rage-wide", name: "Rage Wide", retune: 95, humanize: 5, formant: 18, comp: 76, space: 34, width: 86 },
-  { id: "radio-hook", name: "Radio Hook", retune: 58, humanize: 30, formant: 8, comp: 68, space: 45, width: 72 },
-  { id: "lofi-demo", name: "Lo-Fi Demo", retune: 36, humanize: 55, formant: -18, comp: 54, space: 22, width: 12 },
+  { id: "trap-hard", name: "Trap Hard", retune: 88, humanize: 10, formant: 10, gate: 18, deEss: 28, comp: 72, space: 18, width: 42 },
+  { id: "drill-dark", name: "Drill Dark", retune: 72, humanize: 18, formant: -12, gate: 24, deEss: 34, comp: 82, space: 12, width: 28 },
+  { id: "clean-rap", name: "Clean Rap", retune: 22, humanize: 60, formant: 0, gate: 10, deEss: 20, comp: 62, space: 8, width: 18 },
+  { id: "rage-wide", name: "Rage Wide", retune: 95, humanize: 5, formant: 18, gate: 16, deEss: 38, comp: 76, space: 34, width: 86 },
+  { id: "radio-hook", name: "Radio Hook", retune: 58, humanize: 30, formant: 8, gate: 12, deEss: 30, comp: 68, space: 45, width: 72 },
+  { id: "lofi-demo", name: "Lo-Fi Demo", retune: 36, humanize: 55, formant: -18, gate: 4, deEss: 14, comp: 54, space: 22, width: 12 },
 ];
 
 const els = {
@@ -134,6 +134,10 @@ const els = {
   humanizeText: document.querySelector("#humanizeText"),
   formantSlider: document.querySelector("#formantSlider"),
   formantText: document.querySelector("#formantText"),
+  gateSlider: document.querySelector("#gateSlider"),
+  gateText: document.querySelector("#gateText"),
+  deEssSlider: document.querySelector("#deEssSlider"),
+  deEssText: document.querySelector("#deEssText"),
   vocalTakeSelect: document.querySelector("#vocalTakeSelect"),
   selectedTakeMeta: document.querySelector("#selectedTakeMeta"),
   vocalStatus: document.querySelector("#vocalStatus"),
@@ -231,6 +235,14 @@ function bindEvents() {
     scheduleAutosave();
   });
   els.formantSlider.addEventListener("input", () => {
+    updateTuneControls();
+    scheduleAutosave();
+  });
+  els.gateSlider.addEventListener("input", () => {
+    updateTuneControls();
+    scheduleAutosave();
+  });
+  els.deEssSlider.addEventListener("input", () => {
     updateTuneControls();
     scheduleAutosave();
   });
@@ -672,6 +684,8 @@ function applyProjectSettings(settings = {}) {
     els.retuneSpeedSlider.value = settings.tune.retuneSpeed ?? els.retuneSpeedSlider.value;
     els.humanizeSlider.value = settings.tune.humanize ?? els.humanizeSlider.value;
     els.formantSlider.value = settings.tune.formant ?? els.formantSlider.value;
+    els.gateSlider.value = settings.tune.gate ?? els.gateSlider.value;
+    els.deEssSlider.value = settings.tune.deEss ?? els.deEssSlider.value;
     updateTuneControls();
   }
 
@@ -1704,6 +1718,8 @@ function saveCustomPreset() {
     retune: tuneSettings.retuneSpeed,
     humanize: tuneSettings.humanize,
     formant: tuneSettings.formant,
+    gate: tuneSettings.gate,
+    deEss: tuneSettings.deEss,
     comp: basePreset.comp,
     space: basePreset.space,
     width: basePreset.width,
@@ -1725,6 +1741,8 @@ function normalizePreset(preset) {
     retune: Number(preset.retune ?? 50),
     humanize: Number(preset.humanize ?? 25),
     formant: Number(preset.formant ?? 0),
+    gate: Number(preset.gate ?? 0),
+    deEss: Number(preset.deEss ?? 0),
     comp: Number(preset.comp ?? 60),
     space: Number(preset.space ?? 12),
     width: Number(preset.width ?? 24),
@@ -1743,6 +1761,8 @@ function applyPreset(id) {
   els.retuneSpeedSlider.value = preset.retune;
   els.humanizeSlider.value = preset.humanize;
   els.formantSlider.value = preset.formant;
+  els.gateSlider.value = preset.gate || 0;
+  els.deEssSlider.value = preset.deEss || 0;
   updateTuneControls();
 
   els.presetGrid.querySelectorAll("[data-preset]").forEach((button) => {
@@ -1822,6 +1842,8 @@ function updateTuneControls() {
   els.retuneValue.textContent = String(settings.retuneSpeed);
   els.humanizeText.textContent = String(settings.humanize);
   els.formantText.textContent = formatSigned(settings.formant);
+  els.gateText.textContent = String(settings.gate);
+  els.deEssText.textContent = String(settings.deEss);
 }
 
 function setTuneControlsDisabled(isDisabled) {
@@ -2698,6 +2720,8 @@ function getTuneSettings() {
     retuneSpeed: Number(els.retuneSpeedSlider?.value) || 0,
     humanize: Number(els.humanizeSlider?.value) || 0,
     formant: Number(els.formantSlider?.value) || 0,
+    gate: Number(els.gateSlider?.value) || 0,
+    deEss: Number(els.deEssSlider?.value) || 0,
   };
 }
 
@@ -2975,7 +2999,9 @@ function getTuneSignature(settings = {}) {
   const retuneSpeed = Number(settings.retuneSpeed ?? 0);
   const humanize = Number(settings.humanize ?? 0);
   const formant = Number(settings.formant ?? 0);
-  return `R${retuneSpeed} H${humanize} F${formatSigned(formant)}`;
+  const gate = Number(settings.gate ?? 0);
+  const deEss = Number(settings.deEss ?? 0);
+  return `R${retuneSpeed} H${humanize} F${formatSigned(formant)} G${gate} D${deEss}`;
 }
 
 function escapeHtml(value) {
