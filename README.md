@@ -70,6 +70,7 @@ node .\scripts\check.mjs
 - Timeline undo/redo for marker and region edits
 - Export tab for track stems, beat stem, vocal stem, dry vocals, and tuned vocals
 - Export queue with sequential job status for mix, stems, beat stem, vocal stem, dry vocals, and tuned vocals
+- Export queue retry, remove, and clear-finished controls
 - WAV export metadata for artist, title, BPM, key, and software
 - Export preview playback from completed queue jobs
 - Project zip export containing the `.punchlab.json` bundle, manifest, README, beat asset, and take audio assets

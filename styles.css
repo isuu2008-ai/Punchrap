@@ -653,6 +653,13 @@ h1 {
   letter-spacing: 0;
 }
 
+.export-queue-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
 .export-row {
   display: flex;
   align-items: center;
@@ -693,7 +700,12 @@ h1 {
 }
 
 .export-job-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
   justify-items: end;
+  justify-content: flex-end;
 }
 
 .export-job-row span {

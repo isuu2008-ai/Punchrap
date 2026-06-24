@@ -89,6 +89,8 @@
 - Render/export queue
 - Export job queued/running/done/failed 상태 표시
 - Mix/stem/dry/tuned export 순차 실행
+- Export queue recovery 1차
+- failed job retry, done/failed remove, clear finished controls
 - Batch scope 고도화 1차
 - comp lane raw takes와 best raw takes에 현재 체인을 batch render
 - Custom scale editor

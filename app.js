@@ -4083,6 +4083,7 @@ function renderExportPanel() {
     { label: "Normalize", count: els.exportNormalizeInput.checked ? `On ${formatGainDb(state.lastExportNormalizeGain)}` : "Off", unit: "" },
   ];
   const jobs = state.exportQueue.slice(-8).reverse();
+  const hasFinishedExports = state.exportQueue.some((job) => job.status === "done" || job.status === "failed");
 
   const sourceRows = rows
     .map(
@@ -4106,6 +4107,8 @@ function renderExportPanel() {
             <div class="export-job-actions">
               <span>${getExportJobStatusLabel(job.status)}</span>
               ${job.previewUrl ? `<button class="mini-button" type="button" data-preview-export="${job.id}">Preview</button>` : ""}
+              ${job.status === "failed" ? `<button class="mini-button" type="button" data-retry-export="${job.id}">Retry</button>` : ""}
+              ${job.status === "done" || job.status === "failed" ? `<button class="mini-button danger" type="button" data-remove-export="${job.id}">Remove</button>` : ""}
             </div>
           </div>
         `,
@@ -4118,13 +4121,23 @@ function renderExportPanel() {
     ${sourceRows}
     <div class="export-section-heading">Loudness</div>
     ${renderLoudnessReport()}
-    <div class="export-section-heading">Queue</div>
+    <div class="export-section-heading export-queue-heading">
+      <span>Queue</span>
+      ${hasFinishedExports ? `<button class="mini-button" type="button" data-clear-finished-exports>Clear finished</button>` : ""}
+    </div>
     ${queueRows}
   `;
 
   els.exportList.querySelectorAll("[data-preview-export]").forEach((button) => {
     button.addEventListener("click", () => playExportPreview(button.dataset.previewExport));
   });
+  els.exportList.querySelectorAll("[data-retry-export]").forEach((button) => {
+    button.addEventListener("click", () => retryExportJob(button.dataset.retryExport));
+  });
+  els.exportList.querySelectorAll("[data-remove-export]").forEach((button) => {
+    button.addEventListener("click", () => removeExportJob(button.dataset.removeExport));
+  });
+  els.exportList.querySelector("[data-clear-finished-exports]")?.addEventListener("click", clearFinishedExportJobs);
 }
 
 function renderLoudnessReport() {
@@ -5238,9 +5251,7 @@ async function executeExportJob(job) {
 }
 
 function storeExportPreview(job, blob, filename) {
-  if (job.previewUrl) {
-    URL.revokeObjectURL(job.previewUrl);
-  }
+  cleanupExportJob(job);
 
   job.previewUrl = URL.createObjectURL(blob);
   job.previewName = filename;
@@ -5305,11 +5316,62 @@ function trimExportQueue() {
     .map(({ index }) => index);
 
   state.exportQueue.forEach((job, index) => {
-    if (removable.includes(index) && job.previewUrl) {
-      URL.revokeObjectURL(job.previewUrl);
+    if (removable.includes(index)) {
+      cleanupExportJob(job);
     }
   });
   state.exportQueue = state.exportQueue.filter((_, index) => !removable.includes(index));
+}
+
+function retryExportJob(jobId) {
+  const job = state.exportQueue.find((item) => item.id === jobId);
+  if (!job || job.status !== "failed") {
+    return;
+  }
+
+  cleanupExportJob(job);
+  job.status = "queued";
+  job.detail = "";
+  els.sessionState.textContent = `${job.label} requeued`;
+  els.exportStatusText.textContent = "Queued";
+  updateExportButtons();
+  runExportQueue();
+}
+
+function removeExportJob(jobId) {
+  const job = state.exportQueue.find((item) => item.id === jobId);
+  if (!job || job.status === "queued" || job.status === "running") {
+    els.sessionState.textContent = "Export still active";
+    return;
+  }
+
+  stopExportPreview(false);
+  cleanupExportJob(job);
+  state.exportQueue = state.exportQueue.filter((item) => item.id !== jobId);
+  els.sessionState.textContent = "Export job removed";
+  updateExportButtons();
+}
+
+function clearFinishedExportJobs() {
+  stopExportPreview(false);
+  const before = state.exportQueue.length;
+  state.exportQueue
+    .filter((job) => job.status === "done" || job.status === "failed")
+    .forEach(cleanupExportJob);
+  state.exportQueue = state.exportQueue.filter((job) => job.status !== "done" && job.status !== "failed");
+  const removed = before - state.exportQueue.length;
+  els.sessionState.textContent = removed ? `Cleared ${removed} export job(s)` : "No finished exports";
+  updateExportButtons();
+}
+
+function cleanupExportJob(job) {
+  if (job?.previewUrl) {
+    URL.revokeObjectURL(job.previewUrl);
+  }
+  if (job) {
+    job.previewUrl = "";
+    job.previewName = "";
+  }
 }
 
 function getExportJobStatusLabel(status) {
