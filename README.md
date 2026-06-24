@@ -30,6 +30,7 @@ Then open `http://localhost:4173`.
 - Separated DSP, audio utility, and project storage modules under `src/`
 - Timeline view with marker management and take region start/nudge controls
 - Region rename, clip gain, and fade in/out controls persisted in project files
+- Timeline undo/redo for marker and region edits
 - Export tab for track stems, dry vocals, and tuned vocals
 - IndexedDB autosave with project recovery
 - BPM-based metronome toggle for recording and session playback
@@ -50,4 +51,4 @@ See [COMMERCIAL_STUDIO_ROADMAP.md](./COMMERCIAL_STUDIO_ROADMAP.md) for the comme
 - Custom scale editing
 - Formant-aware pitch shifting
 - Better EQ, compressor, delay, reverb, and limiter controls
-- Timeline region editing and stem export
+- Render/export queue

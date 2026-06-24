@@ -62,6 +62,8 @@ const state = {
     { id: "marker-verse", type: "Verse", time: 16 },
     { id: "marker-hook", type: "Hook", time: 48 },
   ],
+  timelineUndoStack: [],
+  timelineRedoStack: [],
 };
 
 const tracks = [
@@ -174,6 +176,8 @@ const els = {
   addMarkerButton: document.querySelector("#addMarkerButton"),
   markerList: document.querySelector("#markerList"),
   regionList: document.querySelector("#regionList"),
+  timelineUndoButton: document.querySelector("#timelineUndoButton"),
+  timelineRedoButton: document.querySelector("#timelineRedoButton"),
   exportStemsButton: document.querySelector("#exportStemsButton"),
   exportDryVocalsButton: document.querySelector("#exportDryVocalsButton"),
   exportTunedVocalsButton: document.querySelector("#exportTunedVocalsButton"),
@@ -191,6 +195,7 @@ function init() {
   renderExportPanel();
   renderPresets();
   applyPreset("trap-hard");
+  updateTimelineHistoryButtons();
   updateInputGain();
   updatePunchControls();
   checkAutosave();
@@ -274,6 +279,8 @@ function bindEvents() {
   els.projectInput.addEventListener("change", loadProject);
   els.recoverProjectButton.addEventListener("click", recoverAutosave);
   els.addMarkerButton.addEventListener("click", addTimelineMarker);
+  els.timelineUndoButton.addEventListener("click", undoTimelineEdit);
+  els.timelineRedoButton.addEventListener("click", redoTimelineEdit);
   els.exportStemsButton.addEventListener("click", exportTrackStems);
   els.exportDryVocalsButton.addEventListener("click", exportDryVocals);
   els.exportTunedVocalsButton.addEventListener("click", exportTunedVocals);
@@ -281,7 +288,28 @@ function bindEvents() {
 }
 
 function handleGlobalShortcut(event) {
-  if (event.ctrlKey || event.metaKey || event.altKey || isTypingTarget(event.target) || isTypingTarget(document.activeElement)) {
+  const isTyping = isTypingTarget(event.target) || isTypingTarget(document.activeElement);
+  if ((event.ctrlKey || event.metaKey) && !event.altKey && !isTyping && state.activeView === "timeline") {
+    if (event.code === "KeyZ" && event.shiftKey) {
+      event.preventDefault();
+      redoTimelineEdit();
+      return;
+    }
+
+    if (event.code === "KeyZ") {
+      event.preventDefault();
+      undoTimelineEdit();
+      return;
+    }
+
+    if (event.code === "KeyY") {
+      event.preventDefault();
+      redoTimelineEdit();
+      return;
+    }
+  }
+
+  if (event.ctrlKey || event.metaKey || event.altKey || isTyping) {
     return;
   }
 
@@ -628,6 +656,7 @@ function applyLoadedProject(project) {
 
   applyProjectSettings(project.settings);
   state.markers = normalizeMarkers(project.markers);
+  clearTimelineHistory();
   state.latestTake = getAllTakes().at(-1) || null;
   state.selectedVocalTakeId = state.latestTake?.id || null;
   els.downloadLatestButton.disabled = !state.latestTake;
@@ -2492,7 +2521,96 @@ function renderTimeline() {
   });
 }
 
+function recordTimelineHistory() {
+  state.timelineUndoStack.push(createTimelineSnapshot());
+  if (state.timelineUndoStack.length > 50) {
+    state.timelineUndoStack.shift();
+  }
+  state.timelineRedoStack = [];
+  updateTimelineHistoryButtons();
+}
+
+function clearTimelineHistory() {
+  state.timelineUndoStack = [];
+  state.timelineRedoStack = [];
+  updateTimelineHistoryButtons();
+}
+
+function undoTimelineEdit() {
+  if (!state.timelineUndoStack.length) {
+    return;
+  }
+
+  const previous = state.timelineUndoStack.pop();
+  state.timelineRedoStack.push(createTimelineSnapshot());
+  restoreTimelineSnapshot(previous);
+  els.sessionState.textContent = "Timeline undo";
+  refreshTimelineEdit();
+}
+
+function redoTimelineEdit() {
+  if (!state.timelineRedoStack.length) {
+    return;
+  }
+
+  const next = state.timelineRedoStack.pop();
+  state.timelineUndoStack.push(createTimelineSnapshot());
+  restoreTimelineSnapshot(next);
+  els.sessionState.textContent = "Timeline redo";
+  refreshTimelineEdit();
+}
+
+function createTimelineSnapshot() {
+  return {
+    markers: state.markers.map((marker) => ({ ...marker })),
+    takes: getAllTakes().map((take) => ({
+      id: take.id,
+      name: take.name || null,
+      startTime: take.startTime || 0,
+      clipGain: take.clipGain ?? 1,
+      fadeIn: take.fadeIn || 0,
+      fadeOut: take.fadeOut || 0,
+    })),
+  };
+}
+
+function restoreTimelineSnapshot(snapshot) {
+  state.markers = normalizeMarkers(snapshot?.markers || []);
+  const regionState = new Map((snapshot?.takes || []).map((take) => [take.id, take]));
+  getAllTakes().forEach((take) => {
+    const saved = regionState.get(take.id);
+    if (!saved) {
+      return;
+    }
+
+    take.name = saved.name || null;
+    take.startTime = Math.max(0, Number(saved.startTime) || 0);
+    take.clipGain = Math.max(0, Number(saved.clipGain ?? 1));
+    take.fadeIn = Math.max(0, Number(saved.fadeIn) || 0);
+    take.fadeOut = Math.max(0, Number(saved.fadeOut) || 0);
+  });
+}
+
+function refreshTimelineEdit() {
+  updateActiveSessionMix();
+  renderTracks();
+  renderTakes();
+  updateExportButtons();
+  updateTimelineHistoryButtons();
+  scheduleAutosave();
+}
+
+function updateTimelineHistoryButtons() {
+  if (!els.timelineUndoButton || !els.timelineRedoButton) {
+    return;
+  }
+
+  els.timelineUndoButton.disabled = state.timelineUndoStack.length === 0;
+  els.timelineRedoButton.disabled = state.timelineRedoStack.length === 0;
+}
+
 function addTimelineMarker() {
+  recordTimelineHistory();
   const marker = {
     id: crypto.randomUUID(),
     type: els.markerTypeSelect.value,
@@ -2501,14 +2619,19 @@ function addTimelineMarker() {
   state.markers.push(marker);
   state.markers = normalizeMarkers(state.markers);
   els.markerTimeInput.value = marker.time.toFixed(1);
-  renderTimeline();
-  scheduleAutosave();
+  els.sessionState.textContent = "Marker added";
+  refreshTimelineEdit();
 }
 
 function deleteTimelineMarker(markerId) {
+  if (!state.markers.some((marker) => marker.id === markerId)) {
+    return;
+  }
+
+  recordTimelineHistory();
   state.markers = state.markers.filter((marker) => marker.id !== markerId);
-  renderTimeline();
-  scheduleAutosave();
+  els.sessionState.textContent = "Marker deleted";
+  refreshTimelineEdit();
 }
 
 function setRegionStart(takeId, value) {
@@ -2517,12 +2640,16 @@ function setRegionStart(takeId, value) {
     return;
   }
 
-  take.startTime = Math.max(0, Number(value) || 0);
+  const nextStart = Math.max(0, Number(value) || 0);
+  if (isSameTimelineNumber(take.startTime || 0, nextStart)) {
+    renderTimeline();
+    return;
+  }
+
+  recordTimelineHistory();
+  take.startTime = nextStart;
   els.sessionState.textContent = "Region moved";
-  renderTracks();
-  renderTakes();
-  updateExportButtons();
-  scheduleAutosave();
+  refreshTimelineEdit();
 }
 
 function setRegionName(takeId, value) {
@@ -2531,12 +2658,15 @@ function setRegionName(takeId, value) {
     return;
   }
 
-  take.name = value.trim() || null;
+  const nextName = value.trim() || null;
+  if ((take.name || null) === nextName) {
+    return;
+  }
+
+  recordTimelineHistory();
+  take.name = nextName;
   els.sessionState.textContent = "Region renamed";
-  renderTracks();
-  renderTakes();
-  updateExportButtons();
-  scheduleAutosave();
+  refreshTimelineEdit();
 }
 
 function setRegionClipGain(takeId, value) {
@@ -2545,13 +2675,15 @@ function setRegionClipGain(takeId, value) {
     return;
   }
 
-  take.clipGain = Math.max(0, Number(value) || 0);
+  const nextGain = Math.max(0, Number(value) || 0);
+  if (isSameTimelineNumber(getTakeClipGain(take), nextGain)) {
+    return;
+  }
+
+  recordTimelineHistory();
+  take.clipGain = nextGain;
   els.sessionState.textContent = "Clip gain updated";
-  updateActiveSessionMix();
-  renderTracks();
-  renderTakes();
-  updateExportButtons();
-  scheduleAutosave();
+  refreshTimelineEdit();
 }
 
 function setRegionFade(takeId, edge, value) {
@@ -2561,15 +2693,19 @@ function setRegionFade(takeId, edge, value) {
   }
 
   const safeValue = Math.max(0, Number(value) || 0);
+  const currentValue = edge === "in" ? getTakeFadeIn(take) : getTakeFadeOut(take);
+  if (isSameTimelineNumber(currentValue, safeValue)) {
+    return;
+  }
+
+  recordTimelineHistory();
   if (edge === "in") {
     take.fadeIn = safeValue;
   } else {
     take.fadeOut = safeValue;
   }
   els.sessionState.textContent = "Fade updated";
-  renderTimeline();
-  updateExportButtons();
-  scheduleAutosave();
+  refreshTimelineEdit();
 }
 
 function nudgeRegionStart(takeId, delta) {
@@ -2581,18 +2717,30 @@ function nudgeRegionStart(takeId, delta) {
   setRegionStart(takeId, (take.startTime || 0) + delta);
 }
 
+function isSameTimelineNumber(left, right) {
+  return Math.abs(Number(left || 0) - Number(right || 0)) < 0.0001;
+}
+
 function getTimelineEndPosition() {
   const markerEnd = state.markers.reduce((end, marker) => Math.max(end, marker.time + 4), 0);
   return Math.max(16, getSessionEndPosition(), markerEnd);
 }
 
 function makeTimelineTicks(end) {
-  const step = end > 120 ? 30 : end > 60 ? 15 : 5;
+  const surfaceWidth = els.timelineRuler?.clientWidth || 800;
+  const minTickWidth = surfaceWidth < 520 ? 92 : 64;
+  const targetTickCount = Math.max(2, Math.floor(surfaceWidth / minTickWidth));
+  const rawStep = end / targetTickCount;
+  const step = getTimelineTickStep(rawStep);
   const ticks = [];
   for (let time = 0; time <= end; time += step) {
     ticks.push(time);
   }
   return ticks;
+}
+
+function getTimelineTickStep(rawStep) {
+  return [1, 2, 5, 10, 15, 30, 60, 120].find((step) => step >= rawStep) || 240;
 }
 
 function timelinePercent(value, end) {

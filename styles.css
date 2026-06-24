@@ -349,6 +349,17 @@ h1 {
   overflow: auto;
 }
 
+.timeline-history {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.timeline-history .mini-icon-button {
+  width: 100%;
+}
+
 .marker-form,
 .marker-list,
 .region-list {

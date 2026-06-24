@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PunchLab</title>
     <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="./styles.css?v=20260624-15" />
+    <link rel="stylesheet" href="./styles.css?v=20260624-16" />
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
-    <script src="./src/dsp.js?v=20260624-15" defer></script>
-    <script src="./src/audio.js?v=20260624-15" defer></script>
-    <script src="./src/project.js?v=20260624-15" defer></script>
-    <script src="./src/storage.js?v=20260624-15" defer></script>
-    <script src="./app.js?v=20260624-15" defer></script>
+    <script src="./src/dsp.js?v=20260624-16" defer></script>
+    <script src="./src/audio.js?v=20260624-16" defer></script>
+    <script src="./src/project.js?v=20260624-16" defer></script>
+    <script src="./src/storage.js?v=20260624-16" defer></script>
+    <script src="./app.js?v=20260624-16" defer></script>
   </head>
   <body>
     <main class="studio-shell">
@@ -235,6 +235,17 @@
             </section>
 
             <aside class="panel timeline-side">
+              <div class="timeline-history">
+                <button id="timelineUndoButton" class="mini-icon-button" type="button" title="Undo timeline edit" disabled>
+                  <i data-lucide="undo-2"></i>
+                  <span>Undo</span>
+                </button>
+                <button id="timelineRedoButton" class="mini-icon-button" type="button" title="Redo timeline edit" disabled>
+                  <i data-lucide="redo-2"></i>
+                  <span>Redo</span>
+                </button>
+              </div>
+
               <div class="panel-heading">
                 <span>Markers</span>
                 <span>Song parts</span>
