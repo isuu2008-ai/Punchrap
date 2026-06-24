@@ -1152,6 +1152,7 @@ async function buildProjectZipFiles(bundle, projectFilename) {
     preview: "preview.html",
     exportSettings: summarizeExportSettings(),
     pluginHost: summarizePluginHostScan(),
+    automationManifest: summarizeAutomationParameterManifest(),
     nativeAudio: summarizeNativeAudioEnvironment(),
     desktopReadiness: summarizeDesktopReadinessEnvironment(),
     beat: null,
@@ -1237,6 +1238,7 @@ async function buildProjectZipFiles(bundle, projectFilename) {
     "preview.html is a read-only browser preview for quick review after extracting the zip.",
     "manifest.json lists extracted audio assets for backup, transfer, and manual inspection.",
     "manifest.json includes exportSettings for WAV depth, normalize, loudness target, and recent analysis context.",
+    "manifest.json includes automationManifest for plugin-style vocal chain parameter interpretation.",
     "manifest.json includes nativeAudio for driver, buffer, and latency environment context.",
     "manifest.json includes desktopReadiness for wrapper, native audio, and plugin host handoff context.",
     "Processed takes include automationState when a chain snapshot is available.",
@@ -1648,6 +1650,28 @@ function summarizePluginHostScan() {
     fixture: Boolean(result?.fixture),
     formats: formats.map((format) => String(format)),
     pluginCount: plugins.length,
+  };
+}
+
+function summarizeAutomationParameterManifest() {
+  const manifest = window.PunchLabChainParams?.getAutomationManifest?.();
+  if (!manifest?.parameters?.length) {
+    return null;
+  }
+
+  return {
+    version: Number(manifest.version || 1),
+    parameters: manifest.parameters.map((parameter) => ({
+      automationId: String(parameter.automationId || ""),
+      defaultValue: Number(parameter.defaultValue || 0),
+      group: String(parameter.group || ""),
+      id: String(parameter.id || ""),
+      label: String(parameter.label || ""),
+      max: Number(parameter.max || 0),
+      min: Number(parameter.min || 0),
+      step: Number(parameter.step || 1),
+      unit: String(parameter.unit || ""),
+    })),
   };
 }
 

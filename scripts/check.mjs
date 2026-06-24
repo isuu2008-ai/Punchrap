@@ -179,6 +179,10 @@ if (!appSource.includes("manifest.json includes nativeAudio")) {
   console.error("Project zip README must describe the native audio manifest summary.");
   failed = true;
 }
+if (!appSource.includes("automationManifest: summarizeAutomationParameterManifest()") || !appSource.includes("manifest.json includes automationManifest")) {
+  console.error("Project zip manifest must include the vocal chain automation parameter schema.");
+  failed = true;
+}
 if (!appSource.includes("formatPreviewNativeAudio")) {
   console.error("Project zip preview must display the native audio environment summary.");
   failed = true;
