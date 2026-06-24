@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PunchLab</title>
     <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="./styles.css?v=20260624-18" />
+    <link rel="stylesheet" href="./styles.css?v=20260624-19" />
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
-    <script src="./src/dsp.js?v=20260624-18" defer></script>
-    <script src="./src/audio.js?v=20260624-18" defer></script>
-    <script src="./src/project.js?v=20260624-18" defer></script>
-    <script src="./src/storage.js?v=20260624-18" defer></script>
-    <script src="./app.js?v=20260624-18" defer></script>
+    <script src="./src/dsp.js?v=20260624-19" defer></script>
+    <script src="./src/audio.js?v=20260624-19" defer></script>
+    <script src="./src/project.js?v=20260624-19" defer></script>
+    <script src="./src/storage.js?v=20260624-19" defer></script>
+    <script src="./app.js?v=20260624-19" defer></script>
   </head>
   <body>
     <main class="studio-shell">
@@ -293,6 +293,10 @@
               <button id="playQueueButton" class="icon-button wide" type="button" title="Play all takes in order" disabled>
                 <i data-lucide="list-music"></i>
                 <span class="button-label">Play all</span>
+              </button>
+              <button id="playCompButton" class="icon-button wide" type="button" title="Play selected comp takes" disabled>
+                <i data-lucide="list-checks"></i>
+                <span class="button-label">Play comp</span>
               </button>
               <button id="exportMixButton" class="icon-button wide" type="button" title="Export full mix" disabled>
                 <i data-lucide="file-audio"></i>

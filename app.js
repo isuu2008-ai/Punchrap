@@ -43,6 +43,7 @@ const state = {
   currentTakeId: null,
   currentTakeResolve: null,
   isQueuePlaying: false,
+  queueMode: "all",
   queueTakeIds: [],
   queueIndex: -1,
   isSessionPlaying: false,
@@ -174,6 +175,7 @@ const els = {
   batchMeta: document.querySelector("#batchMeta"),
   takesList: document.querySelector("#takesList"),
   playQueueButton: document.querySelector("#playQueueButton"),
+  playCompButton: document.querySelector("#playCompButton"),
   exportMixButton: document.querySelector("#exportMixButton"),
   downloadLatestButton: document.querySelector("#downloadLatestButton"),
   timelineLength: document.querySelector("#timelineLength"),
@@ -248,7 +250,8 @@ function bindEvents() {
   els.setPunchInButton.addEventListener("click", () => setPunchPoint("in"));
   els.setPunchOutButton.addEventListener("click", () => setPunchPoint("out"));
   els.beatAudio.addEventListener("timeupdate", maintainLoopPlayback);
-  els.playQueueButton.addEventListener("click", toggleTakeQueue);
+  els.playQueueButton.addEventListener("click", () => toggleTakeQueue("all"));
+  els.playCompButton.addEventListener("click", () => toggleTakeQueue("comp"));
   els.exportMixButton.addEventListener("click", exportFullMix);
   els.downloadLatestButton.addEventListener("click", downloadLatestTake);
   els.retuneSpeedSlider.addEventListener("input", () => {
@@ -1151,22 +1154,23 @@ function playTakeAudio(take, label) {
   });
 }
 
-async function toggleTakeQueue() {
+async function toggleTakeQueue(mode = "all") {
   if (state.isQueuePlaying) {
     stopTakeQueue();
     els.sessionState.textContent = "Review stopped";
     return;
   }
 
-  const allTakes = getAllTakes();
-  if (!allTakes.length) {
-    els.sessionState.textContent = "No takes";
+  const queueTakes = mode === "comp" ? getCompTakes() : getAllTakes();
+  if (!queueTakes.length) {
+    els.sessionState.textContent = mode === "comp" ? "No comp takes" : "No takes";
     return;
   }
 
   stopSessionPlayback(false);
   state.isQueuePlaying = true;
-  state.queueTakeIds = allTakes.map((take) => take.id);
+  state.queueMode = mode;
+  state.queueTakeIds = queueTakes.map((take) => take.id);
   state.queueIndex = 0;
   updateQueueButton();
 
@@ -1183,7 +1187,8 @@ async function toggleTakeQueue() {
 
     renderTracks();
     renderTakes();
-    const status = await playTakeAudio(take, `Review ${index + 1}/${state.queueTakeIds.length} ${take.trackName}`);
+    const labelPrefix = mode === "comp" ? "Comp" : "Review";
+    const status = await playTakeAudio(take, `${labelPrefix} ${index + 1}/${state.queueTakeIds.length} ${take.trackName}`);
     if (status === "blocked" || status === "error") {
       break;
     }
@@ -1195,6 +1200,7 @@ async function toggleTakeQueue() {
 
   if (state.isQueuePlaying) {
     state.isQueuePlaying = false;
+    state.queueMode = "all";
     state.queueTakeIds = [];
     state.queueIndex = -1;
     els.sessionState.textContent = "Review done";
@@ -1206,6 +1212,7 @@ async function toggleTakeQueue() {
 
 function stopTakeQueue(shouldRender = true) {
   state.isQueuePlaying = false;
+  state.queueMode = "all";
   state.queueTakeIds = [];
   state.queueIndex = -1;
   stopCurrentTake(false);
@@ -2445,6 +2452,9 @@ function renderTakes() {
             <button class="mini-button ${isPlaying ? "active" : ""}" type="button" data-play-take="${take.id}">
               ${isPlaying ? "Pause" : "Play"}
             </button>
+            <button class="mini-button ${take.compSelected ? "active" : ""}" type="button" data-comp-take="${take.id}">
+              Comp
+            </button>
             <a href="${take.url}" download="${makeTakeFilename(take)}">Save</a>
             <button class="mini-button danger" type="button" data-delete-take="${take.id}">Del</button>
           </div>
@@ -2464,6 +2474,11 @@ function renderTakes() {
   els.takesList.querySelectorAll("[data-delete-take]").forEach((button) => {
     button.addEventListener("click", () => {
       deleteTake(button.dataset.deleteTake);
+    });
+  });
+  els.takesList.querySelectorAll("[data-comp-take]").forEach((button) => {
+    button.addEventListener("click", () => {
+      toggleCompTake(button.dataset.compTake);
     });
   });
 
@@ -3191,6 +3206,18 @@ function downloadBlob(blob, filename) {
   window.PunchLabAudio.downloadBlob(blob, filename);
 }
 
+function toggleCompTake(takeId) {
+  const take = findTake(takeId);
+  if (!take) {
+    return;
+  }
+
+  take.compSelected = !take.compSelected;
+  els.sessionState.textContent = take.compSelected ? "Added to comp" : "Removed from comp";
+  renderTakes();
+  scheduleAutosave();
+}
+
 function deleteTake(takeId) {
   const track = tracks.find((item) => item.takes.some((take) => take.id === takeId));
   if (!track) {
@@ -3265,6 +3292,12 @@ function getAllTakes() {
   return tracks
     .flatMap((track) => track.takes)
     .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+}
+
+function getCompTakes() {
+  return getAllTakes()
+    .filter((take) => take.compSelected)
+    .sort((a, b) => (a.startTime || 0) - (b.startTime || 0) || a.createdAt.getTime() - b.createdAt.getTime());
 }
 
 function getSelectedPreset() {
@@ -3456,11 +3489,23 @@ function updateQueueButton() {
   }
 
   const allTakes = getAllTakes();
-  const label = els.playQueueButton.querySelector(".button-label");
+  const compTakes = getCompTakes();
+  const allLabel = els.playQueueButton.querySelector(".button-label");
+  const compLabel = els.playCompButton?.querySelector(".button-label");
+  const isAllQueue = state.isQueuePlaying && state.queueMode === "all";
+  const isCompQueue = state.isQueuePlaying && state.queueMode === "comp";
   els.playQueueButton.disabled = !state.isQueuePlaying && allTakes.length === 0;
-  els.playQueueButton.classList.toggle("queue-active", state.isQueuePlaying);
-  if (label) {
-    label.textContent = state.isQueuePlaying ? "Stop all" : "Play all";
+  els.playQueueButton.classList.toggle("queue-active", isAllQueue);
+  if (allLabel) {
+    allLabel.textContent = isAllQueue ? "Stop all" : "Play all";
+  }
+
+  if (els.playCompButton) {
+    els.playCompButton.disabled = !state.isQueuePlaying && compTakes.length === 0;
+    els.playCompButton.classList.toggle("queue-active", isCompQueue);
+    if (compLabel) {
+      compLabel.textContent = isCompQueue ? "Stop comp" : "Play comp";
+    }
   }
 }
 
@@ -3534,11 +3579,12 @@ function getTakeTitle(take, index) {
 }
 
 function getTakeSubtitle(take) {
+  const compTag = take.compSelected ? "comp / " : "";
   if (take.processed) {
-    return `processed v${take.version || 1} / ${getTuneSignature(take.tuneSettings)} / ${formatDuration(take.duration)} @ ${formatDuration(take.startTime || 0)}`;
+    return `${compTag}processed v${take.version || 1} / ${getTuneSignature(take.tuneSettings)} / ${formatDuration(take.duration)} @ ${formatDuration(take.startTime || 0)}`;
   }
 
-  return `raw / ${formatDuration(take.duration)} @ ${formatDuration(take.startTime || 0)}`;
+  return `${compTag}raw / ${formatDuration(take.duration)} @ ${formatDuration(take.startTime || 0)}`;
 }
 
 function getTakeShortName(take) {
