@@ -7,6 +7,7 @@
       version: PROJECT_VERSION,
       savedAt: new Date().toISOString(),
       settings,
+      markers: (state.markers || []).map((marker) => ({ ...marker })),
       presets: presets.map((preset) => ({ ...preset })),
       beat: state.beatArrayBuffer
         ? {
@@ -87,6 +88,7 @@
 
     return {
       settings: bundle.settings || {},
+      markers: bundle.markers || [],
       presets: bundle.presets || [],
       beat,
       tracks,

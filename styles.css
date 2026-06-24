@@ -120,7 +120,7 @@ h1 {
 
 .view-tabs {
   display: inline-grid;
-  grid-template-columns: repeat(5, minmax(70px, 1fr));
+  grid-template-columns: repeat(6, minmax(70px, 1fr));
   gap: 6px;
   padding: 4px;
   border: 1px solid var(--line);
@@ -237,6 +237,165 @@ h1 {
 
 .full-panel {
   min-height: calc(100vh - 124px);
+}
+
+.timeline-grid {
+  min-height: 590px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 14px;
+}
+
+.timeline-panel {
+  grid-template-rows: auto minmax(440px, 1fr);
+}
+
+.timeline-surface {
+  position: relative;
+  min-height: 440px;
+  overflow: hidden;
+  border-top: 1px solid var(--line);
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px) 0 0 / 64px 100%,
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px) 0 58px / 100% 58px,
+    #070a08;
+}
+
+.timeline-ruler {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 38px;
+  border-bottom: 1px solid var(--line);
+}
+
+.timeline-tick {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.timeline-tick span {
+  position: absolute;
+  top: 10px;
+  left: 6px;
+  color: var(--muted);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.timeline-markers,
+.timeline-regions {
+  position: absolute;
+  inset: 38px 0 0;
+}
+
+.timeline-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(255, 183, 74, 0.56);
+}
+
+.timeline-marker span {
+  position: absolute;
+  top: 8px;
+  left: 6px;
+  padding: 3px 7px;
+  color: #050706;
+  background: var(--amber);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.timeline-region {
+  position: absolute;
+  height: 36px;
+  min-width: 4px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  overflow: hidden;
+  color: #f8fff8;
+  background: color-mix(in srgb, var(--track-color) 28%, #101611);
+  border: 1px solid color-mix(in srgb, var(--track-color) 70%, #101611);
+  border-radius: 7px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.24);
+}
+
+.timeline-region strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.timeline-region.beat-region {
+  top: 18px;
+  background: rgba(200, 255, 77, 0.16);
+  border-style: dashed;
+}
+
+.timeline-region.take-region {
+  top: calc(72px + var(--row-index) * 48px);
+}
+
+.timeline-side {
+  min-height: 590px;
+  overflow: auto;
+}
+
+.marker-form,
+.marker-list,
+.region-list {
+  display: grid;
+  gap: 10px;
+}
+
+.marker-form {
+  margin-bottom: 18px;
+}
+
+.marker-row,
+.region-row {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  background: #0f1411;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.marker-row header,
+.region-row header,
+.region-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.marker-row strong,
+.region-row strong {
+  font-size: 13px;
+}
+
+.marker-row small,
+.region-row small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.region-actions input {
+  width: 82px;
+}
+
+.timeline-region-heading {
+  margin-top: 18px;
 }
 
 .panel-heading.padded {
@@ -1074,6 +1233,7 @@ textarea:focus {
 
   .record-grid,
   .lyrics-grid,
+  .timeline-grid,
   .vocal-grid {
     grid-template-columns: 1fr;
   }
@@ -1110,6 +1270,7 @@ textarea:focus {
   .bottom-console,
   .record-grid,
   .lyrics-grid,
+  .timeline-grid,
   .vocal-grid {
     grid-template-columns: 1fr;
   }

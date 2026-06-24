@@ -46,6 +46,11 @@ const state = {
   punchTimers: [],
   isPunchWaiting: false,
   isPunchRecording: false,
+  markers: [
+    { id: "marker-intro", type: "Intro", time: 0 },
+    { id: "marker-verse", type: "Verse", time: 16 },
+    { id: "marker-hook", type: "Hook", time: 48 },
+  ],
 };
 
 const tracks = [
@@ -135,6 +140,15 @@ const els = {
   playQueueButton: document.querySelector("#playQueueButton"),
   exportMixButton: document.querySelector("#exportMixButton"),
   downloadLatestButton: document.querySelector("#downloadLatestButton"),
+  timelineLength: document.querySelector("#timelineLength"),
+  timelineRuler: document.querySelector("#timelineRuler"),
+  timelineMarkers: document.querySelector("#timelineMarkers"),
+  timelineRegions: document.querySelector("#timelineRegions"),
+  markerTypeSelect: document.querySelector("#markerTypeSelect"),
+  markerTimeInput: document.querySelector("#markerTimeInput"),
+  addMarkerButton: document.querySelector("#addMarkerButton"),
+  markerList: document.querySelector("#markerList"),
+  regionList: document.querySelector("#regionList"),
 };
 
 function init() {
@@ -143,6 +157,7 @@ function init() {
   renderTracks();
   renderArmTracks();
   renderTakes();
+  renderTimeline();
   renderPresets();
   applyPreset("trap-hard");
   updateInputGain();
@@ -195,6 +210,7 @@ function bindEvents() {
   els.batchRenderButton.addEventListener("click", renderBatchVocalTakes);
   els.saveProjectButton.addEventListener("click", saveProject);
   els.projectInput.addEventListener("change", loadProject);
+  els.addMarkerButton.addEventListener("click", addTimelineMarker);
 }
 
 function setActiveView(view) {
@@ -205,6 +221,9 @@ function setActiveView(view) {
   els.viewPanels.forEach((panel) => {
     panel.classList.toggle("active", panel.dataset.viewPanel === view);
   });
+  if (view === "timeline") {
+    renderTimeline();
+  }
 }
 
 function getBestMimeType() {
@@ -278,6 +297,7 @@ async function loadBeat(event) {
   els.beatName.textContent = file.name;
   els.sessionState.textContent = "Beat loaded";
   updateExportButtons();
+  renderTimeline();
 }
 
 async function saveProject() {
@@ -359,6 +379,7 @@ function applyLoadedProject(project) {
   );
 
   applyProjectSettings(project.settings);
+  state.markers = normalizeMarkers(project.markers);
   state.latestTake = getAllTakes().at(-1) || null;
   state.selectedVocalTakeId = state.latestTake?.id || null;
   els.downloadLatestButton.disabled = !state.latestTake;
@@ -366,6 +387,7 @@ function applyLoadedProject(project) {
   renderArmTracks();
   renderTakes();
   renderVocalPanel();
+  renderTimeline();
   updateQueueButton();
   updateExportButtons();
 }
@@ -1756,6 +1778,175 @@ function renderTakes() {
   updateQueueButton();
   updateExportButtons();
   renderVocalPanel();
+  renderTimeline();
+}
+
+function renderTimeline() {
+  if (!els.timelineRegions) {
+    return;
+  }
+
+  const timelineEnd = getTimelineEndPosition();
+  const beatDuration = els.beatAudio.src && Number.isFinite(els.beatAudio.duration) ? els.beatAudio.duration : 0;
+  const takes = getAllTakes();
+  const markers = normalizeMarkers(state.markers);
+  state.markers = markers;
+  els.timelineLength.textContent = formatDuration(timelineEnd);
+
+  els.timelineRuler.innerHTML = makeTimelineTicks(timelineEnd)
+    .map(
+      (tick) => `
+        <span class="timeline-tick" style="left: ${timelinePercent(tick, timelineEnd)}%">
+          <span>${formatDuration(tick)}</span>
+        </span>
+      `,
+    )
+    .join("");
+
+  els.timelineMarkers.innerHTML = markers
+    .map(
+      (marker) => `
+        <span class="timeline-marker" style="left: ${timelinePercent(marker.time, timelineEnd)}%">
+          <span>${marker.type}</span>
+        </span>
+      `,
+    )
+    .join("");
+
+  const beatRegion = beatDuration
+    ? `
+      <div class="timeline-region beat-region" style="left: 0%; width: ${timelinePercent(beatDuration, timelineEnd)}%; --track-color: var(--lime);">
+        <strong>${state.beatFileName || "Beat"}</strong>
+      </div>
+    `
+    : "";
+  const takeRegions = takes
+    .map((take, index) => {
+      const start = take.startTime || 0;
+      const width = Math.max(1.2, timelinePercent(take.duration || 0.2, timelineEnd));
+      const left = timelinePercent(start, timelineEnd);
+      const track = findTrack(take.trackId);
+      return `
+        <div class="timeline-region take-region" style="left: ${left}%; width: ${width}%; --row-index: ${index}; --track-color: ${track?.color || "#c8ff4d"};">
+          <strong>${getTakeShortName(take)}</strong>
+        </div>
+      `;
+    })
+    .join("");
+  els.timelineRegions.innerHTML = beatRegion + takeRegions;
+
+  els.markerList.innerHTML = markers.length
+    ? markers
+      .map(
+        (marker) => `
+          <div class="marker-row">
+            <header>
+              <strong>${marker.type}</strong>
+              <button class="mini-button danger" type="button" data-delete-marker="${marker.id}">Del</button>
+            </header>
+            <small>${formatDuration(marker.time)}</small>
+          </div>
+        `,
+      )
+      .join("")
+    : `<span class="empty-takes">No markers</span>`;
+
+  els.regionList.innerHTML = takes.length
+    ? takes
+      .map(
+        (take, index) => `
+          <div class="region-row">
+            <header>
+              <strong>${getTakeTitle(take, index)}</strong>
+              <small>${take.trackName}</small>
+            </header>
+            <div class="region-actions">
+              <button class="mini-button" type="button" data-nudge-region="${take.id}" data-delta="-0.1">-0.1</button>
+              <input type="number" min="0" step="0.1" value="${(take.startTime || 0).toFixed(1)}" data-region-start="${take.id}" />
+              <button class="mini-button" type="button" data-nudge-region="${take.id}" data-delta="0.1">+0.1</button>
+            </div>
+          </div>
+        `,
+      )
+      .join("")
+    : `<span class="empty-takes">No regions</span>`;
+
+  els.markerList.querySelectorAll("[data-delete-marker]").forEach((button) => {
+    button.addEventListener("click", () => deleteTimelineMarker(button.dataset.deleteMarker));
+  });
+  els.regionList.querySelectorAll("[data-region-start]").forEach((input) => {
+    input.addEventListener("change", () => setRegionStart(input.dataset.regionStart, input.value));
+  });
+  els.regionList.querySelectorAll("[data-nudge-region]").forEach((button) => {
+    button.addEventListener("click", () => nudgeRegionStart(button.dataset.nudgeRegion, Number(button.dataset.delta)));
+  });
+}
+
+function addTimelineMarker() {
+  const marker = {
+    id: crypto.randomUUID(),
+    type: els.markerTypeSelect.value,
+    time: Math.max(0, Number(els.markerTimeInput.value) || 0),
+  };
+  state.markers.push(marker);
+  state.markers = normalizeMarkers(state.markers);
+  els.markerTimeInput.value = marker.time.toFixed(1);
+  renderTimeline();
+}
+
+function deleteTimelineMarker(markerId) {
+  state.markers = state.markers.filter((marker) => marker.id !== markerId);
+  renderTimeline();
+}
+
+function setRegionStart(takeId, value) {
+  const take = findTake(takeId);
+  if (!take) {
+    return;
+  }
+
+  take.startTime = Math.max(0, Number(value) || 0);
+  els.sessionState.textContent = "Region moved";
+  renderTracks();
+  renderTakes();
+  updateExportButtons();
+}
+
+function nudgeRegionStart(takeId, delta) {
+  const take = findTake(takeId);
+  if (!take) {
+    return;
+  }
+
+  setRegionStart(takeId, (take.startTime || 0) + delta);
+}
+
+function getTimelineEndPosition() {
+  const markerEnd = state.markers.reduce((end, marker) => Math.max(end, marker.time + 4), 0);
+  return Math.max(16, getSessionEndPosition(), markerEnd);
+}
+
+function makeTimelineTicks(end) {
+  const step = end > 120 ? 30 : end > 60 ? 15 : 5;
+  const ticks = [];
+  for (let time = 0; time <= end; time += step) {
+    ticks.push(time);
+  }
+  return ticks;
+}
+
+function timelinePercent(value, end) {
+  return Math.max(0, Math.min(100, (value / Math.max(1, end)) * 100));
+}
+
+function normalizeMarkers(markers = []) {
+  return markers
+    .map((marker) => ({
+      id: marker.id || crypto.randomUUID(),
+      type: marker.type || "Marker",
+      time: Math.max(0, Number(marker.time) || 0),
+    }))
+    .sort((a, b) => a.time - b.time);
 }
 
 function downloadLatestTake() {

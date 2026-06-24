@@ -28,6 +28,7 @@ Then open `http://localhost:4173`.
 - Processed take version labels for repeated renders from the same source take
 - Project save/open as a local `.punchlab.json` bundle
 - Separated DSP, audio utility, and project storage modules under `src/`
+- Timeline view with marker management and take region start/nudge controls
 
 ## Planning
 

@@ -26,6 +26,7 @@
         <nav class="view-tabs" aria-label="Studio views">
           <button class="view-tab active" type="button" data-view="record">Record</button>
           <button class="view-tab" type="button" data-view="mix">Mix</button>
+          <button class="view-tab" type="button" data-view="timeline">Timeline</button>
           <button class="view-tab" type="button" data-view="vocal">Vocal</button>
           <button class="view-tab" type="button" data-view="takes">Takes</button>
           <button class="view-tab" type="button" data-view="lyrics">Lyrics</button>
@@ -189,6 +190,56 @@
               <span>Mute / Solo / Vol / Pan</span>
             </div>
             <div class="track-list" id="trackList"></div>
+          </section>
+        </section>
+
+        <section class="view-panel" data-view-panel="timeline">
+          <section class="timeline-grid">
+            <section class="center-panel full-panel timeline-panel">
+              <div class="panel-heading padded">
+                <span>Arrangement</span>
+                <span id="timelineLength">00:16.0</span>
+              </div>
+              <div class="timeline-surface">
+                <div class="timeline-ruler" id="timelineRuler"></div>
+                <div class="timeline-markers" id="timelineMarkers"></div>
+                <div class="timeline-regions" id="timelineRegions"></div>
+              </div>
+            </section>
+
+            <aside class="panel timeline-side">
+              <div class="panel-heading">
+                <span>Markers</span>
+                <span>Song parts</span>
+              </div>
+              <div class="marker-form">
+                <label>
+                  Type
+                  <select id="markerTypeSelect">
+                    <option>Intro</option>
+                    <option>Verse</option>
+                    <option>Hook</option>
+                    <option>Bridge</option>
+                    <option>Outro</option>
+                  </select>
+                </label>
+                <label>
+                  Time
+                  <input id="markerTimeInput" type="number" min="0" step="0.1" value="0" />
+                </label>
+                <button id="addMarkerButton" class="icon-button wide" type="button">
+                  <i data-lucide="map-pin-plus"></i>
+                  Add marker
+                </button>
+              </div>
+              <div class="marker-list" id="markerList"></div>
+
+              <div class="panel-heading timeline-region-heading">
+                <span>Regions</span>
+                <span>Nudge / Start</span>
+              </div>
+              <div class="region-list" id="regionList"></div>
+            </aside>
           </section>
         </section>
 
