@@ -74,6 +74,16 @@
     return Boolean((await loadAutosave()) || (await loadLatestBackup()));
   }
 
+  function formatBackupHistoryLabel(backup = {}, index = 0, locale = []) {
+    const when = backup.savedAt ? new Date(backup.savedAt) : null;
+    const fallback = `Backup ${index + 1}`;
+    const time = when && !Number.isNaN(when.getTime())
+      ? when.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })
+      : fallback;
+    const name = backup.title || backup.beatName || fallback;
+    return `${time} ${name}`;
+  }
+
   async function clearAutosave() {
     const db = await openDb();
     await requestToPromise(db.transaction(STORE_NAME, "readwrite").objectStore(STORE_NAME).delete(AUTOSAVE_KEY));
@@ -140,6 +150,7 @@
 
   window.PunchLabStorage = {
     clearAutosave,
+    formatBackupHistoryLabel,
     hasAutosave,
     hasRecovery,
     loadAutosave,

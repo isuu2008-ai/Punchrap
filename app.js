@@ -1833,12 +1833,7 @@ function renderRecoverySelect() {
 }
 
 function formatBackupHistoryLabel(backup, index) {
-  const when = backup.savedAt ? new Date(backup.savedAt) : null;
-  const time = when && !Number.isNaN(when.getTime())
-    ? when.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-    : `Backup ${index + 1}`;
-  const name = backup.title || backup.beatName || `Backup ${index + 1}`;
-  return `${time} ${name}`;
+  return window.PunchLabStorage.formatBackupHistoryLabel(backup, index);
 }
 
 function applyLoadedProject(project) {

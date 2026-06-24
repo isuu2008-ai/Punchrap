@@ -252,6 +252,8 @@
 - scale 정규화, manual target overlay, pitch lane sampling, note label, correction summary를 `src/pitch.js`로 분리
 - Device recording MIME policy split 1차
 - recording MIME 선택을 `src/devices.js`로 분리하고 mic constraints/output routing 경계와 함께 검증
+- Storage backup display policy split 1차
+- rolling backup history label 생성을 `src/storage.js`로 분리
 - Format utility module split 1차
 - duration, gain/dB, LUFS, pan, percent, semitone, HTML escape 표시 포맷을 `src/format.js`로 분리
 - Native display formatter split 1차

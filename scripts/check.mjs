@@ -344,6 +344,11 @@ if (!devicesSource.includes("window.PunchLabDevices") || !devicesSource.includes
   console.error("Device enumeration, recording MIME, mic constraints, and output routing must live in src/devices.js and be used by app.js.");
   failed = true;
 }
+const storageSource = readFileSync("src/storage.js", "utf8");
+if (!storageSource.includes("window.PunchLabStorage") || !storageSource.includes("formatBackupHistoryLabel") || !storageSource.includes("saveBackup") || !storageSource.includes("listBackups") || !storageSource.includes("loadBackup") || !appSource.includes("PunchLabStorage.formatBackupHistoryLabel")) {
+  console.error("Autosave, rolling backup, recovery list, and backup-history display policy must live in src/storage.js and be used by app.js.");
+  failed = true;
+}
 if (!indexHtml.includes("quickTakeList") || !appSource.includes("data-quick-play-take") || !appSource.includes("data-quick-vocal-take") || !appSource.includes("sendTakeToVocal")) {
   console.error("Record view must support immediate recent-take audition and Vocal handoff.");
   failed = true;
