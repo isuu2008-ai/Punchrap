@@ -31,6 +31,7 @@ Then open `http://localhost:4173`.
 - Timeline view with marker management and take region start/nudge controls
 - Region rename, clip gain, and fade in/out controls persisted in project files
 - Export tab for track stems, dry vocals, and tuned vocals
+- IndexedDB autosave with project recovery
 
 ## Planning
 

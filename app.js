@@ -27,6 +27,9 @@ const state = {
   isExportingMix: false,
   isExportingAssets: false,
   isRenderingVocal: false,
+  autosaveTimer: 0,
+  isAutosaving: false,
+  hasAutosave: false,
   currentTakeAudio: null,
   currentTakeId: null,
   currentTakeResolve: null,
@@ -76,6 +79,7 @@ const els = {
   viewPanels: document.querySelectorAll("[data-view-panel]"),
   projectInput: document.querySelector("#projectInput"),
   saveProjectButton: document.querySelector("#saveProjectButton"),
+  recoverProjectButton: document.querySelector("#recoverProjectButton"),
   beatInput: document.querySelector("#beatInput"),
   beatName: document.querySelector("#beatName"),
   beatAudio: document.querySelector("#beatAudio"),
@@ -169,6 +173,7 @@ function init() {
   applyPreset("trap-hard");
   updateInputGain();
   updatePunchControls();
+  checkAutosave();
   drawIdleWave();
   updateTimer();
 
@@ -201,9 +206,18 @@ function bindEvents() {
   els.playQueueButton.addEventListener("click", toggleTakeQueue);
   els.exportMixButton.addEventListener("click", exportFullMix);
   els.downloadLatestButton.addEventListener("click", downloadLatestTake);
-  els.retuneSpeedSlider.addEventListener("input", updateTuneControls);
-  els.humanizeSlider.addEventListener("input", updateTuneControls);
-  els.formantSlider.addEventListener("input", updateTuneControls);
+  els.retuneSpeedSlider.addEventListener("input", () => {
+    updateTuneControls();
+    scheduleAutosave();
+  });
+  els.humanizeSlider.addEventListener("input", () => {
+    updateTuneControls();
+    scheduleAutosave();
+  });
+  els.formantSlider.addEventListener("input", () => {
+    updateTuneControls();
+    scheduleAutosave();
+  });
   els.vocalTakeSelect.addEventListener("change", () => {
     state.selectedVocalTakeId = els.vocalTakeSelect.value || null;
     renderVocalPanel();
@@ -217,6 +231,7 @@ function bindEvents() {
   els.batchRenderButton.addEventListener("click", renderBatchVocalTakes);
   els.saveProjectButton.addEventListener("click", saveProject);
   els.projectInput.addEventListener("change", loadProject);
+  els.recoverProjectButton.addEventListener("click", recoverAutosave);
   els.addMarkerButton.addEventListener("click", addTimelineMarker);
   els.exportStemsButton.addEventListener("click", exportTrackStems);
   els.exportDryVocalsButton.addEventListener("click", exportDryVocals);
@@ -308,6 +323,7 @@ async function loadBeat(event) {
   els.sessionState.textContent = "Beat loaded";
   updateExportButtons();
   renderTimeline();
+  scheduleAutosave();
 }
 
 async function saveProject() {
@@ -349,12 +365,92 @@ async function loadProject(event) {
     const project = await window.PunchLabProject.hydrateProjectBundle(bundle);
     applyLoadedProject(project);
     els.sessionState.textContent = "Project opened";
+    scheduleAutosave();
   } catch (error) {
     els.sessionState.textContent = "Open failed";
     console.error(error);
   } finally {
     els.projectInput.value = "";
   }
+}
+
+async function recoverAutosave() {
+  if (!window.PunchLabStorage || !window.PunchLabProject) {
+    return;
+  }
+
+  try {
+    els.sessionState.textContent = "Recovering";
+    const bundle = await window.PunchLabStorage.loadAutosave();
+    if (!bundle) {
+      els.sessionState.textContent = "No recovery";
+      state.hasAutosave = false;
+      updateRecoveryButton();
+      return;
+    }
+
+    stopAll();
+    const project = await window.PunchLabProject.hydrateProjectBundle(bundle);
+    applyLoadedProject(project);
+    els.sessionState.textContent = "Autosave recovered";
+  } catch (error) {
+    els.sessionState.textContent = "Recovery failed";
+    console.error(error);
+  }
+}
+
+async function checkAutosave() {
+  if (!window.PunchLabStorage) {
+    return;
+  }
+
+  try {
+    state.hasAutosave = await window.PunchLabStorage.hasAutosave();
+    updateRecoveryButton();
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+function scheduleAutosave() {
+  if (!window.PunchLabProject || !window.PunchLabStorage) {
+    return;
+  }
+
+  window.clearTimeout(state.autosaveTimer);
+  state.autosaveTimer = window.setTimeout(saveCurrentAutosave, 1400);
+}
+
+async function saveCurrentAutosave() {
+  if (state.isAutosaving || !window.PunchLabProject || !window.PunchLabStorage) {
+    return;
+  }
+
+  try {
+    state.isAutosaving = true;
+    updateRecoveryButton();
+    const bundle = await window.PunchLabProject.buildProjectBundle({
+      state,
+      tracks,
+      presets,
+      settings: getProjectSettings(),
+    });
+    await window.PunchLabStorage.saveAutosave(bundle);
+    state.hasAutosave = true;
+  } catch (error) {
+    console.error(error);
+  } finally {
+    state.isAutosaving = false;
+    updateRecoveryButton();
+  }
+}
+
+function updateRecoveryButton() {
+  if (!els.recoverProjectButton) {
+    return;
+  }
+
+  els.recoverProjectButton.disabled = state.isAutosaving || !state.hasAutosave;
 }
 
 function applyLoadedProject(project) {
@@ -400,6 +496,7 @@ function applyLoadedProject(project) {
   renderTimeline();
   updateQueueButton();
   updateExportButtons();
+  scheduleAutosave();
 }
 
 function revokeCurrentProjectAssets() {
@@ -1127,6 +1224,7 @@ function saveTake() {
   renderTakes();
   updateQueueButton();
   updateExportButtons();
+  scheduleAutosave();
 }
 
 async function countIn(bars) {
@@ -1723,6 +1821,7 @@ async function renderProcessedTake(sourceTake, preset, tuneSettings) {
   };
 
   track.takes.push(take);
+  scheduleAutosave();
   return take;
 }
 
@@ -1959,11 +2058,13 @@ function addTimelineMarker() {
   state.markers = normalizeMarkers(state.markers);
   els.markerTimeInput.value = marker.time.toFixed(1);
   renderTimeline();
+  scheduleAutosave();
 }
 
 function deleteTimelineMarker(markerId) {
   state.markers = state.markers.filter((marker) => marker.id !== markerId);
   renderTimeline();
+  scheduleAutosave();
 }
 
 function setRegionStart(takeId, value) {
@@ -1977,6 +2078,7 @@ function setRegionStart(takeId, value) {
   renderTracks();
   renderTakes();
   updateExportButtons();
+  scheduleAutosave();
 }
 
 function setRegionName(takeId, value) {
@@ -1990,6 +2092,7 @@ function setRegionName(takeId, value) {
   renderTracks();
   renderTakes();
   updateExportButtons();
+  scheduleAutosave();
 }
 
 function setRegionClipGain(takeId, value) {
@@ -2004,6 +2107,7 @@ function setRegionClipGain(takeId, value) {
   renderTracks();
   renderTakes();
   updateExportButtons();
+  scheduleAutosave();
 }
 
 function setRegionFade(takeId, edge, value) {
@@ -2021,6 +2125,7 @@ function setRegionFade(takeId, edge, value) {
   els.sessionState.textContent = "Fade updated";
   renderTimeline();
   updateExportButtons();
+  scheduleAutosave();
 }
 
 function nudgeRegionStart(takeId, delta) {
@@ -2317,6 +2422,7 @@ function deleteTake(takeId) {
   renderArmTracks();
   renderTakes();
   updateExportButtons();
+  scheduleAutosave();
 }
 
 function updateTimer() {
@@ -2501,6 +2607,7 @@ function setTrackVolume(trackId, value) {
   updateActiveSessionMix();
   updateExportButtons();
   renderTracks();
+  scheduleAutosave();
 }
 
 function setTrackPan(trackId, value) {
@@ -2513,6 +2620,7 @@ function setTrackPan(trackId, value) {
   updateActiveSessionMix();
   updateExportButtons();
   renderTracks();
+  scheduleAutosave();
 }
 
 function toggleTrackMute(trackId) {
@@ -2525,6 +2633,7 @@ function toggleTrackMute(trackId) {
   updateActiveSessionMix();
   updateExportButtons();
   renderTracks();
+  scheduleAutosave();
 }
 
 function toggleTrackSolo(trackId) {
@@ -2537,6 +2646,7 @@ function toggleTrackSolo(trackId) {
   updateActiveSessionMix();
   updateExportButtons();
   renderTracks();
+  scheduleAutosave();
 }
 
 function updateQueueButton() {

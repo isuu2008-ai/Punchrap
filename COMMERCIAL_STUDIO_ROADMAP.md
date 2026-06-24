@@ -23,6 +23,9 @@
 - track stem export
 - dry vocal export
 - tuned vocal export
+- IndexedDB autosave
+- Recover 버튼으로 autosave 복원
+- Storage Layer `src/storage.js` 분리
 
 ## 결론부터
 
