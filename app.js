@@ -4276,6 +4276,7 @@ function renderExportPanel() {
     { label: "WAV depth", count: `${getExportBitDepth()}-bit`, unit: "" },
     { label: "Loudness target", count: els.exportLoudnessNormalizeInput.checked ? `-14 LUFS ${formatGainDb(state.lastExportLoudnessGain)}` : "Off", unit: "" },
     { label: "Normalize", count: els.exportNormalizeInput.checked ? `On ${formatGainDb(state.lastExportNormalizeGain)}` : "Off", unit: "" },
+    { label: "Compressed export", count: getCompressedExportStatus(), unit: "" },
   ];
   const jobs = state.exportQueue.slice(-8).reverse();
   const hasFinishedExports = state.exportQueue.some((job) => job.status === "done" || job.status === "failed");
@@ -4406,6 +4407,11 @@ function formatExportRowCount(row) {
   }
 
   return `${row.count} ${row.unit}${row.count === 1 ? "" : "s"}`;
+}
+
+function getCompressedExportStatus() {
+  const driver = window.PunchLabEngine?.getDriver?.();
+  return driver?.capabilities?.compressedAudioExport ? "Native MP3/M4A ready" : "Native required";
 }
 
 function updateExportMetadata() {
