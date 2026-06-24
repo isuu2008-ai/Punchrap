@@ -105,6 +105,7 @@ node .\scripts\check.mjs
 - Engine status tooltip includes native audio engine readiness detail without adding another visible panel
 - Record setup includes a compact native audio runtime summary for driver, buffer, latency, and sample rate
 - Record setup can manually refresh native latency/sample-rate stats when a desktop host supports it
+- Native audio summaries preserve and display latency stat freshness timestamps when available
 - Timeline view with marker management and take region start/nudge controls
 - BPM-based timeline grid with optional beat/bar snap for markers and region starts
 - Region rename, color, clip gain, and fade in/out controls persisted in project files

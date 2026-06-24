@@ -6,6 +6,7 @@
       nativeBufferSize: 128,
     },
     latencyStats: null,
+    latencyStatsUpdatedAt: null,
     serviceWorker: {
       supported: "serviceWorker" in navigator,
       registered: false,
@@ -107,12 +108,14 @@
     const status = bridge?.getStatus?.();
     if (!status?.available || status.missingOptionalMethods?.includes("getLatencyStats")) {
       platform.latencyStats = null;
+      platform.latencyStatsUpdatedAt = null;
       emitPlatformReady();
       return null;
     }
 
     const result = await bridge.callOptionalNative("getLatencyStats");
     platform.latencyStats = result || null;
+    platform.latencyStatsUpdatedAt = platform.latencyStats ? new Date().toISOString() : null;
     emitPlatformReady();
     return platform.latencyStats;
   }

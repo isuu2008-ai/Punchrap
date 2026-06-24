@@ -390,7 +390,8 @@ function renderNativeAudioSummary(desktopReadiness = window.PunchLabDesktop?.get
   const buffer = nativeAudio.preferredRuntimeBufferSize || state.nativeBufferSize;
   const latencyText = formatRuntimeLatency(getDisplayRoundTripLatency(desktopReadiness)) || "Latency pending";
   const sampleRateText = formatDisplaySampleRate(getDisplaySampleRate(desktopReadiness)) || "Rate pending";
-  const detail = [`${buffer} samples`, latencyText, sampleRateText].filter(Boolean).join(" / ");
+  const updatedText = formatDisplayTimestamp(getDisplayLatencyStatsUpdatedAt(desktopReadiness));
+  const detail = [`${buffer} samples`, latencyText, sampleRateText, updatedText].filter(Boolean).join(" / ");
   const canRefresh = Boolean(desktopReadiness?.latencyControl?.available && window.PunchLabPlatform?.refreshLatencyStats);
 
   els.nativeAudioSummary.dataset.ready = nativeAudio.ready ? "true" : "false";
@@ -425,6 +426,19 @@ function getDisplaySampleRate(desktopReadiness) {
   return desktopReadiness?.latencyControl?.stats?.sampleRate
     ?? state.loadedProjectEnvironment?.nativeAudio?.stats?.sampleRate
     ?? null;
+}
+
+function getDisplayLatencyStatsUpdatedAt(desktopReadiness) {
+  return desktopReadiness?.latencyControl?.statsUpdatedAt
+    ?? state.loadedProjectEnvironment?.nativeAudio?.statsUpdatedAt
+    ?? null;
+}
+
+function formatDisplayTimestamp(value) {
+  const timestamp = value ? new Date(value) : null;
+  return timestamp && !Number.isNaN(timestamp.getTime())
+    ? `Updated ${timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+    : "";
 }
 
 function renderPluginScanStatus(desktopReadiness = window.PunchLabDesktop?.getReadiness?.()) {
@@ -1501,6 +1515,7 @@ function formatPreviewNativeAudio(nativeAudio = {}) {
   const buffer = Number(nativeAudio.preferredBufferSize || 0);
   const latency = Number(nativeAudio.roundTripLatencyMs);
   const sampleRateText = formatDisplaySampleRate(nativeAudio.stats?.sampleRate);
+  const updatedText = formatDisplayTimestamp(nativeAudio.statsUpdatedAt);
   const parts = [driver];
   if (buffer > 0) {
     parts.push(`${buffer} samples`);
@@ -1510,6 +1525,9 @@ function formatPreviewNativeAudio(nativeAudio = {}) {
   }
   if (sampleRateText) {
     parts.push(sampleRateText);
+  }
+  if (updatedText) {
+    parts.push(updatedText);
   }
   return parts.join(" / ");
 }
@@ -1586,12 +1604,14 @@ function summarizeNativeAudioEnvironment() {
   const latencyStats = readiness?.latencyControl?.stats || null;
   const nativeAudio = readiness?.nativeAudioEngine || {};
   const loadedNativeAudio = state.loadedProjectEnvironment?.nativeAudio || null;
+  const statsUpdatedAt = readiness?.latencyControl?.statsUpdatedAt ?? loadedNativeAudio?.statsUpdatedAt ?? null;
   return {
     driver: readiness?.engineDriver?.id || "web-audio",
     nativeAvailable: Boolean(readiness?.nativeAvailable),
     preferredBufferSize: nativeAudio.preferredRuntimeBufferSize || state.nativeBufferSize,
     roundTripLatencyMs: nativeAudio.runtimeRoundTripLatencyMs ?? loadedNativeAudio?.roundTripLatencyMs ?? null,
     loadedRoundTripLatencyMs: loadedNativeAudio?.roundTripLatencyMs ?? null,
+    statsUpdatedAt,
     stats: latencyStats
       ? {
         inputLatencyMs: latencyStats.inputLatencyMs,

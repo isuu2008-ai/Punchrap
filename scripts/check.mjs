@@ -207,6 +207,10 @@ if (!readFileSync("src/platform.js", "utf8").includes("refreshLatencyStats")) {
   console.error("Platform must expose native latency stat refresh.");
   failed = true;
 }
+if (!readFileSync("src/platform.js", "utf8").includes("latencyStatsUpdatedAt") || !readFileSync("src/desktop.js", "utf8").includes("statsUpdatedAt")) {
+  console.error("Platform and desktop readiness must expose native latency stat freshness.");
+  failed = true;
+}
 if (!readFileSync("src/desktop.js", "utf8").includes("preferredRuntimeBufferSize")) {
   console.error("Desktop readiness must expose the preferred runtime buffer size.");
   failed = true;
@@ -225,6 +229,10 @@ if (!indexHtml.includes("nativeAudioSummary") || !appSource.includes("renderNati
 }
 if (!indexHtml.includes("nativeLatencyRefreshButton") || !appSource.includes("refreshNativeLatencyStats")) {
   console.error("Record setup must expose a native latency stats refresh control.");
+  failed = true;
+}
+if (!appSource.includes("getDisplayLatencyStatsUpdatedAt") || !appSource.includes("statsUpdatedAt")) {
+  console.error("Native audio summaries must show latency stats freshness when available.");
   failed = true;
 }
 

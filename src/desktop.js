@@ -198,6 +198,7 @@
         missingMethods: missingLatencyMethods,
         preferredBufferSize: preferredNativeBufferSize,
         stats: latencyStats,
+        statsUpdatedAt: platform.latencyStatsUpdatedAt || null,
       },
       nativeAudioEngine: {
         ...nativeAudioContract,

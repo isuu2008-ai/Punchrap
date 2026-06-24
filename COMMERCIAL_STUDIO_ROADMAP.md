@@ -74,6 +74,8 @@
 - Record Session 패널에 driver, buffer, latency, sample rate compact summary를 표시
 - Native latency manual refresh 1차
 - Record Session 패널에서 getLatencyStats를 수동 갱신해 latency/sample rate runtime 상태를 다시 표시
+- Native latency freshness timestamp 1차
+- platform/readiness/project/preview 경로에 latency stats 갱신 시각을 보존하고 표시
 - Native adapter 1차
 - `src/native-adapter.js`가 native host bridge를 swappable engine interface로 연결
 - Desktop wrapper manifest 1차
