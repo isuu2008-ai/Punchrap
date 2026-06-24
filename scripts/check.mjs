@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 const syntaxFiles = [
   "server.mjs",
@@ -10,6 +10,8 @@ const syntaxFiles = [
   "src/vocal.js",
   "src/project.js",
   "src/storage.js",
+  "src/platform.js",
+  "sw.js",
 ];
 
 const requiredScripts = [
@@ -19,7 +21,14 @@ const requiredScripts = [
   "src/vocal.js",
   "src/project.js",
   "src/storage.js",
+  "src/platform.js",
   "app.js",
+];
+
+const requiredFiles = [
+  "manifest.webmanifest",
+  "assets/punchlab-icon.svg",
+  "sw.js",
 ];
 
 let failed = false;
@@ -39,6 +48,18 @@ for (const script of requiredScripts) {
     console.error(`Missing script reference: ${script}`);
     failed = true;
   }
+}
+
+for (const file of requiredFiles) {
+  if (!existsSync(file)) {
+    console.error(`Missing required file: ${file}`);
+    failed = true;
+  }
+}
+
+if (!indexHtml.includes("manifest.webmanifest")) {
+  console.error("Missing web app manifest link.");
+  failed = true;
 }
 
 if (failed) {

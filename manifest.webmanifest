@@ -1,0 +1,18 @@
+{
+  "name": "PunchLab",
+  "short_name": "PunchLab",
+  "description": "Local rap vocal recorder and render studio prototype.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#080a0a",
+  "theme_color": "#c8ff4d",
+  "icons": [
+    {
+      "src": "./assets/punchlab-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -41,6 +41,7 @@ node .\scripts\check.mjs
 - Project save/open as a local `.punchlab.json` bundle
 - Separated DSP, audio utility, offline mix render, vocal render engine, and project storage modules under `src/`
 - Node package scripts for local start and smoke checks
+- PWA manifest, local icon, platform bootstrap, and service worker shell cache for desktop-install preparation
 - Timeline view with marker management and take region start/nudge controls
 - Region rename, clip gain, and fade in/out controls persisted in project files
 - Timeline undo/redo for marker and region edits
@@ -71,5 +72,5 @@ See [COMMERCIAL_STUDIO_ROADMAP.md](./COMMERCIAL_STUDIO_ROADMAP.md) for the comme
 
 ## Next DSP Steps
 
-- Desktop wrapper preparation
 - Native audio engine interface planning
+- Desktop wrapper shell integration

@@ -13,6 +13,8 @@
 - 프로젝트 저장/불러오기 계층을 `src/project.js`로 분리
 - `package.json` start/check script 추가
 - `scripts/check.mjs` smoke check 추가
+- PWA manifest/icon/service worker 추가
+- Platform bootstrap `src/platform.js` 추가
 - `.punchlab.json` 로컬 프로젝트 저장/복원
 - processed take `v1`, `v2` 버전 관리
 - processed take 버전/체인 정보 저장 포맷 포함
@@ -440,8 +442,8 @@ VST3/AU 플러그인은 마지막에 가는 것이 맞습니다.
 5. stem export
 6. latency compensation
 7. pitch engine 개선
-8. desktop wrapper
+8. desktop wrapper shell integration
 9. native audio engine
 10. VST3/AU plugin
 
-현재는 1-8번의 기본선과 timeline undo/redo, render/export queue, custom scale editor, take comping, comp lane editing, export metadata, export preview, project zip export asset 포함형, waveform recording view, export peak normalize, K-weighted LUFS/true peak analysis 기본형, offline mix/vocal render 모듈 분리, formant-aware pitch shifting 기본형, vocal chain controls 1차, EQ/limiter controls 1차, delay/reverb controls 1차, desktop wrapper 준비용 start/check script가 들어온 상태입니다. 다음으로는 desktop wrapper 준비, native audio engine 준비, VST3/AU plugin 준비가 중요합니다.
+현재는 1-8번의 기본선과 timeline undo/redo, render/export queue, custom scale editor, take comping, comp lane editing, export metadata, export preview, project zip export asset 포함형, waveform recording view, export peak normalize, K-weighted LUFS/true peak analysis 기본형, offline mix/vocal render 모듈 분리, formant-aware pitch shifting 기본형, vocal chain controls 1차, EQ/limiter controls 1차, delay/reverb controls 1차, desktop wrapper 준비용 start/check/PWA shell이 들어온 상태입니다. 다음으로는 desktop wrapper shell integration, native audio engine 준비, VST3/AU plugin 준비가 중요합니다.
