@@ -524,5 +524,6 @@
   window.PunchLabDesktop = {
     getManifest,
     getReadiness,
+    normalizeNativeBufferSize,
   };
 })();

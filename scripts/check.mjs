@@ -608,6 +608,11 @@ if (!indexHtml.includes("nativeBufferSizeSelect")) {
   console.error("index.html must include the native buffer-size selector.");
   failed = true;
 }
+const desktopSource = readFileSync("src/desktop.js", "utf8");
+if (!desktopSource.includes("normalizeNativeBufferSize") || !desktopSource.includes("NATIVE_AUDIO_ENGINE_CONTRACT.bufferSizes") || !appSource.includes("PunchLabDesktop.normalizeNativeBufferSize")) {
+  console.error("Native buffer-size normalization must be exported from src/desktop.js and used by app.js.");
+  failed = true;
+}
 if (!indexHtml.includes("nativeAudioSummary") || !appSource.includes("renderNativeAudioSummary")) {
   console.error("Record setup must include a compact native audio runtime summary.");
   failed = true;

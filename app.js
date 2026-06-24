@@ -2094,8 +2094,7 @@ async function changeNativeBufferSize() {
 }
 
 function normalizeNativeBufferSize(value) {
-  const size = Number(value || 128);
-  return [64, 128, 256, 512, 1024].includes(size) ? size : 128;
+  return window.PunchLabDesktop.normalizeNativeBufferSize(value);
 }
 
 function setPunchPoint(point) {

@@ -144,6 +144,7 @@ node .\scripts\check.mjs
 - Project zip preview lists desktop handoff stages for wrapper, native audio, and plugin host review
 - Desktop contract check enforces native audio engine sample-rate, buffer-size, and latency targets
 - Desktop readiness exposes native audio engine performance contract status at runtime
+- Native buffer-size normalization is exported from `src/desktop.js` and reused by app settings/project restore
 - Engine status tooltip includes native audio engine readiness detail without adding another visible panel
 - Record setup includes a compact native audio runtime summary for driver, buffer, latency, and sample rate
 - Record setup can manually refresh native latency/sample-rate stats when a desktop host supports it
