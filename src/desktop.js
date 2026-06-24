@@ -26,6 +26,7 @@
       bridgeVersion: 1,
       bridgeGlobal: "__PUNCHLAB_NATIVE__",
       manifestPath: "./desktop-host-manifest.json",
+      wrapperManifestPath: "./desktop-wrapper-manifest.json",
       projectFormat: ".punchlab.json",
       bundleFormat: ".punchlab.zip",
       requiredNativeMethods,

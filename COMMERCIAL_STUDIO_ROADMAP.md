@@ -32,6 +32,8 @@
 - getLatencyStats와 setBufferSize를 optional native method로 분리하고 engine adapter에서 호출 가능하게 연결
 - Native adapter 1차
 - `src/native-adapter.js`가 native host bridge를 swappable engine interface로 연결
+- Desktop wrapper manifest 1차
+- Tauri/Electron wrapper에 필요한 shell, 권한, bridge, handoff stage 계약을 `desktop-wrapper-manifest.json`으로 분리
 - Native fixture mode 1차
 - `?nativeFixture=1`로 native adapter/engine 선택 경로를 브라우저에서 검증
 - Vocal chain parameter manifest 1차

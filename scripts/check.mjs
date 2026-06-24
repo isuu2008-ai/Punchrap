@@ -48,6 +48,7 @@ const requiredScripts = [
 const requiredFiles = [
   "manifest.webmanifest",
   "desktop-host-manifest.json",
+  "desktop-wrapper-manifest.json",
   "assets/punchlab-icon.svg",
   "sw.js",
 ];
@@ -74,6 +75,29 @@ for (const script of requiredScripts) {
 for (const file of requiredFiles) {
   if (!existsSync(file)) {
     console.error(`Missing required file: ${file}`);
+    failed = true;
+  }
+}
+
+const desktopHostManifest = JSON.parse(readFileSync("desktop-host-manifest.json", "utf8"));
+const desktopWrapperManifest = JSON.parse(readFileSync("desktop-wrapper-manifest.json", "utf8"));
+if (desktopWrapperManifest.nativeBridge?.hostManifest !== "desktop-host-manifest.json") {
+  console.error("Desktop wrapper manifest must reference desktop-host-manifest.json.");
+  failed = true;
+}
+if (desktopWrapperManifest.nativeBridge?.global !== desktopHostManifest.bridgeGlobal) {
+  console.error("Desktop wrapper bridge global does not match host manifest.");
+  failed = true;
+}
+for (const method of desktopHostManifest.requiredNativeMethods || []) {
+  if (!desktopWrapperManifest.nativeBridge?.requiredMethods?.includes(method)) {
+    console.error(`Desktop wrapper manifest missing required native method: ${method}`);
+    failed = true;
+  }
+}
+for (const method of desktopHostManifest.optionalNativeMethods || []) {
+  if (!desktopWrapperManifest.nativeBridge?.optionalMethods?.includes(method)) {
+    console.error(`Desktop wrapper manifest missing optional native method: ${method}`);
     failed = true;
   }
 }

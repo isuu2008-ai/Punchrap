@@ -1,0 +1,61 @@
+{
+  "appId": "ai.isuu2008.punchrap",
+  "appName": "PunchLab",
+  "wrapperVersion": 1,
+  "shell": {
+    "devServer": "http://localhost:4173",
+    "entry": "index.html",
+    "windowTitle": "PunchLab",
+    "minWidth": 1180,
+    "minHeight": 760
+  },
+  "nativeBridge": {
+    "global": "__PUNCHLAB_NATIVE__",
+    "hostManifest": "desktop-host-manifest.json",
+    "requiredMethods": [
+      "getCapabilities",
+      "getDevices",
+      "renderMix",
+      "renderVocal",
+      "startInputMonitor",
+      "stopInputMonitor"
+    ],
+    "optionalMethods": [
+      "getLatencyStats",
+      "setOutputDevice",
+      "setBufferSize",
+      "openProjectFile",
+      "saveProjectFile",
+      "exportCompressedAudio",
+      "scanPluginHosts"
+    ]
+  },
+  "permissions": {
+    "microphone": true,
+    "filesystem": true,
+    "audioOutputRouting": true,
+    "network": false
+  },
+  "handoffStages": [
+    {
+      "id": "browser-shell",
+      "label": "Browser shell",
+      "status": "ready"
+    },
+    {
+      "id": "desktop-wrapper",
+      "label": "Tauri/Electron wrapper",
+      "status": "planned"
+    },
+    {
+      "id": "native-audio-engine",
+      "label": "Native low-latency audio engine",
+      "status": "planned"
+    },
+    {
+      "id": "plugin-host",
+      "label": "VST3/AU plugin host",
+      "status": "planned"
+    }
+  ]
+}
