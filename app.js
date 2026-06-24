@@ -6546,28 +6546,11 @@ function hasProcessedTakeForChain(sourceTake, preset, tuneSettings) {
 }
 
 function getBatchScopeReadyText(scope, count, skippedCount = 0) {
-  const messages = {
-    all: `Will render ${count} raw take(s) across all vocal tracks.`,
-    best: `Will render ${count} best raw take(s).`,
-    comp: `Will render ${count} raw take(s) from the comp lane.`,
-    track: `Will render ${count} raw take(s) on this track.`,
-  };
-  const skippedText = skippedCount ? ` Skipping ${skippedCount} already rendered.` : "";
-  return `${messages[scope] || messages.track}${skippedText}`;
+  return window.PunchLabTakes.getBatchScopeReadyText(scope, count, skippedCount);
 }
 
 function getBatchScopeEmptyText(scope, skippedCount = 0) {
-  if (skippedCount) {
-    return "All matching raw takes already have this preset/tune render.";
-  }
-
-  const messages = {
-    all: "No raw vocal takes available.",
-    best: "No best raw takes selected.",
-    comp: "No raw takes in the comp lane.",
-    track: "No raw takes on this track.",
-  };
-  return messages[scope] || messages.track;
+  return window.PunchLabTakes.getBatchScopeEmptyText(scope, skippedCount);
 }
 
 function getAudibleTakes() {
