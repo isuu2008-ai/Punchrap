@@ -1046,6 +1046,7 @@ async function buildProjectZipFiles(bundle, projectFilename) {
     preview: "preview.html",
     exportSettings: summarizeExportSettings(),
     pluginHost: summarizePluginHostScan(),
+    nativeAudio: summarizeNativeAudioEnvironment(),
     beat: null,
     markers: [],
     takes: [],
@@ -1446,6 +1447,27 @@ function summarizePluginHostScan() {
     fixture: Boolean(result?.fixture),
     formats: formats.map((format) => String(format)),
     pluginCount: plugins.length,
+  };
+}
+
+function summarizeNativeAudioEnvironment() {
+  const readiness = window.PunchLabDesktop?.getReadiness?.();
+  const latencyStats = readiness?.latencyControl?.stats || null;
+  const nativeAudio = readiness?.nativeAudioEngine || {};
+  return {
+    driver: readiness?.engineDriver?.id || "web-audio",
+    nativeAvailable: Boolean(readiness?.nativeAvailable),
+    preferredBufferSize: nativeAudio.preferredRuntimeBufferSize || state.nativeBufferSize,
+    roundTripLatencyMs: nativeAudio.runtimeRoundTripLatencyMs ?? null,
+    stats: latencyStats
+      ? {
+        inputLatencyMs: latencyStats.inputLatencyMs,
+        outputLatencyMs: latencyStats.outputLatencyMs,
+        roundTripLatencyMs: latencyStats.roundTripLatencyMs,
+        bufferSize: latencyStats.bufferSize,
+        sampleRate: latencyStats.sampleRate,
+      }
+      : null,
   };
 }
 

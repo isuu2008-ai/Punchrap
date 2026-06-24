@@ -46,6 +46,8 @@
 - getLatencyStats 결과를 platform latencyStats와 desktop readiness runtimeRoundTripLatencyMs로 노출
 - Native latency tooltip 1차
 - engine status tooltip에 runtime round-trip latency를 표시
+- Native audio zip manifest summary 1차
+- project zip manifest에 native audio driver, buffer, latency 환경 요약을 포함
 - Native adapter 1차
 - `src/native-adapter.js`가 native host bridge를 swappable engine interface로 연결
 - Desktop wrapper manifest 1차
