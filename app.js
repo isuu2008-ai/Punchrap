@@ -1017,6 +1017,7 @@ async function buildProjectZipFiles(bundle, projectFilename) {
     project: projectFilename,
     preview: "preview.html",
     exportSettings: summarizeExportSettings(),
+    pluginHost: summarizePluginHostScan(),
     beat: null,
     markers: [],
     takes: [],
@@ -1402,6 +1403,21 @@ function summarizeExportSettings() {
         recommendedGainDb: Number(report.recommendedGainDb || 0),
       }
       : null,
+  };
+}
+
+function summarizePluginHostScan() {
+  const result = state.pluginScanResult;
+  const plugins = Array.isArray(result?.plugins) ? result.plugins : [];
+  const formats = Array.isArray(result?.formats) ? result.formats : [];
+  return {
+    manifest: "plugin-host-manifest.json",
+    scanAvailable: Boolean(window.PunchLabDesktop?.getReadiness?.()?.pluginHost?.scanAvailable),
+    scanned: Boolean(result),
+    scannedAt: result?.scannedAt || null,
+    fixture: Boolean(result?.fixture),
+    formats: formats.map((format) => String(format)),
+    pluginCount: plugins.length,
   };
 }
 
