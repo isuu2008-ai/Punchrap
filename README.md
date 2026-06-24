@@ -36,6 +36,7 @@ Then open `http://localhost:4173`.
 - Global shortcuts for transport, metronome, stop, and tab switching outside text inputs
 - Recording latency compensation in milliseconds, applied to new take placement
 - Input monitoring toggle through the Web Audio mic chain
+- Custom vocal preset saving and project restore
 
 ## Planning
 

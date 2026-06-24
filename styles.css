@@ -1012,6 +1012,19 @@ textarea:focus {
   border-color: var(--lime);
 }
 
+.preset-save-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  align-self: start;
+  gap: 8px;
+}
+
+.preset-save-row .mini-button {
+  min-height: 48px;
+  align-self: start;
+}
+
 .chain-display {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1359,6 +1372,10 @@ textarea:focus {
   }
 
   .vocal-action-row {
+    grid-template-columns: 1fr;
+  }
+
+  .preset-save-row {
     grid-template-columns: 1fr;
   }
 

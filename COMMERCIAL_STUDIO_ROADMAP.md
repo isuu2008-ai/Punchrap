@@ -35,6 +35,8 @@
 - latency 설정 프로젝트 저장/복원
 - Input monitoring toggle
 - 마이크 신호를 monitor gain node를 통해 destination으로 라우팅
+- Custom vocal preset 저장
+- 저장한 preset 프로젝트 저장/복원
 
 ## 결론부터
 

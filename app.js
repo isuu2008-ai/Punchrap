@@ -121,6 +121,8 @@ const els = {
   setPunchOutButton: document.querySelector("#setPunchOutButton"),
   punchWindowText: document.querySelector("#punchWindowText"),
   presetGrid: document.querySelector("#presetGrid"),
+  customPresetNameInput: document.querySelector("#customPresetNameInput"),
+  saveCustomPresetButton: document.querySelector("#saveCustomPresetButton"),
   presetName: document.querySelector("#presetName"),
   retuneValue: document.querySelector("#retuneValue"),
   compValue: document.querySelector("#compValue"),
@@ -250,6 +252,7 @@ function bindEvents() {
   els.exportStemsButton.addEventListener("click", exportTrackStems);
   els.exportDryVocalsButton.addEventListener("click", exportDryVocals);
   els.exportTunedVocalsButton.addEventListener("click", exportTunedVocals);
+  els.saveCustomPresetButton.addEventListener("click", saveCustomPreset);
 }
 
 function handleGlobalShortcut(event) {
@@ -592,6 +595,11 @@ function applyLoadedProject(project) {
       })),
     })),
   );
+
+  if (project.presets?.length) {
+    presets.splice(0, presets.length, ...project.presets.map(normalizePreset));
+    renderPresets();
+  }
 
   applyProjectSettings(project.settings);
   state.markers = normalizeMarkers(project.markers);
@@ -1675,7 +1683,7 @@ function renderPresets() {
     .map(
       (preset) => `
         <button class="preset-button" type="button" data-preset="${preset.id}">
-          ${preset.name}
+          ${escapeHtml(preset.name)}
         </button>
       `,
     )
@@ -1686,9 +1694,48 @@ function renderPresets() {
   });
 }
 
+function saveCustomPreset() {
+  const basePreset = getSelectedPreset();
+  const tuneSettings = getTuneSettings();
+  const name = els.customPresetNameInput.value.trim() || `Custom ${presets.filter((preset) => preset.custom).length + 1}`;
+  const preset = {
+    id: `custom-${crypto.randomUUID()}`,
+    name,
+    retune: tuneSettings.retuneSpeed,
+    humanize: tuneSettings.humanize,
+    formant: tuneSettings.formant,
+    comp: basePreset.comp,
+    space: basePreset.space,
+    width: basePreset.width,
+    custom: true,
+  };
+
+  presets.push(preset);
+  els.customPresetNameInput.value = "";
+  renderPresets();
+  applyPreset(preset.id);
+  els.sessionState.textContent = "Preset saved";
+  scheduleAutosave();
+}
+
+function normalizePreset(preset) {
+  return {
+    id: preset.id || `custom-${crypto.randomUUID()}`,
+    name: preset.name || "Custom",
+    retune: Number(preset.retune ?? 50),
+    humanize: Number(preset.humanize ?? 25),
+    formant: Number(preset.formant ?? 0),
+    comp: Number(preset.comp ?? 60),
+    space: Number(preset.space ?? 12),
+    width: Number(preset.width ?? 24),
+    custom: Boolean(preset.custom),
+  };
+}
+
 function applyPreset(id) {
   state.selectedPresetId = id;
-  const preset = presets.find((item) => item.id === id);
+  const preset = presets.find((item) => item.id === id) || presets[0];
+  state.selectedPresetId = preset.id;
   els.presetName.textContent = preset.name;
   els.compValue.textContent = preset.comp;
   els.spaceValue.textContent = preset.space;
