@@ -89,6 +89,7 @@ node .\scripts\check.mjs
 - Engine status tooltip shows the selected native buffer size alongside desktop readiness
 - Engine status tooltip shows runtime native round-trip latency when available
 - Project zip manifests include native audio driver, buffer, and latency environment summaries
+- Project zip README documents the native audio environment summary for extracted archives
 - Desktop contract check enforces native audio engine sample-rate, buffer-size, and latency targets
 - Desktop readiness exposes native audio engine performance contract status at runtime
 - Engine status tooltip includes native audio engine readiness detail without adding another visible panel

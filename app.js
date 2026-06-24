@@ -1130,6 +1130,7 @@ async function buildProjectZipFiles(bundle, projectFilename) {
     "preview.html is a read-only browser preview for quick review after extracting the zip.",
     "manifest.json lists extracted audio assets for backup, transfer, and manual inspection.",
     "manifest.json includes exportSettings for WAV depth, normalize, loudness target, and recent analysis context.",
+    "manifest.json includes nativeAudio for driver, buffer, and latency environment context.",
     "Processed takes include automationState when a chain snapshot is available.",
     "assets/beat contains the loaded beat when available.",
     "assets/takes contains recorded and processed take audio files.",
