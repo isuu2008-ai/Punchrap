@@ -226,7 +226,7 @@ if (!appSource.includes("presets: summarizePresetManifest") || !projectZipSource
   console.error("Project zip manifest and preview must expose vocal chain preset summaries.");
   failed = true;
 }
-if (!appSource.includes("notes: summarizeProjectNotes") || !appSource.includes("Lyrics & Notes") || !appSource.includes("buildPreviewNotesRows") || !zipSource.includes("manifest.json includes notes")) {
+if (!appSource.includes("notes: summarizeProjectNotes") || !appSource.includes("Lyrics & Notes") || !projectZipSource.includes("buildProjectZipPreviewNotesRows") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewNotesRows") || !zipSource.includes("manifest.json includes notes")) {
   console.error("Project zip manifest and preview must expose scratch lyrics, marker lyrics, and session notes.");
   failed = true;
 }
@@ -286,7 +286,7 @@ if (!appSource.includes("formatPreviewPluginHostScan") || !appSource.includes("m
   console.error("Project zip preview must display plugin host scan summary.");
   failed = true;
 }
-if (!appSource.includes("Plugin Host") || !appSource.includes("buildPreviewPluginHostRows")) {
+if (!appSource.includes("Plugin Host") || !projectZipSource.includes("buildProjectZipPreviewPluginHostRows") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewPluginHostRows")) {
   console.error("Project zip preview must include a plugin host detail section.");
   failed = true;
 }
@@ -294,7 +294,7 @@ if (!appSource.includes("formatPluginScanStatusTitle") || !appSource.includes("s
   console.error("Topbar plugin scan status must expose scan freshness.");
   failed = true;
 }
-if (!appSource.includes("Desktop Handoff") || !appSource.includes("formatPreviewHandoffStageName")) {
+if (!appSource.includes("Desktop Handoff") || !projectZipSource.includes("buildProjectZipPreviewHandoffRows") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewHandoffRows")) {
   console.error("Project zip preview must list desktop handoff stages.");
   failed = true;
 }

@@ -115,6 +115,13 @@
     return `${value >= 0 ? "+" : ""}${value.toFixed(1)}`;
   }
 
+  function formatTimestamp(value) {
+    const timestamp = value ? new Date(value) : null;
+    return timestamp && !Number.isNaN(timestamp.getTime())
+      ? `Updated ${timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+      : "";
+  }
+
   function normalizeTimelineSnapMode(value) {
     return ["off", "beat", "bar"].includes(value) ? value : "off";
   }
@@ -319,6 +326,73 @@
       .join("");
   }
 
+  function buildProjectZipPreviewPluginHostRows(pluginHost = {}) {
+    const formats = Array.isArray(pluginHost.formats) && pluginHost.formats.length ? pluginHost.formats.join(", ") : "None";
+    const scannedAt = formatTimestamp(pluginHost.scannedAt) || "Not scanned";
+    return buildDescriptionListRows([
+      ["Scan", pluginHost.scanAvailable ? pluginHost.scanned ? "Scanned" : "Ready" : "Unavailable"],
+      ["Formats", formats],
+      ["Plugins", String(pluginHost.pluginCount || 0)],
+      ["Freshness", scannedAt],
+      ["Source", pluginHost.fixture ? "Fixture" : "Native"],
+    ]);
+  }
+
+  function buildProjectZipPreviewNotesRows(notesManifest = {}, markers = []) {
+    const rows = [];
+    const scratchLyrics = String(notesManifest.scratchLyrics || "");
+    const sessionNotes = String(notesManifest.sessionNotes || "");
+    if (scratchLyrics.trim()) {
+      rows.push(buildProjectZipPreviewTextCard("Scratch Lyrics", `${notesManifest.scratchLyricLines || getLyricLineCount(scratchLyrics)} lines`, scratchLyrics));
+    }
+    if (sessionNotes.trim()) {
+      rows.push(buildProjectZipPreviewTextCard("Session Notes", `${notesManifest.sessionNoteLines || getLyricLineCount(sessionNotes)} lines`, sessionNotes));
+    }
+
+    (Array.isArray(markers) ? markers : [])
+      .filter((marker) => String(marker.lyrics || "").trim())
+      .forEach((marker) => {
+        rows.push(buildProjectZipPreviewTextCard(`${marker.type} Lyrics`, formatDuration(marker.time), marker.lyrics));
+      });
+
+    return rows.length
+      ? rows.join("")
+      : `<article class="asset-card"><strong>No lyrics or notes</strong><small>The project bundle has no scratch lyrics, marker lyrics, or session notes.</small></article>`;
+  }
+
+  function getLyricLineCount(value) {
+    const text = String(value || "").trim();
+    return text ? text.split(/\r?\n/).filter((line) => line.trim()).length : 0;
+  }
+
+  function buildProjectZipPreviewTextCard(title, detail, value) {
+    return `
+      <article class="asset-card">
+        <div class="asset-heading">
+          <div>
+            <strong>${escapeHtml(title)}</strong>
+            <small>${escapeHtml(detail)}</small>
+          </div>
+        </div>
+        <pre class="note-text">${escapeHtml(value)}</pre>
+      </article>`;
+  }
+
+  function buildProjectZipPreviewHandoffRows(desktopReadiness = {}) {
+    return Array.isArray(desktopReadiness.handoffStages) && desktopReadiness.handoffStages.length
+      ? desktopReadiness.handoffStages
+        .map((stage, index) => `<li><span>${index + 1}</span>${escapeHtml(formatProjectZipPreviewHandoffStageName(stage.id))} <small>${escapeHtml(stage.status || "pending")}</small></li>`)
+        .join("")
+      : `<li>No desktop handoff snapshot.</li>`;
+  }
+
+  function formatProjectZipPreviewHandoffStageName(id) {
+    return String(id || "stage")
+      .split("-")
+      .map((part) => part ? `${part.charAt(0).toUpperCase()}${part.slice(1)}` : "")
+      .join(" ");
+  }
+
   window.PunchLabProjectZip = {
     README_MANIFEST_LINES,
     createProjectZipManifest,
@@ -332,5 +406,8 @@
     buildProjectZipPreviewAutomationSchemaRows,
     buildProjectZipPreviewSessionRows,
     buildProjectZipPreviewPresetRows,
+    buildProjectZipPreviewPluginHostRows,
+    buildProjectZipPreviewNotesRows,
+    buildProjectZipPreviewHandoffRows,
   };
 })();

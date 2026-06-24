@@ -1320,16 +1320,12 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
       .map((take, index) => `<li><span>${index + 1}</span>${escapeHtml(take.name)} <small>${escapeHtml(take.trackName)}</small></li>`)
       .join("")
     : `<li>No comp lane takes selected.</li>`;
-  const handoffStageRows = Array.isArray(desktopReadiness.handoffStages) && desktopReadiness.handoffStages.length
-    ? desktopReadiness.handoffStages
-      .map((stage, index) => `<li><span>${index + 1}</span>${escapeHtml(formatPreviewHandoffStageName(stage.id))} <small>${escapeHtml(stage.status || "pending")}</small></li>`)
-      .join("")
-    : `<li>No desktop handoff snapshot.</li>`;
-  const pluginHostRows = buildPreviewPluginHostRows(pluginHost);
+  const handoffStageRows = window.PunchLabProjectZip.buildProjectZipPreviewHandoffRows(desktopReadiness);
+  const pluginHostRows = window.PunchLabProjectZip.buildProjectZipPreviewPluginHostRows(pluginHost);
   const sessionRows = window.PunchLabProjectZip.buildProjectZipPreviewSessionRows(sessionManifest);
   const automationSchemaRows = window.PunchLabProjectZip.buildProjectZipPreviewAutomationSchemaRows(automationManifest);
   const presetRows = window.PunchLabProjectZip.buildProjectZipPreviewPresetRows(presetManifest);
-  const notesRows = buildPreviewNotesRows(notesManifest, manifest.markers);
+  const notesRows = window.PunchLabProjectZip.buildProjectZipPreviewNotesRows(notesManifest, manifest.markers);
 
   return `<!doctype html>
 <html lang="en">
@@ -1594,56 +1590,6 @@ function formatPreviewPluginHostScan(pluginHost = {}) {
   return [`Plugin ${pluginHost.pluginCount || 0}`, formats, scannedAt].filter(Boolean).join(" / ");
 }
 
-function buildPreviewPluginHostRows(pluginHost = {}) {
-  const formats = Array.isArray(pluginHost.formats) && pluginHost.formats.length ? pluginHost.formats.join(", ") : "None";
-  const scannedAt = formatDisplayTimestamp(pluginHost.scannedAt) || "Not scanned";
-  const rows = [
-    ["Scan", pluginHost.scanAvailable ? pluginHost.scanned ? "Scanned" : "Ready" : "Unavailable"],
-    ["Formats", formats],
-    ["Plugins", String(pluginHost.pluginCount || 0)],
-    ["Freshness", scannedAt],
-    ["Source", pluginHost.fixture ? "Fixture" : "Native"],
-  ];
-  return rows
-    .map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`)
-    .join("");
-}
-
-function buildPreviewNotesRows(notesManifest = {}, markers = []) {
-  const rows = [];
-  const scratchLyrics = String(notesManifest.scratchLyrics || "");
-  const sessionNotes = String(notesManifest.sessionNotes || "");
-  if (scratchLyrics.trim()) {
-    rows.push(buildPreviewTextCard("Scratch Lyrics", `${notesManifest.scratchLyricLines || getLyricLineCount(scratchLyrics)} lines`, scratchLyrics));
-  }
-  if (sessionNotes.trim()) {
-    rows.push(buildPreviewTextCard("Session Notes", `${notesManifest.sessionNoteLines || getLyricLineCount(sessionNotes)} lines`, sessionNotes));
-  }
-
-  normalizeMarkers(markers)
-    .filter((marker) => String(marker.lyrics || "").trim())
-    .forEach((marker) => {
-      rows.push(buildPreviewTextCard(`${marker.type} Lyrics`, formatDuration(marker.time), marker.lyrics));
-    });
-
-  return rows.length
-    ? rows.join("")
-    : `<article class="asset-card"><strong>No lyrics or notes</strong><small>The project bundle has no scratch lyrics, marker lyrics, or session notes.</small></article>`;
-}
-
-function buildPreviewTextCard(title, detail, value) {
-  return `
-    <article class="asset-card">
-      <div class="asset-heading">
-        <div>
-          <strong>${escapeHtml(title)}</strong>
-          <small>${escapeHtml(detail)}</small>
-        </div>
-      </div>
-      <pre class="note-text">${escapeHtml(value)}</pre>
-    </article>`;
-}
-
 function formatPreviewDesktopReadiness(desktopReadiness = {}) {
   if (!desktopReadiness || !Object.keys(desktopReadiness).length) {
     return "Desktop snapshot unavailable";
@@ -1655,13 +1601,6 @@ function formatPreviewDesktopReadiness(desktopReadiness = {}) {
   parts.push(nativeAudio.ready ? "Native audio ready" : "Native audio pending");
   parts.push(pluginHost.scanAvailable ? "Plugin scan ready" : "Plugin scan pending");
   return parts.join(" / ");
-}
-
-function formatPreviewHandoffStageName(id) {
-  return String(id || "stage")
-    .split("-")
-    .map((part) => part ? `${part.charAt(0).toUpperCase()}${part.slice(1)}` : "")
-    .join(" ");
 }
 
 function summarizeExportSettings() {
