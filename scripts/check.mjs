@@ -90,6 +90,20 @@ for (const file of requiredFiles) {
   }
 }
 
+const staticButtonIds = [...indexHtml.matchAll(/<button\b[^>]*\bid="([^"]+)"/g)].map((match) => match[1]);
+for (const id of staticButtonIds) {
+  const lookupPatterns = [
+    `querySelector("#${id}")`,
+    `querySelector('#${id}')`,
+    `getElementById("${id}")`,
+    `getElementById('${id}')`,
+  ];
+  if (!lookupPatterns.some((pattern) => appSource.includes(pattern))) {
+    console.error(`Static button is missing an app.js DOM lookup: #${id}`);
+    failed = true;
+  }
+}
+
 const desktopHostManifest = JSON.parse(readFileSync("desktop-host-manifest.json", "utf8"));
 const desktopWrapperManifest = JSON.parse(readFileSync("desktop-wrapper-manifest.json", "utf8"));
 const pluginHostManifest = JSON.parse(readFileSync("plugin-host-manifest.json", "utf8"));
