@@ -103,13 +103,82 @@
       .sort((a, b) => a.time - b.time);
   }
 
+  function normalizeTakeTrim(take = {}) {
+    const sourceDuration = getTakeSourceDuration(take);
+    const sourceOffset = getTakeSourceOffset({ ...take, sourceDuration });
+    const maxDuration = Math.max(0, sourceDuration - sourceOffset);
+    const duration = maxDuration <= 0 ? 0 : Math.max(0.05, Math.min(Number(take.duration || maxDuration), maxDuration));
+    return {
+      ...take,
+      duration,
+      sourceDuration,
+      sourceOffset,
+    };
+  }
+
+  function getTakeSourceDuration(take = {}) {
+    const duration = Math.max(0, Number(take?.duration) || 0);
+    const sourceOffset = Math.max(0, Number(take?.sourceOffset) || 0);
+    return Math.max(duration + sourceOffset, Number(take?.sourceDuration) || 0);
+  }
+
+  function getTakeSourceOffset(take = {}) {
+    const sourceDuration = getTakeSourceDuration(take);
+    const sourceOffset = Math.max(0, Number(take?.sourceOffset) || 0);
+    return Math.min(sourceOffset, Math.max(0, sourceDuration - 0.05));
+  }
+
+  function getTakeVisibleDuration(take = {}) {
+    const sourceDuration = getTakeSourceDuration(take);
+    const sourceOffset = getTakeSourceOffset(take);
+    const maxDuration = Math.max(0, sourceDuration - sourceOffset);
+    if (maxDuration <= 0) {
+      return 0;
+    }
+
+    return Math.max(0.05, Math.min(Number(take?.duration || maxDuration), maxDuration));
+  }
+
+  function getTakeClipGain(take = {}) {
+    return Math.max(0, Number(take?.clipGain ?? 1));
+  }
+
+  function normalizeRegionColor(value) {
+    const color = String(value || "").trim();
+    if (/^#[0-9a-f]{6}$/i.test(color)) {
+      return color.toLowerCase();
+    }
+
+    if (/^#[0-9a-f]{3}$/i.test(color)) {
+      return `#${color[1]}${color[1]}${color[2]}${color[2]}${color[3]}${color[3]}`.toLowerCase();
+    }
+
+    return "";
+  }
+
+  function getTakeFadeIn(take = {}) {
+    return Math.max(0, Math.min(Number(take?.fadeIn ?? 0), Math.max(0, (take?.duration || 0) / 2)));
+  }
+
+  function getTakeFadeOut(take = {}) {
+    return Math.max(0, Math.min(Number(take?.fadeOut ?? 0), Math.max(0, (take?.duration || 0) / 2)));
+  }
+
   window.PunchLabTimeline = {
     getBeatDuration,
+    getTakeClipGain,
+    getTakeFadeIn,
+    getTakeFadeOut,
+    getTakeSourceDuration,
+    getTakeSourceOffset,
+    getTakeVisibleDuration,
     getTimelineSnapStep,
     getTimelineTickStep,
     makeTimelineGridLines,
     makeTimelineTicks,
     normalizeMarkers,
+    normalizeRegionColor,
+    normalizeTakeTrim,
     normalizeTimelineSnapMode,
     nudgeTimelineTime,
     snapTimelineTime,

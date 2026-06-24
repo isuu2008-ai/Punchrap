@@ -6695,35 +6695,20 @@ function getTrackOutputVolume(track) {
 }
 
 function normalizeTakeTrim(take) {
-  const sourceDuration = getTakeSourceDuration(take);
-  take.sourceDuration = sourceDuration;
-  take.sourceOffset = getTakeSourceOffset(take);
-  const maxDuration = Math.max(0, sourceDuration - take.sourceOffset);
-  take.duration = maxDuration <= 0 ? 0 : Math.max(0.05, Math.min(Number(take.duration || maxDuration), maxDuration));
+  Object.assign(take, window.PunchLabTimeline.normalizeTakeTrim(take));
   return take;
 }
 
 function getTakeSourceDuration(take) {
-  const duration = Math.max(0, Number(take?.duration) || 0);
-  const sourceOffset = Math.max(0, Number(take?.sourceOffset) || 0);
-  return Math.max(duration + sourceOffset, Number(take?.sourceDuration) || 0);
+  return window.PunchLabTimeline.getTakeSourceDuration(take);
 }
 
 function getTakeSourceOffset(take) {
-  const sourceDuration = getTakeSourceDuration(take);
-  const sourceOffset = Math.max(0, Number(take?.sourceOffset) || 0);
-  return Math.min(sourceOffset, Math.max(0, sourceDuration - 0.05));
+  return window.PunchLabTimeline.getTakeSourceOffset(take);
 }
 
 function getTakeVisibleDuration(take) {
-  const sourceDuration = getTakeSourceDuration(take);
-  const sourceOffset = getTakeSourceOffset(take);
-  const maxDuration = Math.max(0, sourceDuration - sourceOffset);
-  if (maxDuration <= 0) {
-    return 0;
-  }
-
-  return Math.max(0.05, Math.min(Number(take?.duration || maxDuration), maxDuration));
+  return window.PunchLabTimeline.getTakeVisibleDuration(take);
 }
 
 function setTrackName(trackId, value) {
@@ -6768,7 +6753,7 @@ function getDefaultTrackName(trackId) {
 }
 
 function getTakeClipGain(take) {
-  return Math.max(0, Number(take?.clipGain ?? 1));
+  return window.PunchLabTimeline.getTakeClipGain(take);
 }
 
 function getTakeRegionColor(take) {
@@ -6807,24 +6792,15 @@ function renderRegionGroupOptions(selectedGroup) {
 }
 
 function normalizeRegionColor(value) {
-  const color = String(value || "").trim();
-  if (/^#[0-9a-f]{6}$/i.test(color)) {
-    return color.toLowerCase();
-  }
-
-  if (/^#[0-9a-f]{3}$/i.test(color)) {
-    return `#${color[1]}${color[1]}${color[2]}${color[2]}${color[3]}${color[3]}`.toLowerCase();
-  }
-
-  return "";
+  return window.PunchLabTimeline.normalizeRegionColor(value);
 }
 
 function getTakeFadeIn(take) {
-  return Math.max(0, Math.min(Number(take?.fadeIn ?? 0), Math.max(0, (take?.duration || 0) / 2)));
+  return window.PunchLabTimeline.getTakeFadeIn(take);
 }
 
 function getTakeFadeOut(take) {
-  return Math.max(0, Math.min(Number(take?.fadeOut ?? 0), Math.max(0, (take?.duration || 0) / 2)));
+  return window.PunchLabTimeline.getTakeFadeOut(take);
 }
 
 function applyTakeGainAutomation(audioParam, volume, take, offset = 0, startAt = 0) {

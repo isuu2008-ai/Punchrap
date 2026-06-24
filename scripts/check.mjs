@@ -292,8 +292,8 @@ if (!exportPlanSource.includes("window.PunchLabExportPlan") || !exportPlanSource
   failed = true;
 }
 const timelineSource = readFileSync("src/timeline.js", "utf8");
-if (!timelineSource.includes("window.PunchLabTimeline") || !timelineSource.includes("normalizeTimelineSnapMode") || !timelineSource.includes("makeTimelineGridLines") || !timelineSource.includes("timelinePercent") || !appSource.includes("PunchLabTimeline.snapTimelineTime") || !appSource.includes("PunchLabTimeline.normalizeMarkers") || !appSource.includes("PunchLabTimeline.makeTimelineTicks")) {
-  console.error("Timeline snap and marker normalization policy must live in src/timeline.js and be used by app.js.");
+if (!timelineSource.includes("window.PunchLabTimeline") || !timelineSource.includes("normalizeTimelineSnapMode") || !timelineSource.includes("makeTimelineGridLines") || !timelineSource.includes("timelinePercent") || !timelineSource.includes("normalizeTakeTrim") || !timelineSource.includes("normalizeRegionColor") || !appSource.includes("PunchLabTimeline.snapTimelineTime") || !appSource.includes("PunchLabTimeline.normalizeMarkers") || !appSource.includes("PunchLabTimeline.makeTimelineTicks") || !appSource.includes("PunchLabTimeline.getTakeVisibleDuration")) {
+  console.error("Timeline snap, grid, marker, and region trim policy must live in src/timeline.js and be used by app.js.");
   failed = true;
 }
 if (!indexHtml.includes("quickTakeList") || !appSource.includes("data-quick-play-take") || !appSource.includes("data-quick-vocal-take") || !appSource.includes("sendTakeToVocal")) {
