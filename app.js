@@ -3391,14 +3391,11 @@ function renderBatchPanel(targets) {
   const scope = els.batchScopeSelect.value;
   els.batchStatus.textContent = targets.length ? `${targets.length} raw` : "No raw";
   if (targets.length) {
-    els.batchMeta.textContent =
-      scope === "track"
-        ? `Will render ${targets.length} raw take(s) on this track.`
-        : `Will render ${targets.length} raw take(s) across all vocal tracks.`;
+    els.batchMeta.textContent = getBatchScopeReadyText(scope, targets.length);
     return;
   }
 
-  els.batchMeta.textContent = scope === "track" ? "No raw takes on this track." : "No raw vocal takes available.";
+  els.batchMeta.textContent = getBatchScopeEmptyText(scope);
 }
 
 async function playComparisonTake(kind) {
@@ -5766,12 +5763,41 @@ function getNextProcessedVersion(sourceTakeId, presetId) {
 
 function getBatchTargets(selectedTake) {
   const rawTakes = getAllTakes().filter((take) => !take.processed);
-  if (els.batchScopeSelect.value === "all") {
+  const scope = els.batchScopeSelect.value;
+  if (scope === "all") {
     return rawTakes;
+  }
+
+  if (scope === "comp") {
+    return getCompTakes().filter((take) => !take.processed);
+  }
+
+  if (scope === "best") {
+    return rawTakes.filter((take) => take.bestTake);
   }
 
   const trackId = selectedTake?.trackId || state.armedTrackId;
   return rawTakes.filter((take) => take.trackId === trackId);
+}
+
+function getBatchScopeReadyText(scope, count) {
+  const messages = {
+    all: `Will render ${count} raw take(s) across all vocal tracks.`,
+    best: `Will render ${count} best raw take(s).`,
+    comp: `Will render ${count} raw take(s) from the comp lane.`,
+    track: `Will render ${count} raw take(s) on this track.`,
+  };
+  return messages[scope] || messages.track;
+}
+
+function getBatchScopeEmptyText(scope) {
+  const messages = {
+    all: "No raw vocal takes available.",
+    best: "No best raw takes selected.",
+    comp: "No raw takes in the comp lane.",
+    track: "No raw takes on this track.",
+  };
+  return messages[scope] || messages.track;
 }
 
 function getAudibleTakes() {

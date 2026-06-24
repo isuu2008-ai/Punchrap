@@ -48,6 +48,7 @@ node .\scripts\check.mjs
 - User-adjustable delay and reverb controls for vocal renders and custom presets
 - A/B comparison between raw and tuned takes
 - Batch render for the current track or all raw vocal takes
+- Batch render for comp lane raw takes and best raw takes
 - Processed take version labels for repeated renders from the same source take
 - Project save/open as a local `.punchlab.json` bundle
 - File System Access project save/open when available, with browser download/input fallback

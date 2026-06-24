@@ -89,6 +89,8 @@
 - Render/export queue
 - Export job queued/running/done/failed 상태 표시
 - Mix/stem/dry/tuned export 순차 실행
+- Batch scope 고도화 1차
+- comp lane raw takes와 best raw takes에 현재 체인을 batch render
 - Custom scale editor
 - 12 pitch-class toggle로 target scale 편집
 - Custom scale 프로젝트 저장/복원
