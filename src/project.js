@@ -8,6 +8,7 @@
       savedAt: new Date().toISOString(),
       settings,
       environment: sanitizeEnvironment(environment),
+      exportHistory: sanitizeExportHistory(state.exportQueue),
       markers: (state.markers || []).map((marker) => ({ ...marker })),
       presets: presets.map((preset) => ({ ...preset })),
       beat: state.beatArrayBuffer
@@ -79,6 +80,22 @@
     };
   }
 
+  function sanitizeExportHistory(exportQueue = []) {
+    return (Array.isArray(exportQueue) ? exportQueue : [])
+      .filter((job) => job && (job.status === "done" || job.status === "failed"))
+      .slice(-12)
+      .map((job) => ({
+        id: String(job.id || ""),
+        type: String(job.type || ""),
+        label: String(job.label || ""),
+        status: String(job.status || "idle"),
+        detail: String(job.detail || ""),
+        fileName: String(job.previewName || job.fileName || ""),
+        compressedStatus: String(job.compressedStatus || ""),
+        createdAt: job.createdAt instanceof Date ? job.createdAt.toISOString() : job.createdAt || null,
+      }));
+  }
+
   async function hydrateProjectBundle(bundle) {
     if (!bundle || bundle.app !== "PunchLab" || bundle.version !== PROJECT_VERSION) {
       throw new Error("Unsupported PunchLab project file.");
@@ -110,6 +127,7 @@
 
     return {
       environment: sanitizeEnvironment(bundle.environment || {}),
+      exportHistory: sanitizeExportHistory(bundle.exportHistory || []),
       settings: bundle.settings || {},
       markers: bundle.markers || [],
       presets: bundle.presets || [],

@@ -330,6 +330,8 @@
 - WAV RIFF INFO chunk에 title, artist, BPM, key, software 기록
 - Export settings manifest 1차
 - project zip `manifest.json`에 WAV depth, normalize, loudness target, 최근 분석 상태 저장
+- Export history manifest 1차
+- project bundle과 zip `manifest.json`/`preview.html`에 최근 완료/실패 export queue 요약 저장
 - Export preview 기본형
 - 완료된 export queue job의 마지막 WAV를 Preview 버튼으로 재생
 - Export redownload 기본형

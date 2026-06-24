@@ -3,6 +3,7 @@
     "manifest.json lists extracted audio assets for backup, transfer, and manual inspection.",
     "manifest.json includes session settings for tempo, key, tuning mode, punch, loop, and snap review.",
     "manifest.json includes exportSettings for WAV depth, normalize, loudness target, and recent analysis context.",
+    "manifest.json includes exportHistory for recent export queue result review.",
     "manifest.json includes automationManifest for plugin-style vocal chain parameter interpretation.",
     "manifest.json includes nativeAudio for driver, buffer, and latency environment context.",
     "manifest.json includes desktopReadiness for wrapper, native audio, and plugin host handoff context.",
@@ -22,6 +23,7 @@
     projectFilename = "session.punchlab.json",
     session = {},
     exportSettings = {},
+    exportHistory = [],
     pluginHost = {},
     automationManifest = {},
     nativeAudio = {},
@@ -36,6 +38,7 @@
       preview: "preview.html",
       session,
       exportSettings,
+      exportHistory: Array.isArray(exportHistory) ? exportHistory : [],
       pluginHost,
       automationManifest,
       nativeAudio,
@@ -423,6 +426,7 @@
     const markers = Array.isArray(manifest.markers) ? manifest.markers : [];
     const sessionManifest = manifest.session || {};
     const exportSettings = manifest.exportSettings || {};
+    const exportHistory = Array.isArray(manifest.exportHistory) ? manifest.exportHistory : [];
     const pluginHost = manifest.pluginHost || {};
     const automationManifest = manifest.automationManifest || {};
     const nativeAudio = manifest.nativeAudio || {};
@@ -443,6 +447,7 @@
     const automationSchemaRows = buildProjectZipPreviewAutomationSchemaRows(automationManifest);
     const presetRows = buildProjectZipPreviewPresetRows(presetManifest);
     const notesRows = buildProjectZipPreviewNotesRows(notesManifest, markers);
+    const exportHistoryRows = buildProjectZipPreviewExportHistoryRows(exportHistory);
 
     return `<!doctype html>
 <html lang="en">
@@ -484,6 +489,10 @@ ${getProjectZipPreviewStyles()}
         <article class="asset-card">
           <dl>${sessionRows}</dl>
         </article>
+      </section>
+      <section>
+        <h2>Export History</h2>
+        <div class="grid">${exportHistoryRows}</div>
       </section>
       <section>
         <h2>Desktop Handoff</h2>
@@ -845,6 +854,18 @@ ${getProjectZipPreviewPlayerScript()}
       </article>`;
   }
 
+  function buildProjectZipPreviewExportHistoryRows(exportHistory = []) {
+    return exportHistory.length
+      ? exportHistory
+        .map((job) => {
+          const detail = [job.fileName || job.detail || "No file", job.compressedStatus].filter(Boolean).join(" / ");
+          const meta = `${job.status || "idle"}${job.createdAt ? ` / ${formatTimestamp(job.createdAt)}` : ""}`;
+          return buildProjectZipPreviewTextCard(job.label || "Export", meta, detail);
+        })
+        .join("")
+      : `<article class="asset-card"><strong>No completed exports</strong><small>The project snapshot has no finished export queue jobs.</small></article>`;
+  }
+
   function buildProjectZipPreviewHandoffRows(desktopReadiness = {}) {
     return Array.isArray(desktopReadiness.handoffStages) && desktopReadiness.handoffStages.length
       ? desktopReadiness.handoffStages
@@ -948,6 +969,7 @@ ${getProjectZipPreviewPlayerScript()}
     buildProjectZipPreviewPresetRows,
     buildProjectZipPreviewPluginHostRows,
     buildProjectZipPreviewNotesRows,
+    buildProjectZipPreviewExportHistoryRows,
     buildProjectZipPreviewHandoffRows,
     formatProjectZipPreviewExportSettings,
     formatProjectZipPreviewPluginHostScan,

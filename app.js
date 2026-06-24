@@ -62,6 +62,7 @@ const state = {
   currentTakeResolve: null,
   pluginScanResult: null,
   loadedProjectEnvironment: null,
+  loadedProjectExportHistory: [],
   isPluginScanning: false,
   isRefreshingNativeStats: false,
   isQueuePlaying: false,
@@ -1262,6 +1263,7 @@ async function buildProjectZipFiles(bundle, projectFilename) {
     projectFilename,
     session: summarizeSessionManifest(bundle),
     exportSettings: summarizeExportSettings(),
+    exportHistory: summarizeExportHistory(state.exportQueue.length ? state.exportQueue : bundle.exportHistory || state.loadedProjectExportHistory),
     pluginHost: summarizePluginHostScan(),
     automationManifest: summarizeAutomationParameterManifest(),
     nativeAudio: summarizeNativeAudioEnvironment(),
@@ -1461,6 +1463,23 @@ function summarizeExportSettings() {
       }
       : null,
   };
+}
+
+function summarizeExportHistory(source = state.exportQueue) {
+  const jobs = Array.isArray(source) ? source : [];
+  return jobs
+    .filter((job) => job && (job.status === "done" || job.status === "failed"))
+    .slice(-12)
+    .map((job) => ({
+      id: String(job.id || ""),
+      type: String(job.type || ""),
+      label: String(job.label || ""),
+      status: String(job.status || "idle"),
+      detail: String(job.detail || ""),
+      fileName: String(job.previewName || job.fileName || ""),
+      compressedStatus: String(job.compressedStatus || ""),
+      createdAt: job.createdAt instanceof Date ? job.createdAt.toISOString() : job.createdAt || null,
+    }));
 }
 
 function summarizePluginHostScan() {
@@ -1846,6 +1865,7 @@ function formatBackupHistoryLabel(backup, index) {
 function applyLoadedProject(project) {
   revokeCurrentProjectAssets();
   state.loadedProjectEnvironment = project.environment || null;
+  state.loadedProjectExportHistory = Array.isArray(project.exportHistory) ? project.exportHistory : [];
 
   if (project.beat) {
     state.beatArrayBuffer = project.beat.arrayBuffer;

@@ -174,6 +174,7 @@ node .\scripts\check.mjs
 - Export preview playback and re-download from completed queue jobs
 - Project zip export containing the `.punchlab.json` bundle, manifest, README, beat asset, and take audio assets
 - Project zip manifests include WAV depth, normalize, loudness target, and recent analysis settings
+- Project bundles and zip manifests include sanitized recent export queue history
 - Project zip manifests and preview include vocal chain preset summaries
 - Project zip manifests and preview include scratch lyrics, marker lyrics, and session notes
 - Project zip manifests and preview include session settings for tempo, tuning mode, punch, loop, and snap

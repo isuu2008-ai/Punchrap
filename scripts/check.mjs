@@ -413,6 +413,10 @@ if (!projectZipSource.includes("formatProjectZipPreviewDesktopReadiness(desktopR
   console.error("Project zip preview must display the desktop readiness snapshot.");
   failed = true;
 }
+if (!readFileSync("src/project.js", "utf8").includes("exportHistory: sanitizeExportHistory(state.exportQueue)") || !projectZipSource.includes("manifest.json includes exportHistory") || !projectZipSource.includes("buildProjectZipPreviewExportHistoryRows")) {
+  console.error("Project bundles and zip previews must preserve sanitized export queue history.");
+  failed = true;
+}
 if (!projectZipSource.includes("formatProjectZipPreviewPluginHostScan(pluginHost)") || !projectZipSource.includes("manifest.pluginHost || {}") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewHtml")) {
   console.error("Project zip preview must display plugin host scan summary.");
   failed = true;
