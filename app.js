@@ -406,8 +406,7 @@ function renderNativeAudioSummary(desktopReadiness = window.PunchLabDesktop?.get
 }
 
 function formatRuntimeLatency(value) {
-  const latencyMs = Number(value);
-  return Number.isFinite(latencyMs) ? `Latency ${Math.round(latencyMs)} ms` : "";
+  return window.PunchLabFormat.formatRuntimeLatency(value);
 }
 
 function getDisplayRoundTripLatency(desktopReadiness) {
@@ -417,8 +416,7 @@ function getDisplayRoundTripLatency(desktopReadiness) {
 }
 
 function formatDisplaySampleRate(value) {
-  const sampleRate = Number(value);
-  return Number.isFinite(sampleRate) && sampleRate > 0 ? `${(sampleRate / 1000).toFixed(sampleRate % 1000 ? 1 : 0)} kHz` : "";
+  return window.PunchLabFormat.formatDisplaySampleRate(value);
 }
 
 function getDisplaySampleRate(desktopReadiness) {
@@ -434,10 +432,7 @@ function getDisplayLatencyStatsUpdatedAt(desktopReadiness) {
 }
 
 function formatDisplayTimestamp(value) {
-  const timestamp = value ? new Date(value) : null;
-  return timestamp && !Number.isNaN(timestamp.getTime())
-    ? `Updated ${timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
-    : "";
+  return window.PunchLabFormat.formatDisplayTimestamp(value);
 }
 
 function renderPluginScanStatus(desktopReadiness = window.PunchLabDesktop?.getReadiness?.()) {

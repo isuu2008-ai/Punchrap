@@ -58,6 +58,23 @@
     return value < 0 ? `L${Math.round(Math.abs(value) * 100)}` : `R${Math.round(value * 100)}`;
   }
 
+  function formatRuntimeLatency(value) {
+    const latencyMs = Number(value);
+    return Number.isFinite(latencyMs) ? `Latency ${Math.round(latencyMs)} ms` : "";
+  }
+
+  function formatDisplaySampleRate(value) {
+    const sampleRate = Number(value);
+    return Number.isFinite(sampleRate) && sampleRate > 0 ? `${(sampleRate / 1000).toFixed(sampleRate % 1000 ? 1 : 0)} kHz` : "";
+  }
+
+  function formatDisplayTimestamp(value) {
+    const timestamp = value ? new Date(value) : null;
+    return timestamp && !Number.isNaN(timestamp.getTime())
+      ? `Updated ${timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+      : "";
+  }
+
   function escapeHtml(value) {
     return String(value ?? "")
       .replace(/&/g, "&amp;")
@@ -75,7 +92,10 @@
     formatLufs,
     formatPan,
     formatPercent,
+    formatDisplaySampleRate,
+    formatDisplayTimestamp,
     formatRatio,
+    formatRuntimeLatency,
     formatSemitones,
     formatSigned,
     gainToDb,

@@ -236,6 +236,8 @@
 - take 파일명, title, short name, latency tag 생성을 `src/takes.js`로 분리
 - Format utility module split 1차
 - duration, gain/dB, LUFS, pan, percent, semitone, HTML escape 표시 포맷을 `src/format.js`로 분리
+- Native display formatter split 1차
+- native latency, sample rate, freshness timestamp 표시 포맷을 `src/format.js`로 분리
 - Project zip asset/timeline formatter split 1차
 - project zip preview의 beat section, marker rows, comp lane rows를 `src/project-zip.js`로 분리
 - Project zip take card formatter split 1차

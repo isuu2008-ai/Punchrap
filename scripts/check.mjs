@@ -314,7 +314,7 @@ if (!takesSource.includes("window.PunchLabTakes") || !takesSource.includes("sort
   failed = true;
 }
 const formatSource = readFileSync("src/format.js", "utf8");
-if (!formatSource.includes("window.PunchLabFormat") || !formatSource.includes("formatDuration") || !formatSource.includes("formatGainDb") || !formatSource.includes("formatLufs") || !formatSource.includes("escapeHtml") || !appSource.includes("PunchLabFormat.formatDuration") || !appSource.includes("PunchLabFormat.formatGainDb") || !appSource.includes("PunchLabFormat.formatLufs") || !appSource.includes("PunchLabFormat.escapeHtml")) {
+if (!formatSource.includes("window.PunchLabFormat") || !formatSource.includes("formatDuration") || !formatSource.includes("formatGainDb") || !formatSource.includes("formatLufs") || !formatSource.includes("formatRuntimeLatency") || !formatSource.includes("formatDisplaySampleRate") || !formatSource.includes("formatDisplayTimestamp") || !formatSource.includes("escapeHtml") || !appSource.includes("PunchLabFormat.formatDuration") || !appSource.includes("PunchLabFormat.formatGainDb") || !appSource.includes("PunchLabFormat.formatLufs") || !appSource.includes("PunchLabFormat.formatRuntimeLatency") || !appSource.includes("PunchLabFormat.formatDisplaySampleRate") || !appSource.includes("PunchLabFormat.formatDisplayTimestamp") || !appSource.includes("PunchLabFormat.escapeHtml")) {
   console.error("Shared display formatting must live in src/format.js and be used by app.js.");
   failed = true;
 }

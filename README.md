@@ -169,7 +169,7 @@ node .\scripts\check.mjs
 - Export filename, single group, stem group, compressed-format, and job-detail planning lives in `src/export-plan.js`
 - Timeline snap, grid, marker normalization, region trim, fade, color, region group, input formatting, numeric comparison, undo snapshot, and percent mapping policy lives in `src/timeline.js`
 - Take sorting, best-to-comp ordering, comp order moves, filename, display metadata, and processed-version policy lives in `src/takes.js`
-- Shared display formatting for durations, dB values, pan, percentages, LUFS, and HTML escaping lives in `src/format.js`
+- Shared display formatting for durations, dB values, pan, percentages, LUFS, native latency/sample-rate timestamps, and HTML escaping lives in `src/format.js`
 - Project zip preview beat, marker, and comp rows are formatted in `src/project-zip.js`
 - Project zip comp lane rows show best/version/preset/tune context for selected vocal takes
 - Project zip preview take cards and their processed-chain summaries are formatted in `src/project-zip.js`
