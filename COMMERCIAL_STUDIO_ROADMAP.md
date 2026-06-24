@@ -97,6 +97,8 @@
 - 완료된 export queue job의 마지막 WAV를 Preview 버튼으로 재생
 - Project zip export asset 포함형
 - `.punchlab.json`, manifest, README, beat asset, take audio asset을 `.punchlab.zip`에 저장
+- Read-only mix preview 1차
+- project zip에 `preview.html`을 포함해 압축 해제 후 beat/take/marker/comp 정보를 읽기 전용으로 검토
 - File System Access 파일 계층 1차
 - 지원 브라우저에서는 Save/Open 버튼이 OS 파일 선택창을 사용하고, 미지원 환경에서는 기존 download/input으로 fallback
 - Project templates 1차

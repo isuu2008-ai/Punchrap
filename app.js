@@ -947,7 +947,9 @@ async function buildProjectZipFiles(bundle, projectFilename) {
     app: "PunchLab",
     exportedAt: new Date().toISOString(),
     project: projectFilename,
+    preview: "preview.html",
     beat: null,
+    markers: [],
     takes: [],
   };
 
@@ -998,16 +1000,171 @@ async function buildProjectZipFiles(bundle, projectFilename) {
     });
   }
 
+  manifest.markers = normalizeMarkers(bundle.markers).map((marker) => ({
+    id: marker.id,
+    type: marker.type,
+    time: marker.time,
+    comment: marker.comment,
+    lyricLines: getLyricLineCount(marker.lyrics),
+  }));
+  files["preview.html"] = buildProjectZipPreviewHtml(manifest, bundle, projectFilename);
   files["manifest.json"] = JSON.stringify(manifest, null, 2);
   files["README.txt"] = [
     "PunchLab project archive",
     "",
     `${projectFilename} is the full PunchLab project bundle used by the current web app.`,
+    "preview.html is a read-only browser preview for quick review after extracting the zip.",
     "manifest.json lists extracted audio assets for backup, transfer, and manual inspection.",
     "assets/beat contains the loaded beat when available.",
     "assets/takes contains recorded and processed take audio files.",
   ].join("\n");
   return files;
+}
+
+function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
+  const settings = bundle.settings || {};
+  const metadata = settings.exportMetadata || {};
+  const title = metadata.title || state.beatFileName || "PunchLab Session";
+  const artist = metadata.artist || "PunchLab";
+  const bpm = settings.bpm || Number(els.bpmInput.value) || 140;
+  const key = settings.key || els.keySelect.value || "C minor";
+  const takes = [...manifest.takes].sort(
+    (left, right) => (left.startTime || 0) - (right.startTime || 0) || String(left.trackName).localeCompare(String(right.trackName)),
+  );
+  const compTakes = takes
+    .filter((take) => take.compSelected)
+    .sort((left, right) => (left.compOrder || 0) - (right.compOrder || 0));
+
+  const beatSection = manifest.beat
+    ? `
+      <section>
+        <h2>Beat</h2>
+        <article class="asset-card">
+          <strong>${escapeHtml(manifest.beat.fileName)}</strong>
+          <small>${formatFileSize(manifest.beat.bytes)}</small>
+          <audio controls src="${escapeHtml(manifest.beat.path)}"></audio>
+        </article>
+      </section>`
+    : "";
+  const markerRows = manifest.markers.length
+    ? manifest.markers
+      .map(
+        (marker) => `
+          <tr>
+            <td>${escapeHtml(formatDuration(marker.time))}</td>
+            <td>${escapeHtml(marker.type)}</td>
+            <td>${escapeHtml(marker.comment || "")}</td>
+            <td>${marker.lyricLines}</td>
+          </tr>`,
+      )
+      .join("")
+    : `<tr><td colspan="4">No markers</td></tr>`;
+  const takeRows = takes.length
+    ? takes
+      .map(
+        (take) => `
+          <article class="asset-card">
+            <div class="asset-heading">
+              <div>
+                <strong>${escapeHtml(take.name)}</strong>
+                <small>${escapeHtml(take.trackName)} / ${escapeHtml(getRegionGroupLabel(take.regionGroup))}</small>
+              </div>
+              <span>${take.bestTake ? "Best" : take.processed ? "Tuned" : "Raw"}</span>
+            </div>
+            <dl>
+              <div><dt>Start</dt><dd>${escapeHtml(formatDuration(take.startTime))}</dd></div>
+              <div><dt>Length</dt><dd>${escapeHtml(formatDuration(take.duration))}</dd></div>
+              <div><dt>Size</dt><dd>${escapeHtml(formatFileSize(take.bytes))}</dd></div>
+            </dl>
+            <audio controls src="${escapeHtml(take.path)}"></audio>
+          </article>`,
+      )
+      .join("")
+    : `<p>No take audio assets exported.</p>`;
+  const compRows = compTakes.length
+    ? compTakes
+      .map((take, index) => `<li><span>${index + 1}</span>${escapeHtml(take.name)} <small>${escapeHtml(take.trackName)}</small></li>`)
+      .join("")
+    : `<li>No comp lane takes selected.</li>`;
+
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>${escapeHtml(title)} - PunchLab Preview</title>
+    <style>
+      :root { color-scheme: dark; --bg: #080a09; --panel: #101511; --line: #273129; --text: #f1f5ef; --muted: #8b978f; --lime: #c8ff4d; --cyan: #41e6d0; }
+      * { box-sizing: border-box; }
+      body { margin: 0; padding: 24px; color: var(--text); background: var(--bg); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      main { max-width: 1120px; margin: 0 auto; display: grid; gap: 18px; }
+      header, section { border: 1px solid var(--line); background: var(--panel); border-radius: 8px; padding: 18px; }
+      h1, h2, p { margin: 0; }
+      h1 { font-size: 32px; line-height: 1; }
+      h2 { margin-bottom: 12px; font-size: 15px; text-transform: uppercase; color: var(--cyan); }
+      small, p { color: var(--muted); }
+      .meta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+      .meta span, .asset-heading span { border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; color: var(--lime); font-size: 12px; font-weight: 800; }
+      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
+      .asset-card { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: #0b0f0d; }
+      .asset-heading { display: flex; align-items: start; justify-content: space-between; gap: 10px; }
+      audio { width: 100%; }
+      dl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0; }
+      dt { color: var(--muted); font-size: 10px; text-transform: uppercase; }
+      dd { margin: 3px 0 0; font-size: 13px; font-weight: 800; }
+      table { width: 100%; border-collapse: collapse; }
+      th, td { padding: 8px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+      th { color: var(--muted); font-size: 11px; text-transform: uppercase; }
+      ol { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+      li { display: flex; gap: 8px; align-items: center; }
+      li span { width: 28px; height: 28px; display: grid; place-items: center; color: #050706; background: var(--lime); border-radius: 6px; font-weight: 900; }
+      code { color: var(--cyan); }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <p>Read-only PunchLab project preview</p>
+        <h1>${escapeHtml(title)}</h1>
+        <div class="meta">
+          <span>${escapeHtml(artist)}</span>
+          <span>${escapeHtml(String(bpm))} BPM</span>
+          <span>${escapeHtml(key)}</span>
+          <span>${takes.length} takes</span>
+          <span>${manifest.markers.length} markers</span>
+        </div>
+        <p>Open <code>${escapeHtml(projectFilename)}</code> in PunchLab to edit the full session.</p>
+      </header>
+      ${beatSection}
+      <section>
+        <h2>Comp Lane</h2>
+        <ol>${compRows}</ol>
+      </section>
+      <section>
+        <h2>Timeline Markers</h2>
+        <table>
+          <thead><tr><th>Time</th><th>Type</th><th>Comment</th><th>Lyric lines</th></tr></thead>
+          <tbody>${markerRows}</tbody>
+        </table>
+      </section>
+      <section>
+        <h2>Take Audio</h2>
+        <div class="grid">${takeRows}</div>
+      </section>
+    </main>
+  </body>
+</html>`;
+}
+
+function formatFileSize(bytes) {
+  const safeBytes = Math.max(0, Number(bytes) || 0);
+  if (safeBytes < 1024) {
+    return `${safeBytes} B`;
+  }
+  if (safeBytes < 1024 * 1024) {
+    return `${(safeBytes / 1024).toFixed(1)} KB`;
+  }
+  return `${(safeBytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function reserveZipPath(usedPaths, requestedPath) {
