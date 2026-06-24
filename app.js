@@ -53,6 +53,7 @@ const state = {
   isAutosaving: false,
   lastBackupAt: 0,
   hasAutosave: false,
+  backupHistory: [],
   currentTakeAudio: null,
   currentTakeId: null,
   currentTakeResolve: null,
@@ -132,6 +133,7 @@ const els = {
   saveProjectButton: document.querySelector("#saveProjectButton"),
   saveProjectZipButton: document.querySelector("#saveProjectZipButton"),
   recoverProjectButton: document.querySelector("#recoverProjectButton"),
+  recoverySelect: document.querySelector("#recoverySelect"),
   templateSelect: document.querySelector("#templateSelect"),
   templateMeta: document.querySelector("#templateMeta"),
   applyTemplateButton: document.querySelector("#applyTemplateButton"),
@@ -489,6 +491,7 @@ function bindEvents() {
   els.openProjectButton.addEventListener("click", openProject);
   els.projectInput.addEventListener("change", loadProject);
   els.recoverProjectButton.addEventListener("click", recoverAutosave);
+  els.recoverySelect.addEventListener("change", updateRecoveryButton);
   els.addMarkerButton.addEventListener("click", addTimelineMarker);
   els.timelineSnapSelect.addEventListener("change", updateTimelineSnapMode);
   els.timelineUndoButton.addEventListener("click", undoTimelineEdit);
@@ -1376,12 +1379,20 @@ async function recoverAutosave() {
 
   try {
     els.sessionState.textContent = "Recovering";
-    const autosaveBundle = await window.PunchLabStorage.loadAutosave();
-    const backup = await window.PunchLabStorage.loadLatestBackup?.();
-    const candidates = [
-      { label: "Autosave", bundle: autosaveBundle },
-      { label: "Backup", bundle: backup?.bundle },
-    ].filter((candidate) => candidate.bundle);
+    const selectedRecovery = els.recoverySelect?.value || "autosave";
+    let candidates = [];
+    if (selectedRecovery.startsWith("backup:")) {
+      const backupId = selectedRecovery.slice("backup:".length);
+      const backup = await window.PunchLabStorage.loadBackup?.(backupId);
+      candidates = [{ label: "Backup", bundle: backup?.bundle }].filter((candidate) => candidate.bundle);
+    } else {
+      const autosaveBundle = await window.PunchLabStorage.loadAutosave();
+      const backup = await window.PunchLabStorage.loadLatestBackup?.();
+      candidates = [
+        { label: "Autosave", bundle: autosaveBundle },
+        { label: "Backup", bundle: backup?.bundle },
+      ].filter((candidate) => candidate.bundle);
+    }
 
     if (!candidates.length) {
       els.sessionState.textContent = "No recovery";
@@ -1410,6 +1421,7 @@ async function recoverAutosave() {
     stopAll();
     applyLoadedProject(recoveredProject);
     els.sessionState.textContent = `${recoveredLabel} recovered`;
+    await checkAutosave();
   } catch (error) {
     els.sessionState.textContent = "Recovery failed";
     console.error(error);
@@ -1425,6 +1437,8 @@ async function checkAutosave() {
     state.hasAutosave = window.PunchLabStorage.hasRecovery
       ? await window.PunchLabStorage.hasRecovery()
       : await window.PunchLabStorage.hasAutosave();
+    state.backupHistory = window.PunchLabStorage.listBackups ? await window.PunchLabStorage.listBackups() : [];
+    renderRecoverySelect();
     updateRecoveryButton();
   } catch (error) {
     console.error(error);
@@ -1459,6 +1473,8 @@ async function saveCurrentAutosave() {
     if (window.PunchLabStorage.saveBackup && now - state.lastBackupAt > 60000) {
       await window.PunchLabStorage.saveBackup(bundle);
       state.lastBackupAt = now;
+      state.backupHistory = window.PunchLabStorage.listBackups ? await window.PunchLabStorage.listBackups() : state.backupHistory;
+      renderRecoverySelect();
     }
     state.hasAutosave = true;
   } catch (error) {
@@ -1475,6 +1491,37 @@ function updateRecoveryButton() {
   }
 
   els.recoverProjectButton.disabled = state.isAutosaving || !state.hasAutosave;
+  if (els.recoverySelect) {
+    els.recoverySelect.disabled = state.isAutosaving || !state.hasAutosave;
+  }
+}
+
+function renderRecoverySelect() {
+  if (!els.recoverySelect) {
+    return;
+  }
+
+  const currentValue = els.recoverySelect.value || "autosave";
+  const backupOptions = state.backupHistory.map((backup, index) => ({
+    label: formatBackupHistoryLabel(backup, index),
+    value: `backup:${backup.id}`,
+  }));
+  const values = ["autosave", ...backupOptions.map((option) => option.value)];
+  const options = [
+    `<option value="autosave">Autosave</option>`,
+    ...backupOptions.map((option) => `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`),
+  ];
+  els.recoverySelect.innerHTML = options.join("");
+  els.recoverySelect.value = values.includes(currentValue) ? currentValue : "autosave";
+}
+
+function formatBackupHistoryLabel(backup, index) {
+  const when = backup.savedAt ? new Date(backup.savedAt) : null;
+  const time = when && !Number.isNaN(when.getTime())
+    ? when.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    : `Backup ${index + 1}`;
+  const name = backup.title || backup.beatName || `Backup ${index + 1}`;
+  return `${time} ${name}`;
 }
 
 function applyLoadedProject(project) {

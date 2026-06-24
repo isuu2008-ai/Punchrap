@@ -40,6 +40,32 @@
       .sort((a, b) => String(b.savedAt || "").localeCompare(String(a.savedAt || "")))[0] || null;
   }
 
+  async function listBackups() {
+    const db = await openDb();
+    const backups = await requestToPromise(db.transaction(BACKUP_STORE_NAME, "readonly").objectStore(BACKUP_STORE_NAME).getAll());
+    db.close();
+    return backups
+      .filter((backup) => backup?.bundle)
+      .sort((a, b) => String(b.savedAt || "").localeCompare(String(a.savedAt || "")))
+      .map((backup) => ({
+        id: backup.id,
+        savedAt: backup.savedAt,
+        beatName: backup.bundle?.beat?.fileName || "",
+        title: backup.bundle?.settings?.exportMetadata?.title || "",
+      }));
+  }
+
+  async function loadBackup(id) {
+    if (!id) {
+      return null;
+    }
+
+    const db = await openDb();
+    const backup = await requestToPromise(db.transaction(BACKUP_STORE_NAME, "readonly").objectStore(BACKUP_STORE_NAME).get(id));
+    db.close();
+    return backup?.bundle ? backup : null;
+  }
+
   async function hasAutosave() {
     return Boolean(await loadAutosave());
   }
@@ -117,7 +143,9 @@
     hasAutosave,
     hasRecovery,
     loadAutosave,
+    loadBackup,
     loadLatestBackup,
+    listBackups,
     saveBackup,
     saveAutosave,
   };

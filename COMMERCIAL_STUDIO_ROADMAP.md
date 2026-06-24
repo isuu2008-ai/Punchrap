@@ -41,6 +41,8 @@
 - Recover 버튼으로 autosave 복원
 - Rolling project backup 기본형
 - IndexedDB에 최근 project backup 5개를 보관하고 Recover가 autosave 실패 시 최신 backup을 fallback으로 복원
+- Version history 1차
+- 상단 History select에서 최근 rolling backup을 골라 특정 버전으로 복원
 - Storage Layer `src/storage.js` 분리
 - Device Layer `src/devices.js` 분리
 - 브라우저 input/output 장치 목록, mic constraints, playback sink routing을 UI 밖 모듈로 분리

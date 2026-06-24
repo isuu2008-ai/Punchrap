@@ -203,6 +203,24 @@ h1 {
   height: 15px;
 }
 
+.project-history-select {
+  min-height: 36px;
+  width: 132px;
+  min-width: 118px;
+  color: var(--text);
+  background: #111613;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0 9px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.project-history-select:disabled {
+  color: var(--muted);
+  opacity: 0.58;
+}
+
 .file-action input {
   display: none;
 }
