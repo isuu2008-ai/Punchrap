@@ -51,6 +51,7 @@ const requiredFiles = [
   "desktop-host-manifest.json",
   "desktop-wrapper-manifest.json",
   "plugin-host-manifest.json",
+  "desktop-package-manifest.json",
   "assets/punchlab-icon.svg",
   "sw.js",
 ];

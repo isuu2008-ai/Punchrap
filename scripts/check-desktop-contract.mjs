@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 const wrapper = readJson("desktop-wrapper-manifest.json");
 const host = readJson("desktop-host-manifest.json");
 const plugin = readJson("plugin-host-manifest.json");
+const packageManifest = readJson("desktop-package-manifest.json");
 const indexHtml = readFileSync("index.html", "utf8");
 const desktopSource = readFileSync("src/desktop.js", "utf8");
 let failed = false;
@@ -43,6 +44,7 @@ const requiredMeta = {
   "punchlab-desktop-manifest": "./desktop-host-manifest.json",
   "punchlab-wrapper-manifest": "./desktop-wrapper-manifest.json",
   "punchlab-plugin-host-manifest": "./plugin-host-manifest.json",
+  "punchlab-desktop-package-manifest": "./desktop-package-manifest.json",
 };
 
 for (const [name, content] of Object.entries(requiredMeta)) {
@@ -92,6 +94,62 @@ if (wrapper.pluginHost?.scanMethod !== plugin.scan?.nativeMethod) {
 }
 if (wrapper.pluginHost?.requiresCapability !== plugin.requiredCapabilities?.[0]) {
   fail("Wrapper plugin capability must match plugin host manifest.");
+}
+if (host.packageManifest !== "desktop-package-manifest.json" || wrapper.packageManifest !== host.packageManifest) {
+  fail("Desktop host and wrapper manifests must reference desktop-package-manifest.json.");
+}
+
+requireString(packageManifest.appId, "packageManifest.appId");
+requireString(packageManifest.appName, "packageManifest.appName");
+requireString(packageManifest.preferredWrapper?.framework, "packageManifest.preferredWrapper.framework");
+requireString(packageManifest.entry?.webEntry, "packageManifest.entry.webEntry");
+requireString(packageManifest.entry?.devServer, "packageManifest.entry.devServer");
+if (packageManifest.appId !== wrapper.appId || packageManifest.appId !== host.appId) {
+  fail("Desktop package appId must match host and wrapper manifests.");
+}
+if (packageManifest.appName !== wrapper.appName || packageManifest.appName !== host.appName) {
+  fail("Desktop package appName must match host and wrapper manifests.");
+}
+if (packageManifest.entry?.webEntry !== wrapper.shell?.entry) {
+  fail("Desktop package web entry must match wrapper shell entry.");
+}
+if (packageManifest.entry?.devServer !== wrapper.shell?.devServer) {
+  fail("Desktop package dev server must match wrapper shell devServer.");
+}
+if (packageManifest.preferredWrapper?.framework !== "Tauri") {
+  fail("Desktop package manifest must keep Tauri as the preferred wrapper.");
+}
+
+const packageArtifacts = packageManifest.requiredArtifacts || [];
+for (const artifact of packageArtifacts) {
+  if (!existsSync(artifact)) {
+    fail(`Desktop package required artifact is missing: ${artifact}`);
+  }
+}
+for (const artifact of ["desktop-package-manifest.json", "desktop-host-manifest.json", "desktop-wrapper-manifest.json", "plugin-host-manifest.json", "src/native-bridge.js", "src/desktop.js"]) {
+  if (!packageArtifacts.includes(artifact)) {
+    fail(`Desktop package manifest must list required artifact: ${artifact}`);
+  }
+}
+
+const packageStageIds = new Set((packageManifest.packagingStages || []).map((stage) => stage.id));
+for (const stageId of ["wrapper-scaffold", "file-association", "native-audio-bridge", "plugin-host-bridge"]) {
+  if (!packageStageIds.has(stageId)) {
+    fail(`Desktop package stage missing: ${stageId}`);
+  }
+}
+
+const noRewriteBoundary = packageManifest.nativeMigrationGate?.noRewriteBoundary || [];
+for (const boundary of ["src/engine-contract.js", "src/chain-params.js", "src/project.js", "src/native-adapter.js"]) {
+  if (!noRewriteBoundary.includes(boundary)) {
+    fail(`Desktop package no-rewrite boundary missing: ${boundary}`);
+  }
+}
+const verificationCommands = packageManifest.verificationCommands || [];
+for (const command of ["node scripts/check.mjs", "node scripts/check-desktop-contract.mjs"]) {
+  if (!verificationCommands.includes(command)) {
+    fail(`Desktop package verification command missing: ${command}`);
+  }
 }
 
 for (const [contractName, contractPath] of Object.entries(host.contracts || {})) {
@@ -145,6 +203,9 @@ if (nativeAudioEngine.requiresExclusiveAudioThread !== true) {
 }
 if (!desktopSource.includes("nativeAudioEngine") || !desktopSource.includes("getNativeAudioContractStatus")) {
   fail("Desktop readiness must expose native audio engine performance contract status.");
+}
+if (!desktopSource.includes("packageManifestPath")) {
+  fail("Desktop runtime manifest must expose the desktop package manifest path.");
 }
 
 if (failed) {

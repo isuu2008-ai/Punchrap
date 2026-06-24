@@ -5,6 +5,7 @@
   "bridgeGlobal": "__PUNCHLAB_NATIVE__",
   "projectFormat": ".punchlab.json",
   "bundleFormat": ".punchlab.zip",
+  "packageManifest": "desktop-package-manifest.json",
   "requiredNativeMethods": [
     "getCapabilities",
     "getDevices",

@@ -140,6 +140,8 @@
 - project zip `preview.html` take 카드에 region group/color metadata 표시
 - Recording quick take handoff 1차
 - 녹음 화면 최근 take 리스트에서 바로 듣기와 Vocal 탭 전송 제공
+- Desktop package manifest 1차
+- Tauri 우선 wrapper, native 전환 gate, core 재작성 금지 boundary를 manifest/check로 고정
 - `.punchlab.json` 로컬 프로젝트 저장/복원
 - processed take `v1`, `v2` 버전 관리
 - processed take 버전/체인 정보 저장 포맷 포함

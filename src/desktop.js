@@ -43,6 +43,7 @@
       manifestPath: "./desktop-host-manifest.json",
       wrapperManifestPath: "./desktop-wrapper-manifest.json",
       pluginHostManifestPath: "./plugin-host-manifest.json",
+      packageManifestPath: "./desktop-package-manifest.json",
       projectFormat: ".punchlab.json",
       bundleFormat: ".punchlab.zip",
       wrapper: {

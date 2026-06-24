@@ -2,6 +2,7 @@
   "appId": "ai.isuu2008.punchrap",
   "appName": "PunchLab",
   "wrapperVersion": 1,
+  "packageManifest": "desktop-package-manifest.json",
   "shell": {
     "devServer": "http://localhost:4173",
     "entry": "index.html",

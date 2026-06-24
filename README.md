@@ -125,6 +125,7 @@ node .\scripts\check.mjs
 - Export panel reports native MP3/M4A handoff readiness through compressed-audio capability
 - Native engine adapter exposes compressed audio export handoff through `exportCompressedAudio`
 - Desktop readiness separates compressed export method availability from compressed-audio capability
+- Desktop package manifest defines the Tauri-first wrapper, native migration gate, and no-rewrite core boundary
 - Export queue with sequential job status for mix, stems, beat stem, vocal stem, dry vocals, and tuned vocals
 - Export queue retry, remove, and clear-finished controls
 - WAV export metadata for artist, title, BPM, key, and software
