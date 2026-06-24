@@ -38,6 +38,8 @@ const state = {
   exportJobSeq: 1,
   exportPreviewAudio: null,
   lastExportNormalizeGain: 1,
+  isAnalyzingLoudness: false,
+  loudnessReport: null,
   isRenderingVocal: false,
   autosaveTimer: 0,
   isAutosaving: false,
@@ -203,6 +205,7 @@ const els = {
   exportStemsButton: document.querySelector("#exportStemsButton"),
   exportDryVocalsButton: document.querySelector("#exportDryVocalsButton"),
   exportTunedVocalsButton: document.querySelector("#exportTunedVocalsButton"),
+  analyzeLoudnessButton: document.querySelector("#analyzeLoudnessButton"),
   exportStatusText: document.querySelector("#exportStatusText"),
   exportList: document.querySelector("#exportList"),
   exportArtistInput: document.querySelector("#exportArtistInput"),
@@ -314,6 +317,7 @@ function bindEvents() {
   els.exportStemsButton.addEventListener("click", exportTrackStems);
   els.exportDryVocalsButton.addEventListener("click", exportDryVocals);
   els.exportTunedVocalsButton.addEventListener("click", exportTunedVocals);
+  els.analyzeLoudnessButton.addEventListener("click", analyzeLoudness);
   els.exportArtistInput.addEventListener("input", updateExportMetadata);
   els.exportTitleInput.addEventListener("input", updateExportMetadata);
   els.exportNormalizeInput.addEventListener("change", updateExportMetadata);
@@ -2896,6 +2900,8 @@ function renderExportPanel() {
   els.exportList.innerHTML = `
     <div class="export-section-heading">Sources</div>
     ${sourceRows}
+    <div class="export-section-heading">Loudness</div>
+    ${renderLoudnessReport()}
     <div class="export-section-heading">Queue</div>
     ${queueRows}
   `;
@@ -2903,6 +2909,40 @@ function renderExportPanel() {
   els.exportList.querySelectorAll("[data-preview-export]").forEach((button) => {
     button.addEventListener("click", () => playExportPreview(button.dataset.previewExport));
   });
+}
+
+function renderLoudnessReport() {
+  if (state.isAnalyzingLoudness) {
+    return `<span class="empty-takes">Analyzing full mix...</span>`;
+  }
+
+  const report = state.loudnessReport;
+  if (!report) {
+    return `<span class="empty-takes">No loudness analysis yet</span>`;
+  }
+
+  const stale = report.sourceSignature !== getMixSourceSignature();
+  const clippingClass = report.clippingSamples > 0 ? " warning" : "";
+  return `
+    <div class="loudness-grid">
+      <div class="export-row${stale ? " warning" : ""}">
+        <strong>Integrated</strong>
+        <small>${formatLufs(report.integratedLufs)}${stale ? " / stale" : ""}</small>
+      </div>
+      <div class="export-row">
+        <strong>Peak</strong>
+        <small>${formatDb(report.peakDbfs)} dBFS</small>
+      </div>
+      <div class="export-row">
+        <strong>Target gain</strong>
+        <small>${formatDb(report.recommendedGainDb)} dB to -14 LUFS</small>
+      </div>
+      <div class="export-row${clippingClass}">
+        <strong>Clipping</strong>
+        <small>${report.clippingSamples} samples</small>
+      </div>
+    </div>
+  `;
 }
 
 function formatExportRowCount(row) {
@@ -2926,6 +2966,28 @@ function getExportMetadata() {
     key: getPitchModeLabel(),
     software: "PunchLab",
   };
+}
+
+function getMixSourceSignature() {
+  return JSON.stringify({
+    beatBytes: state.beatArrayBuffer?.byteLength || 0,
+    beatName: state.beatFileName || "",
+    takes: getAudibleTakes().map((take) => {
+      const track = findTrack(take.trackId);
+      return [
+        take.id,
+        take.startTime || 0,
+        take.duration || 0,
+        getTakeClipGain(take),
+        getTakeFadeIn(take),
+        getTakeFadeOut(take),
+        track?.volume ?? 0,
+        track?.pan ?? 0,
+        track?.muted ? 1 : 0,
+        track?.solo ? 1 : 0,
+      ];
+    }),
+  });
 }
 
 function renderTimeline() {
@@ -3320,6 +3382,10 @@ function exportFullMix() {
 }
 
 async function renderFullMixBlob() {
+  return encodeWav(applyExportNormalize(await renderFullMixBuffer()), getExportMetadata());
+}
+
+async function renderFullMixBuffer() {
   const audibleTakes = getAudibleTakes();
   const sampleRate = state.audioContext?.sampleRate || 48000;
   const decodeContext = new OfflineAudioContext(2, 1, sampleRate);
@@ -3349,7 +3415,43 @@ async function renderFullMixBlob() {
     scheduleBuffer(renderContext, buffer, take.startTime || 0, getTrackOutputVolume(track), track.pan, take);
   });
 
-  return encodeWav(applyExportNormalize(await renderContext.startRendering()), getExportMetadata());
+  return renderContext.startRendering();
+}
+
+async function analyzeLoudness() {
+  if (!window.PunchLabAudio?.analyzeLoudness) {
+    els.sessionState.textContent = "Audio analyzer missing";
+    return;
+  }
+
+  if (!state.beatArrayBuffer && !getAudibleTakes().length) {
+    els.sessionState.textContent = "No audible mix";
+    return;
+  }
+
+  try {
+    state.isAnalyzingLoudness = true;
+    els.sessionState.textContent = "Analyzing loudness";
+    els.exportStatusText.textContent = "Analyzing";
+    updateExportButtons();
+    const audioBuffer = await renderFullMixBuffer();
+    state.loudnessReport = {
+      ...window.PunchLabAudio.analyzeLoudness(audioBuffer),
+      analyzedAt: new Date(),
+      sourceSignature: getMixSourceSignature(),
+      sourceCount: getAudibleTakes().length + (state.beatArrayBuffer ? 1 : 0),
+    };
+    els.sessionState.textContent = `Loudness ${formatLufs(state.loudnessReport.integratedLufs)}`;
+    els.exportStatusText.textContent = "Loudness ready";
+  } catch (error) {
+    state.loudnessReport = null;
+    els.sessionState.textContent = "Loudness failed";
+    els.exportStatusText.textContent = "Failed";
+    console.error(error);
+  } finally {
+    state.isAnalyzingLoudness = false;
+    updateExportButtons();
+  }
 }
 
 async function exportTrackStems() {
@@ -3827,6 +3929,22 @@ function formatGainDb(gain) {
   return `${db >= 0 ? "+" : ""}${db.toFixed(1)} dB`;
 }
 
+function formatDb(value) {
+  if (!Number.isFinite(value)) {
+    return "-inf";
+  }
+
+  return `${value >= 0 ? "+" : ""}${value.toFixed(1)}`;
+}
+
+function formatLufs(value) {
+  if (!Number.isFinite(value)) {
+    return "-inf LUFS";
+  }
+
+  return `${value.toFixed(1)} LUFS`;
+}
+
 function formatSigned(value) {
   return `${value >= 0 ? "+" : ""}${value}`;
 }
@@ -4101,6 +4219,14 @@ function updateExportButtons() {
   els.exportStemsButton.disabled = !hasStems;
   els.exportDryVocalsButton.disabled = !hasDry;
   els.exportTunedVocalsButton.disabled = !hasTuned;
+  if (els.analyzeLoudnessButton) {
+    const analyzeLabel = els.analyzeLoudnessButton.querySelector(".button-label");
+    els.analyzeLoudnessButton.disabled = state.isAnalyzingLoudness || !hasAudibleSources;
+    els.analyzeLoudnessButton.classList.toggle("rendering", state.isAnalyzingLoudness);
+    if (analyzeLabel) {
+      analyzeLabel.textContent = state.isAnalyzingLoudness ? "Analyzing" : "Analyze loudness";
+    }
+  }
   els.exportStemsButton.classList.toggle("rendering", state.isExportingAssets);
   els.exportDryVocalsButton.classList.toggle("rendering", state.isExportingAssets);
   els.exportTunedVocalsButton.classList.toggle("rendering", state.isExportingAssets);

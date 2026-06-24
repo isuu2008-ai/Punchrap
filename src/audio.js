@@ -96,7 +96,118 @@
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
+  function analyzeLoudness(audioBuffer) {
+    const channels = Math.min(2, audioBuffer.numberOfChannels);
+    const sampleRate = audioBuffer.sampleRate;
+    const sampleCount = audioBuffer.length;
+    const wholeEnergy = getMeanSquare(audioBuffer, 0, sampleCount, channels);
+    const peak = getPeak(audioBuffer, channels);
+    const clippingSamples = countClippingSamples(audioBuffer, channels);
+    const blocks = getLoudnessBlocks(audioBuffer, channels, sampleRate);
+    const gatedBlocks = getGatedBlocks(blocks);
+    const integratedEnergy = mean(gatedBlocks.map((block) => block.energy), wholeEnergy);
+    const integratedLufs = energyToLufs(integratedEnergy);
+    const peakDbfs = amplitudeToDb(peak);
+    const rmsDbfs = energyToDb(wholeEnergy);
+
+    return {
+      integratedLufs,
+      peakDbfs,
+      rmsDbfs,
+      dynamicRange: Number.isFinite(integratedLufs) && Number.isFinite(peakDbfs) ? peakDbfs - integratedLufs : 0,
+      recommendedGainDb: Number.isFinite(integratedLufs) ? -14 - integratedLufs : 0,
+      clippingSamples,
+      duration: sampleCount / sampleRate,
+      sampleRate,
+      measuredBlocks: blocks.length,
+      gatedBlocks: gatedBlocks.length,
+    };
+  }
+
+  function getLoudnessBlocks(audioBuffer, channels, sampleRate) {
+    const blockSize = Math.max(1, Math.round(sampleRate * 0.4));
+    const hopSize = Math.max(1, Math.round(sampleRate * 0.1));
+    const blocks = [];
+
+    for (let start = 0; start < audioBuffer.length; start += hopSize) {
+      const end = Math.min(audioBuffer.length, start + blockSize);
+      if (end <= start) {
+        continue;
+      }
+
+      const energy = getMeanSquare(audioBuffer, start, end, channels);
+      blocks.push({ energy, lufs: energyToLufs(energy) });
+    }
+
+    return blocks;
+  }
+
+  function getGatedBlocks(blocks) {
+    const absoluteGated = blocks.filter((block) => block.lufs > -70);
+    if (!absoluteGated.length) {
+      return [];
+    }
+
+    const ungatedLufs = energyToLufs(mean(absoluteGated.map((block) => block.energy)));
+    const gate = Math.max(-70, ungatedLufs - 10);
+    return absoluteGated.filter((block) => block.lufs > gate);
+  }
+
+  function getMeanSquare(audioBuffer, start, end, channels) {
+    let sum = 0;
+    let count = 0;
+    for (let channel = 0; channel < channels; channel += 1) {
+      const data = audioBuffer.getChannelData(channel);
+      for (let index = start; index < end; index += 1) {
+        sum += data[index] * data[index];
+        count += 1;
+      }
+    }
+    return count ? sum / count : 0;
+  }
+
+  function getPeak(audioBuffer, channels) {
+    let peak = 0;
+    for (let channel = 0; channel < channels; channel += 1) {
+      const data = audioBuffer.getChannelData(channel);
+      for (let index = 0; index < data.length; index += 1) {
+        peak = Math.max(peak, Math.abs(data[index]));
+      }
+    }
+    return peak;
+  }
+
+  function countClippingSamples(audioBuffer, channels) {
+    let count = 0;
+    for (let channel = 0; channel < channels; channel += 1) {
+      const data = audioBuffer.getChannelData(channel);
+      for (let index = 0; index < data.length; index += 1) {
+        if (Math.abs(data[index]) >= 0.999) {
+          count += 1;
+        }
+      }
+    }
+    return count;
+  }
+
+  function mean(values, fallback = 0) {
+    return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : fallback;
+  }
+
+  function energyToLufs(energy) {
+    return energy > 0 ? -0.691 + 10 * Math.log10(energy) : Number.NEGATIVE_INFINITY;
+  }
+
+  function energyToDb(energy) {
+    return energy > 0 ? 10 * Math.log10(energy) : Number.NEGATIVE_INFINITY;
+  }
+
+  function amplitudeToDb(amplitude) {
+    return amplitude > 0 ? 20 * Math.log10(amplitude) : Number.NEGATIVE_INFINITY;
+  }
+
   window.PunchLabAudio = {
+    analyzeLoudness,
     downloadBlob,
     encodeWav,
   };

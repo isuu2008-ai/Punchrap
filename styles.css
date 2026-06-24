@@ -503,6 +503,16 @@ h1 {
   font-size: 11px;
 }
 
+.export-row.warning {
+  border-color: rgba(255, 183, 74, 0.56);
+}
+
+.loudness-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
 .export-job-row {
   align-items: flex-start;
 }
@@ -1702,6 +1712,10 @@ textarea:focus {
 
   .comp-row-actions .mini-button {
     flex: 1;
+  }
+
+  .loudness-grid {
+    grid-template-columns: 1fr;
   }
 
   .chain-route {

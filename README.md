@@ -38,6 +38,7 @@ Then open `http://localhost:4173`.
 - Project zip export containing the `.punchlab.json` bundle, manifest, README, beat asset, and take audio assets
 - Recording waveform capture with saved take waveform thumbnails
 - Export peak normalization to -1 dBFS
+- Export loudness analysis with LUFS estimate, peak, clipping count, and -14 LUFS target gain
 - IndexedDB autosave with project recovery
 - BPM-based metronome toggle for recording and session playback
 - Global shortcuts for transport, metronome, stop, and tab switching outside text inputs
@@ -57,6 +58,6 @@ See [COMMERCIAL_STUDIO_ROADMAP.md](./COMMERCIAL_STUDIO_ROADMAP.md) for the comme
 
 ## Next DSP Steps
 
-- LUFS loudness analysis
 - Formant-aware pitch shifting
 - Better EQ, compressor, delay, reverb, and limiter controls
+- True peak and K-weighted loudness refinement
