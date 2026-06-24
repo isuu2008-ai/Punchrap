@@ -132,6 +132,8 @@
 - project zip `preview.html`의 take 카드에서 schema label/unit 기반 주요 automation 값을 표시
 - Zip processed lineage manifest 1차
 - project zip `manifest.json`과 `preview.html`에 processed take source/version/preset/tune 정보 표시
+- Zip processed lineage preview detail 1차
+- project zip `preview.html` take 카드에 preset, tune, key/scale mode lineage 표시
 - `.punchlab.json` 로컬 프로젝트 저장/복원
 - processed take `v1`, `v2` 버전 관리
 - processed take 버전/체인 정보 저장 포맷 포함

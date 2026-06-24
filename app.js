@@ -1321,6 +1321,9 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
               <div><dt>Length</dt><dd>${escapeHtml(formatDuration(take.duration))}</dd></div>
               <div><dt>Version</dt><dd>${escapeHtml(formatPreviewRenderVersion(take))}</dd></div>
               <div><dt>Source</dt><dd>${escapeHtml(formatPreviewSourceTake(take))}</dd></div>
+              <div><dt>Preset</dt><dd>${escapeHtml(formatPreviewPreset(take))}</dd></div>
+              <div><dt>Tune</dt><dd>${escapeHtml(formatPreviewTune(take))}</dd></div>
+              <div><dt>Key</dt><dd>${escapeHtml(formatPreviewKeyMode(take))}</dd></div>
               <div><dt>Gain</dt><dd>${escapeHtml(formatPreviewGain(take.volume, take.clipGain))}</dd></div>
               <div><dt>Chain</dt><dd>${escapeHtml(formatAutomationStateSummary(take.automationState, automationManifest))}</dd></div>
             </dl>
@@ -1788,6 +1791,23 @@ function formatPreviewSourceTake(take) {
   }
 
   return take.sourceTakeName || take.sourceTakeId || "Unknown raw";
+}
+
+function formatPreviewPreset(take) {
+  return take?.processed ? take.presetName || take.presetId || "Processed" : "None";
+}
+
+function formatPreviewTune(take) {
+  return take?.processed ? take.tuneSignature || "Unknown tune" : "None";
+}
+
+function formatPreviewKeyMode(take) {
+  const chain = take?.chain || {};
+  if (!take?.processed) {
+    return "Project key";
+  }
+
+  return [chain.key, chain.scaleMode].filter(Boolean).join(" / ") || "Unknown key";
 }
 
 function summarizeProcessedChain(take) {

@@ -191,6 +191,10 @@ if (!appSource.includes("formatAutomationParameterValue") || !appSource.includes
   console.error("Project zip preview must summarize processed take automation values with schema labels.");
   failed = true;
 }
+if (!appSource.includes("formatPreviewPreset") || !appSource.includes("formatPreviewTune") || !appSource.includes("formatPreviewKeyMode")) {
+  console.error("Project zip preview must display processed take preset, tune, and key lineage.");
+  failed = true;
+}
 if (!appSource.includes("formatPreviewNativeAudio")) {
   console.error("Project zip preview must display the native audio environment summary.");
   failed = true;
