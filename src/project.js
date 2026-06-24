@@ -187,9 +187,123 @@
     return `punchlab-${slug || "session"}.punchlab.json`;
   }
 
+  function makeProjectZipFilename(beatFileName) {
+    return makeProjectFilename(beatFileName).replace(/\.punchlab\.json$/, ".punchlab.zip");
+  }
+
+  function buildProjectZip(files) {
+    const encoder = new TextEncoder();
+    const entries = Object.entries(files).map(([name, content]) => ({
+      name,
+      nameBytes: encoder.encode(name),
+      data: typeof content === "string" ? encoder.encode(content) : new Uint8Array(content),
+    }));
+    const localParts = [];
+    const centralParts = [];
+    let offset = 0;
+
+    entries.forEach((entry) => {
+      const crc = crc32(entry.data);
+      const localHeader = makeZipLocalHeader(entry, crc);
+      localParts.push(localHeader, entry.data);
+      centralParts.push(makeZipCentralHeader(entry, crc, offset));
+      offset += localHeader.length + entry.data.length;
+    });
+
+    const centralOffset = offset;
+    const centralSize = centralParts.reduce((sum, part) => sum + part.length, 0);
+    const endRecord = makeZipEndRecord(entries.length, centralSize, centralOffset);
+    return new Blob([...localParts, ...centralParts, endRecord], { type: "application/zip" });
+  }
+
+  function makeZipLocalHeader(entry, crc) {
+    const output = new Uint8Array(30 + entry.nameBytes.length);
+    const view = new DataView(output.buffer);
+    const timeDate = getZipTimeDate();
+    view.setUint32(0, 0x04034b50, true);
+    view.setUint16(4, 20, true);
+    view.setUint16(6, 0x0800, true);
+    view.setUint16(8, 0, true);
+    view.setUint16(10, timeDate.time, true);
+    view.setUint16(12, timeDate.date, true);
+    view.setUint32(14, crc, true);
+    view.setUint32(18, entry.data.length, true);
+    view.setUint32(22, entry.data.length, true);
+    view.setUint16(26, entry.nameBytes.length, true);
+    view.setUint16(28, 0, true);
+    output.set(entry.nameBytes, 30);
+    return output;
+  }
+
+  function makeZipCentralHeader(entry, crc, offset) {
+    const output = new Uint8Array(46 + entry.nameBytes.length);
+    const view = new DataView(output.buffer);
+    const timeDate = getZipTimeDate();
+    view.setUint32(0, 0x02014b50, true);
+    view.setUint16(4, 20, true);
+    view.setUint16(6, 20, true);
+    view.setUint16(8, 0x0800, true);
+    view.setUint16(10, 0, true);
+    view.setUint16(12, timeDate.time, true);
+    view.setUint16(14, timeDate.date, true);
+    view.setUint32(16, crc, true);
+    view.setUint32(20, entry.data.length, true);
+    view.setUint32(24, entry.data.length, true);
+    view.setUint16(28, entry.nameBytes.length, true);
+    view.setUint16(30, 0, true);
+    view.setUint16(32, 0, true);
+    view.setUint16(34, 0, true);
+    view.setUint16(36, 0, true);
+    view.setUint32(38, 0, true);
+    view.setUint32(42, offset, true);
+    output.set(entry.nameBytes, 46);
+    return output;
+  }
+
+  function makeZipEndRecord(entryCount, centralSize, centralOffset) {
+    const output = new Uint8Array(22);
+    const view = new DataView(output.buffer);
+    view.setUint32(0, 0x06054b50, true);
+    view.setUint16(8, entryCount, true);
+    view.setUint16(10, entryCount, true);
+    view.setUint32(12, centralSize, true);
+    view.setUint32(16, centralOffset, true);
+    return output;
+  }
+
+  function getZipTimeDate() {
+    const now = new Date();
+    return {
+      time: (now.getHours() << 11) | (now.getMinutes() << 5) | Math.floor(now.getSeconds() / 2),
+      date: ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate(),
+    };
+  }
+
+  function crc32(bytes) {
+    let crc = 0xffffffff;
+    for (let index = 0; index < bytes.length; index += 1) {
+      crc = ZIP_CRC_TABLE[(crc ^ bytes[index]) & 0xff] ^ (crc >>> 8);
+    }
+    return (crc ^ 0xffffffff) >>> 0;
+  }
+
+  const ZIP_CRC_TABLE = (() => {
+    const table = new Uint32Array(256);
+    for (let index = 0; index < table.length; index += 1) {
+      let value = index;
+      for (let bit = 0; bit < 8; bit += 1) {
+        value = value & 1 ? 0xedb88320 ^ (value >>> 1) : value >>> 1;
+      }
+      table[index] = value >>> 0;
+    }
+    return table;
+  })();
+
   window.PunchLabProject = {
+    buildProjectZip,
     buildProjectBundle,
     hydrateProjectBundle,
     makeProjectFilename,
+    makeProjectZipFilename,
   };
 })();

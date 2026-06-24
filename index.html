@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PunchLab</title>
     <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="./styles.css?v=20260624-21" />
+    <link rel="stylesheet" href="./styles.css?v=20260624-22" />
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
-    <script src="./src/dsp.js?v=20260624-21" defer></script>
-    <script src="./src/audio.js?v=20260624-21" defer></script>
-    <script src="./src/project.js?v=20260624-21" defer></script>
-    <script src="./src/storage.js?v=20260624-21" defer></script>
-    <script src="./app.js?v=20260624-21" defer></script>
+    <script src="./src/dsp.js?v=20260624-22" defer></script>
+    <script src="./src/audio.js?v=20260624-22" defer></script>
+    <script src="./src/project.js?v=20260624-22" defer></script>
+    <script src="./src/storage.js?v=20260624-22" defer></script>
+    <script src="./app.js?v=20260624-22" defer></script>
   </head>
   <body>
     <main class="studio-shell">
@@ -38,6 +38,10 @@
           <button id="saveProjectButton" class="mini-icon-button" type="button" title="Save project">
             <i data-lucide="save"></i>
             <span>Save</span>
+          </button>
+          <button id="saveProjectZipButton" class="mini-icon-button" type="button" title="Save project zip">
+            <i data-lucide="package"></i>
+            <span>Zip</span>
           </button>
           <label class="mini-icon-button file-action" title="Open project">
             <input id="projectInput" type="file" accept=".json,.punchlab.json,application/json" />

@@ -96,6 +96,7 @@ const els = {
   viewPanels: document.querySelectorAll("[data-view-panel]"),
   projectInput: document.querySelector("#projectInput"),
   saveProjectButton: document.querySelector("#saveProjectButton"),
+  saveProjectZipButton: document.querySelector("#saveProjectZipButton"),
   recoverProjectButton: document.querySelector("#recoverProjectButton"),
   beatInput: document.querySelector("#beatInput"),
   beatName: document.querySelector("#beatName"),
@@ -292,6 +293,7 @@ function bindEvents() {
   els.batchScopeSelect.addEventListener("change", renderVocalPanel);
   els.batchRenderButton.addEventListener("click", renderBatchVocalTakes);
   els.saveProjectButton.addEventListener("click", saveProject);
+  els.saveProjectZipButton.addEventListener("click", saveProjectZip);
   els.projectInput.addEventListener("change", loadProject);
   els.recoverProjectButton.addEventListener("click", recoverAutosave);
   els.addMarkerButton.addEventListener("click", addTimelineMarker);
@@ -532,6 +534,35 @@ async function saveProject() {
     console.error(error);
   } finally {
     els.saveProjectButton.disabled = false;
+  }
+}
+
+async function saveProjectZip() {
+  if (!window.PunchLabProject) {
+    els.sessionState.textContent = "Project module missing";
+    return;
+  }
+
+  try {
+    els.saveProjectZipButton.disabled = true;
+    els.sessionState.textContent = "Saving zip";
+    const bundle = await window.PunchLabProject.buildProjectBundle({
+      state,
+      tracks,
+      presets,
+      settings: getProjectSettings(),
+    });
+    const projectFilename = window.PunchLabProject.makeProjectFilename(state.beatFileName);
+    const zipBlob = window.PunchLabProject.buildProjectZip({
+      [projectFilename]: JSON.stringify(bundle, null, 2),
+    });
+    downloadBlob(zipBlob, window.PunchLabProject.makeProjectZipFilename(state.beatFileName));
+    els.sessionState.textContent = "Zip saved";
+  } catch (error) {
+    els.sessionState.textContent = "Zip failed";
+    console.error(error);
+  } finally {
+    els.saveProjectZipButton.disabled = false;
   }
 }
 

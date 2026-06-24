@@ -35,6 +35,7 @@ Then open `http://localhost:4173`.
 - Export queue with sequential job status for mix, stems, dry vocals, and tuned vocals
 - WAV export metadata for artist, title, BPM, key, and software
 - Export preview playback from completed queue jobs
+- Project zip export containing the current `.punchlab.json` bundle
 - IndexedDB autosave with project recovery
 - BPM-based metronome toggle for recording and session playback
 - Global shortcuts for transport, metronome, stop, and tab switching outside text inputs
@@ -53,7 +54,7 @@ See [COMMERCIAL_STUDIO_ROADMAP.md](./COMMERCIAL_STUDIO_ROADMAP.md) for the comme
 
 ## Next DSP Steps
 
-- Custom scale editing
+- Waveform recording view
 - Formant-aware pitch shifting
 - Better EQ, compressor, delay, reverb, and limiter controls
-- Project bundle zip
+- Export loudness normalize
