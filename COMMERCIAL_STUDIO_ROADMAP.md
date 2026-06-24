@@ -90,6 +90,8 @@
 - Track 이름 변경 시 기존 take 라벨, arm strip, timeline/export 표시까지 같이 갱신
 - BPM grid/snap 1차
 - Timeline에 BPM 기반 beat/bar grid를 그리고 marker/region start를 beat 또는 bar 단위로 snap
+- Region trim 1차
+- Source offset과 visible length로 비파괴 자르기를 저장하고 playback/export에 동일하게 반영
 - Waveform recording view
 - 녹음 중 waveform peak trail 표시
 - take별 waveform thumbnail 저장/복원

@@ -72,6 +72,7 @@ node .\scripts\check.mjs
 - Marker-linked lyric sections with project-persisted scratch lyrics
 - Timeline region duplicate/delete actions
 - Track rename with take label propagation
+- Non-destructive region trim controls with playback/export source-offset support
 
 ## Planning
 

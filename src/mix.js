@@ -2,7 +2,7 @@
   async function renderMixBuffer({ sampleRate = 48000, beatBuffer = null, takes = [] }) {
     const endPosition = Math.max(
       beatBuffer?.duration || 0,
-      ...takes.map((take) => (take.startTime || 0) + (take.buffer?.duration || take.duration || 0)),
+      ...takes.map((take) => (take.startTime || 0) + getScheduledDuration(take)),
       0.1,
     );
     const frameCount = Math.ceil(endPosition * sampleRate);
@@ -35,13 +35,18 @@
     const startTime = Math.max(0, Number(sourceSpec.startTime) || 0);
     const volume = Math.max(0, Number(sourceSpec.volume ?? 1));
     const pan = Math.max(-1, Math.min(1, Number(sourceSpec.pan) || 0));
+    const sourceOffset = Math.max(0, Number(sourceSpec.sourceOffset) || 0);
+    const duration = getScheduledDuration(sourceSpec);
+    if (duration <= 0) {
+      return;
+    }
 
     source.buffer = sourceSpec.buffer;
     applyGainAutomation(gain.gain, {
       volume: volume * Math.max(0, Number(sourceSpec.clipGain ?? 1)),
       fadeIn: Math.max(0, Number(sourceSpec.fadeIn) || 0),
       fadeOut: Math.max(0, Number(sourceSpec.fadeOut) || 0),
-      duration: Math.max(0, Number(sourceSpec.duration || sourceSpec.buffer.duration || 0)),
+      duration,
       startAt: startTime,
     });
     source.connect(gain);
@@ -53,7 +58,14 @@
       gain.connect(context.destination);
     }
 
-    source.start(startTime);
+    source.start(startTime, sourceOffset, duration);
+  }
+
+  function getScheduledDuration(sourceSpec) {
+    const bufferDuration = Math.max(0, Number(sourceSpec?.buffer?.duration) || 0);
+    const sourceOffset = Math.max(0, Number(sourceSpec?.sourceOffset) || 0);
+    const requestedDuration = Math.max(0, Number(sourceSpec?.duration || bufferDuration) || 0);
+    return Math.min(requestedDuration, Math.max(0, bufferDuration - sourceOffset));
   }
 
   function applyGainAutomation(audioParam, { volume, fadeIn, fadeOut, duration, startAt }) {

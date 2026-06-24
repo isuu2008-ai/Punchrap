@@ -732,7 +732,9 @@ async function buildProjectZipFiles(bundle, projectFilename) {
       compSelected: Boolean(take.compSelected),
       compOrder: Number.isFinite(Number(take.compOrder)) ? Number(take.compOrder) : null,
       startTime: take.startTime || 0,
-      duration: take.duration || 0,
+      duration: getTakeVisibleDuration(take),
+      sourceOffset: getTakeSourceOffset(take),
+      sourceDuration: getTakeSourceDuration(take),
       bytes: data.byteLength,
     });
   }
@@ -932,11 +934,15 @@ function applyLoadedProject(project) {
     tracks.length,
     ...project.tracks.map((track) => ({
       ...track,
-      takes: track.takes.map((take) => ({
-        ...take,
-        trackName: take.trackName || track.name,
-        url: URL.createObjectURL(take.blob),
-      })),
+      takes: track.takes.map((take) => {
+        const hydratedTake = {
+          ...take,
+          trackName: take.trackName || track.name,
+          url: URL.createObjectURL(take.blob),
+        };
+        normalizeTakeTrim(hydratedTake);
+        return hydratedTake;
+      }),
     })),
   );
 
@@ -1199,9 +1205,10 @@ async function playSession() {
 
   audibleTakes.forEach((take) => {
     const takeStart = take.startTime || 0;
+    const takeDuration = getTakeVisibleDuration(take);
     const offset = Math.max(0, origin - takeStart);
     const delay = takeStart - origin;
-    if (offset >= take.duration) {
+    if (offset >= takeDuration) {
       return;
     }
 
@@ -1247,18 +1254,21 @@ async function startSessionTake(take, offset) {
   }
 
   const track = findTrack(take.trackId);
-  if (!track || getTrackOutputVolume(track) <= 0 || offset >= take.duration) {
+  const takeDuration = getTakeVisibleDuration(take);
+  if (!track || getTrackOutputVolume(track) <= 0 || offset >= takeDuration) {
     return;
   }
 
   const ctx = await ensureAudioContext();
   const audio = new Audio(take.url);
-  audio.currentTime = Math.max(0, Math.min(offset, Math.max(0, take.duration - 0.05)));
+  const sourceOffset = getTakeSourceOffset(take);
+  const remainingDuration = Math.max(0, takeDuration - offset);
+  audio.currentTime = Math.max(0, Math.min(sourceOffset + offset, Math.max(0, sourceOffset + takeDuration - 0.05)));
 
   const source = ctx.createMediaElementSource(audio);
   const gain = ctx.createGain();
   const panner = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
-  const player = { takeId: take.id, trackId: track.id, take, audio, source, gain, panner };
+  const player = { takeId: take.id, trackId: track.id, take, audio, source, gain, panner, stopTimer: 0 };
 
   applyTakeGainAutomation(gain.gain, getTrackOutputVolume(track) * getTakeClipGain(take), take, offset, ctx.currentTime);
   source.connect(gain);
@@ -1283,6 +1293,10 @@ async function startSessionTake(take, offset) {
 
   try {
     await audio.play();
+    player.stopTimer = window.setTimeout(() => {
+      audio.pause();
+      removeSessionPlayer(player);
+    }, remainingDuration * 1000 + 40);
   } catch (error) {
     removeSessionPlayer(player);
     els.sessionState.textContent = "Playback blocked";
@@ -1295,6 +1309,7 @@ function removeSessionPlayer(player) {
   if (index >= 0) {
     state.sessionPlayers.splice(index, 1);
   }
+  window.clearTimeout(player.stopTimer);
 
   state.sessionPlayingTakeIds.delete(player.takeId);
   try {
@@ -1403,6 +1418,8 @@ function playTakeAudio(take, label) {
   stopCurrentTake(false);
   els.beatAudio.pause();
   const audio = new Audio(take.url);
+  const takeDuration = getTakeVisibleDuration(take);
+  audio.currentTime = getTakeSourceOffset(take);
   audio.volume = Math.min(1, getTakeClipGain(take));
   state.currentTakeAudio = audio;
   state.currentTakeId = take.id;
@@ -1411,6 +1428,7 @@ function playTakeAudio(take, label) {
 
   return new Promise((resolve) => {
     let settled = false;
+    let stopTimer = 0;
 
     const finish = (status) => {
       if (settled) {
@@ -1418,6 +1436,7 @@ function playTakeAudio(take, label) {
       }
 
       settled = true;
+      window.clearTimeout(stopTimer);
       if (state.currentTakeAudio === audio) {
         state.currentTakeAudio = null;
         state.currentTakeId = null;
@@ -1442,6 +1461,10 @@ function playTakeAudio(take, label) {
     audio
       .play()
       .then(() => {
+        stopTimer = window.setTimeout(() => {
+          audio.pause();
+          finish("ended");
+        }, takeDuration * 1000 + 40);
         els.sessionState.textContent = label;
       })
       .catch((error) => {
@@ -1733,6 +1756,7 @@ function saveTake() {
   const blob = new Blob(state.chunks, { type: state.mimeType || "audio/webm" });
   const url = URL.createObjectURL(blob);
   const latencySeconds = state.recordLatencyMs / 1000;
+  const duration = (performance.now() - state.recordStart) / 1000;
   const take = {
     id: crypto.randomUUID(),
     trackId: track.id,
@@ -1742,7 +1766,9 @@ function saveTake() {
     extension,
     createdAt: new Date(),
     startTime: Math.max(0, state.recordStartPosition - latencySeconds),
-    duration: (performance.now() - state.recordStart) / 1000,
+    duration,
+    sourceOffset: 0,
+    sourceDuration: duration,
     recordLatencyMs: state.recordLatencyMs,
     waveform: downsampleWaveform(state.recordWaveform, 240),
   };
@@ -2654,6 +2680,8 @@ async function renderProcessedTake(sourceTake, preset, tuneSettings) {
     createdAt: new Date(),
     startTime: sourceTake.startTime || 0,
     duration: rendered.duration,
+    sourceOffset: 0,
+    sourceDuration: rendered.duration,
     waveform: rendered.waveform,
     clipGain: sourceTake.clipGain ?? 1,
     fadeIn: sourceTake.fadeIn || 0,
@@ -3309,7 +3337,8 @@ function getMixSourceSignature() {
       return [
         take.id,
         take.startTime || 0,
-        take.duration || 0,
+        getTakeVisibleDuration(take),
+        getTakeSourceOffset(take),
         getTakeClipGain(take),
         getTakeFadeIn(take),
         getTakeFadeOut(take),
@@ -3408,6 +3437,16 @@ function renderTimeline() {
               <input type="number" min="0" step="0.1" value="${formatTimelineInputTime(take.startTime || 0)}" data-region-start="${take.id}" />
               <button class="mini-button" type="button" data-nudge-region="${take.id}" data-delta="0.1">+0.1</button>
             </div>
+            <div class="region-controls region-trim-controls">
+              <label>
+                Source
+                <input type="number" min="0" step="0.05" value="${getTakeSourceOffset(take).toFixed(2)}" data-region-source-offset="${take.id}" />
+              </label>
+              <label>
+                Length
+                <input type="number" min="0.05" step="0.05" value="${getTakeVisibleDuration(take).toFixed(2)}" data-region-duration="${take.id}" />
+              </label>
+            </div>
             <div class="region-controls">
               <label>
                 Gain
@@ -3436,6 +3475,12 @@ function renderTimeline() {
   });
   els.regionList.querySelectorAll("[data-region-gain]").forEach((input) => {
     input.addEventListener("change", () => setRegionClipGain(input.dataset.regionGain, input.value));
+  });
+  els.regionList.querySelectorAll("[data-region-source-offset]").forEach((input) => {
+    input.addEventListener("change", () => setRegionSourceOffset(input.dataset.regionSourceOffset, input.value));
+  });
+  els.regionList.querySelectorAll("[data-region-duration]").forEach((input) => {
+    input.addEventListener("change", () => setRegionDuration(input.dataset.regionDuration, input.value));
   });
   els.regionList.querySelectorAll("[data-region-fade-in]").forEach((input) => {
     input.addEventListener("change", () => setRegionFade(input.dataset.regionFadeIn, "in", input.value));
@@ -3534,6 +3579,9 @@ function createTimelineSnapshot() {
       id: take.id,
       name: take.name || null,
       startTime: take.startTime || 0,
+      duration: getTakeVisibleDuration(take),
+      sourceOffset: getTakeSourceOffset(take),
+      sourceDuration: getTakeSourceDuration(take),
       clipGain: take.clipGain ?? 1,
       fadeIn: take.fadeIn || 0,
       fadeOut: take.fadeOut || 0,
@@ -3552,6 +3600,10 @@ function restoreTimelineSnapshot(snapshot) {
 
     take.name = saved.name || null;
     take.startTime = Math.max(0, Number(saved.startTime) || 0);
+    take.duration = Math.max(0, Number(saved.duration) || 0);
+    take.sourceOffset = Math.max(0, Number(saved.sourceOffset) || 0);
+    take.sourceDuration = Math.max(0, Number(saved.sourceDuration) || 0);
+    normalizeTakeTrim(take);
     take.clipGain = Math.max(0, Number(saved.clipGain ?? 1));
     take.fadeIn = Math.max(0, Number(saved.fadeIn) || 0);
     take.fadeOut = Math.max(0, Number(saved.fadeOut) || 0);
@@ -3655,6 +3707,47 @@ function setRegionClipGain(takeId, value) {
   refreshTimelineEdit();
 }
 
+function setRegionSourceOffset(takeId, value) {
+  const take = findTake(takeId);
+  if (!take) {
+    return;
+  }
+
+  const sourceDuration = getTakeSourceDuration(take);
+  const maxOffset = Math.max(0, sourceDuration - 0.05);
+  const nextOffset = Math.max(0, Math.min(Number(value) || 0, maxOffset));
+  if (isSameTimelineNumber(getTakeSourceOffset(take), nextOffset)) {
+    renderTimeline();
+    return;
+  }
+
+  recordTimelineHistory();
+  take.sourceOffset = nextOffset;
+  normalizeTakeTrim(take);
+  els.sessionState.textContent = "Region trimmed";
+  refreshTimelineEdit();
+}
+
+function setRegionDuration(takeId, value) {
+  const take = findTake(takeId);
+  if (!take) {
+    return;
+  }
+
+  const maxDuration = Math.max(0, getTakeSourceDuration(take) - getTakeSourceOffset(take));
+  const nextDuration = maxDuration <= 0 ? 0 : Math.max(0.05, Math.min(Number(value) || 0.05, maxDuration));
+  if (isSameTimelineNumber(getTakeVisibleDuration(take), nextDuration)) {
+    renderTimeline();
+    return;
+  }
+
+  recordTimelineHistory();
+  take.duration = nextDuration;
+  normalizeTakeTrim(take);
+  els.sessionState.textContent = "Region length updated";
+  refreshTimelineEdit();
+}
+
 function setRegionFade(takeId, edge, value) {
   const take = findTake(takeId);
   if (!take) {
@@ -3711,6 +3804,7 @@ function duplicateTimelineRegion(takeId) {
     manualPitchTargets: clonePlainObject(sourceTake.manualPitchTargets),
     tuneSettings: clonePlainObject(sourceTake.tuneSettings),
   };
+  normalizeTakeTrim(duplicate);
 
   track.takes.push(duplicate);
   normalizeCompOrder();
@@ -4203,7 +4297,8 @@ function makeMixTakeSource({ take, track, buffer }) {
   return {
     buffer,
     startTime: take.startTime || 0,
-    duration: take.duration || buffer.duration,
+    sourceOffset: getTakeSourceOffset(take),
+    duration: getTakeVisibleDuration(take) || buffer.duration,
     volume: getTrackOutputVolume(track),
     pan: track?.pan || 0,
     clipGain: getTakeClipGain(take),
@@ -4582,6 +4677,38 @@ function isTrackAudible(track) {
 
 function getTrackOutputVolume(track) {
   return isTrackAudible(track) ? track.volume : 0;
+}
+
+function normalizeTakeTrim(take) {
+  const sourceDuration = getTakeSourceDuration(take);
+  take.sourceDuration = sourceDuration;
+  take.sourceOffset = getTakeSourceOffset(take);
+  const maxDuration = Math.max(0, sourceDuration - take.sourceOffset);
+  take.duration = maxDuration <= 0 ? 0 : Math.max(0.05, Math.min(Number(take.duration || maxDuration), maxDuration));
+  return take;
+}
+
+function getTakeSourceDuration(take) {
+  const duration = Math.max(0, Number(take?.duration) || 0);
+  const sourceOffset = Math.max(0, Number(take?.sourceOffset) || 0);
+  return Math.max(duration + sourceOffset, Number(take?.sourceDuration) || 0);
+}
+
+function getTakeSourceOffset(take) {
+  const sourceDuration = getTakeSourceDuration(take);
+  const sourceOffset = Math.max(0, Number(take?.sourceOffset) || 0);
+  return Math.min(sourceOffset, Math.max(0, sourceDuration - 0.05));
+}
+
+function getTakeVisibleDuration(take) {
+  const sourceDuration = getTakeSourceDuration(take);
+  const sourceOffset = getTakeSourceOffset(take);
+  const maxDuration = Math.max(0, sourceDuration - sourceOffset);
+  if (maxDuration <= 0) {
+    return 0;
+  }
+
+  return Math.max(0.05, Math.min(Number(take?.duration || maxDuration), maxDuration));
 }
 
 function setTrackName(trackId, value) {
