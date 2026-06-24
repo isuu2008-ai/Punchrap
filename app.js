@@ -294,6 +294,7 @@ const els = {
   timelineRegions: document.querySelector("#timelineRegions"),
   markerTypeSelect: document.querySelector("#markerTypeSelect"),
   markerTimeInput: document.querySelector("#markerTimeInput"),
+  markerCommentInput: document.querySelector("#markerCommentInput"),
   addMarkerButton: document.querySelector("#addMarkerButton"),
   timelineGrid: document.querySelector("#timelineGrid"),
   timelineSnapSelect: document.querySelector("#timelineSnapSelect"),
@@ -5238,11 +5239,14 @@ function addTimelineMarker() {
     id: crypto.randomUUID(),
     type: els.markerTypeSelect.value,
     time: snapTimelineTime(els.markerTimeInput.value),
-    comment: "",
+    comment: els.markerCommentInput?.value.trim() || "",
   };
   state.markers.push(marker);
   state.markers = normalizeMarkers(state.markers);
   els.markerTimeInput.value = formatTimelineInputTime(marker.time);
+  if (els.markerCommentInput) {
+    els.markerCommentInput.value = "";
+  }
   els.sessionState.textContent = "Marker added";
   refreshTimelineEdit();
 }

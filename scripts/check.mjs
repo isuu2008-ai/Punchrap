@@ -369,6 +369,10 @@ if (!projectZipSource.includes("createProjectZipMarkerManifestEntries") || !appS
   console.error("Project zip marker manifest entry policy must live in src/project-zip.js.");
   failed = true;
 }
+if (!indexHtml.includes('id="markerCommentInput"') || !appSource.includes('markerCommentInput: document.querySelector("#markerCommentInput")') || !appSource.includes('comment: els.markerCommentInput?.value.trim() || ""') || !appSource.includes('els.markerCommentInput.value = ""') || !appSource.includes("data-marker-comment") || !projectZipSource.includes('comment: String(marker.comment || "")')) {
+  console.error("Timeline markers must support comments from creation through editing and project zip manifest output.");
+  failed = true;
+}
 if (!projectZipSource.includes("buildProjectZipPreviewPlaybackData") || !projectZipSource.includes("buildProjectZipPreviewPlaybackData(manifest, takes)") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewHtml")) {
   console.error("Project zip preview playback data policy must live in src/project-zip.js and be used by app.js.");
   failed = true;
