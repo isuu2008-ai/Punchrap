@@ -48,6 +48,8 @@
 - desktop host manifest에 44.1/48kHz, 64/128/256 buffer, 10ms 이하 round-trip latency, exclusive audio thread 조건을 명시하고 contract check에서 검증
 - Native audio engine readiness payload 1차
 - desktop readiness가 native audio engine 성능 계약 충족 여부와 fixture capability를 runtime payload로 노출
+- Native audio readiness tooltip 1차
+- engine status tooltip에 native audio engine 성능 계약 detail을 노출해 별도 화면 추가 없이 전환 기준을 확인 가능하게 함
 - Native project file handoff 1차
 - saveProjectFile/openProjectFile optional native method를 Platform API와 project save/open 경로에 연결
 - Project file handoff readiness 1차

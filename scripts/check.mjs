@@ -74,6 +74,7 @@ if (desktopContractResult.status !== 0) {
 }
 
 const indexHtml = readFileSync("index.html", "utf8");
+const appSource = readFileSync("app.js", "utf8");
 for (const script of requiredScripts) {
   if (!indexHtml.includes(script)) {
     console.error(`Missing script reference: ${script}`);
@@ -128,6 +129,10 @@ for (const capability of pluginHostManifest.requiredCapabilities || []) {
 
 if (!indexHtml.includes("manifest.webmanifest")) {
   console.error("Missing web app manifest link.");
+  failed = true;
+}
+if (!appSource.includes("nativeAudioEngine?.detail")) {
+  console.error("app.js must surface native audio engine readiness detail in the engine status.");
   failed = true;
 }
 

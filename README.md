@@ -84,6 +84,7 @@ node .\scripts\check.mjs
 - Native bridge exposes optional latency statistics and buffer-size control through the engine adapter
 - Desktop contract check enforces native audio engine sample-rate, buffer-size, and latency targets
 - Desktop readiness exposes native audio engine performance contract status at runtime
+- Engine status tooltip includes native audio engine readiness detail without adding another visible panel
 - Timeline view with marker management and take region start/nudge controls
 - BPM-based timeline grid with optional beat/bar snap for markers and region starts
 - Region rename, color, clip gain, and fade in/out controls persisted in project files
