@@ -120,6 +120,50 @@
       .sort((a, b) => a.time - b.time);
   }
 
+  function createTimelineSnapshot({ markers = [], takes = [] } = {}) {
+    return {
+      markers: (Array.isArray(markers) ? markers : []).map((marker) => ({ ...marker })),
+      takes: (Array.isArray(takes) ? takes : []).map(createTimelineTakeSnapshot),
+    };
+  }
+
+  function createTimelineTakeSnapshot(take = {}) {
+    return {
+      id: take.id,
+      name: take.name || null,
+      startTime: take.startTime || 0,
+      duration: getTakeVisibleDuration(take),
+      sourceOffset: getTakeSourceOffset(take),
+      sourceDuration: getTakeSourceDuration(take),
+      clipGain: take.clipGain ?? 1,
+      regionColor: take.regionColor || null,
+      regionGroup: normalizeRegionGroup(take.regionGroup, take.trackId),
+      fadeIn: take.fadeIn || 0,
+      fadeOut: take.fadeOut || 0,
+    };
+  }
+
+  function normalizeTimelineTakeSnapshot(take = {}, trackId = "") {
+    const trim = normalizeTakeTrim({
+      duration: Math.max(0, Number(take.duration) || 0),
+      sourceOffset: Math.max(0, Number(take.sourceOffset) || 0),
+      sourceDuration: Math.max(0, Number(take.sourceDuration) || 0),
+    });
+
+    return {
+      name: take.name || null,
+      startTime: Math.max(0, Number(take.startTime) || 0),
+      duration: trim.duration,
+      sourceOffset: trim.sourceOffset,
+      sourceDuration: trim.sourceDuration,
+      clipGain: Math.max(0, Number(take.clipGain ?? 1)),
+      regionColor: normalizeRegionColor(take.regionColor) || null,
+      regionGroup: normalizeRegionGroup(take.regionGroup, trackId),
+      fadeIn: Math.max(0, Number(take.fadeIn) || 0),
+      fadeOut: Math.max(0, Number(take.fadeOut) || 0),
+    };
+  }
+
   function normalizeTakeTrim(take = {}) {
     const sourceDuration = getTakeSourceDuration(take);
     const sourceOffset = getTakeSourceOffset({ ...take, sourceDuration });
@@ -207,6 +251,8 @@
   }
 
   window.PunchLabTimeline = {
+    createTimelineSnapshot,
+    createTimelineTakeSnapshot,
     getBeatDuration,
     getDefaultRegionGroupForTrack,
     getRegionGroupLabel,
@@ -227,6 +273,7 @@
     normalizeRegionColor,
     normalizeRegionGroup,
     normalizeTakeTrim,
+    normalizeTimelineTakeSnapshot,
     normalizeTimelineSnapMode,
     nudgeTimelineTime,
     snapTimelineTime,

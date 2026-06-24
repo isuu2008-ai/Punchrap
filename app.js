@@ -5238,22 +5238,10 @@ function redoTimelineEdit() {
 }
 
 function createTimelineSnapshot() {
-  return {
-    markers: state.markers.map((marker) => ({ ...marker })),
-    takes: getAllTakes().map((take) => ({
-      id: take.id,
-      name: take.name || null,
-      startTime: take.startTime || 0,
-      duration: getTakeVisibleDuration(take),
-      sourceOffset: getTakeSourceOffset(take),
-      sourceDuration: getTakeSourceDuration(take),
-      clipGain: take.clipGain ?? 1,
-      regionColor: take.regionColor || null,
-      regionGroup: getTakeRegionGroup(take),
-      fadeIn: take.fadeIn || 0,
-      fadeOut: take.fadeOut || 0,
-    })),
-  };
+  return window.PunchLabTimeline.createTimelineSnapshot({
+    markers: state.markers,
+    takes: getAllTakes(),
+  });
 }
 
 function restoreTimelineSnapshot(snapshot) {
@@ -5265,17 +5253,17 @@ function restoreTimelineSnapshot(snapshot) {
       return;
     }
 
-    take.name = saved.name || null;
-    take.startTime = Math.max(0, Number(saved.startTime) || 0);
-    take.duration = Math.max(0, Number(saved.duration) || 0);
-    take.sourceOffset = Math.max(0, Number(saved.sourceOffset) || 0);
-    take.sourceDuration = Math.max(0, Number(saved.sourceDuration) || 0);
-    normalizeTakeTrim(take);
-    take.clipGain = Math.max(0, Number(saved.clipGain ?? 1));
-    take.regionColor = normalizeRegionColor(saved.regionColor) || null;
-    take.regionGroup = normalizeRegionGroup(saved.regionGroup, take.trackId);
-    take.fadeIn = Math.max(0, Number(saved.fadeIn) || 0);
-    take.fadeOut = Math.max(0, Number(saved.fadeOut) || 0);
+    const restored = window.PunchLabTimeline.normalizeTimelineTakeSnapshot(saved, take.trackId);
+    take.name = restored.name;
+    take.startTime = restored.startTime;
+    take.duration = restored.duration;
+    take.sourceOffset = restored.sourceOffset;
+    take.sourceDuration = restored.sourceDuration;
+    take.clipGain = restored.clipGain;
+    take.regionColor = restored.regionColor;
+    take.regionGroup = restored.regionGroup;
+    take.fadeIn = restored.fadeIn;
+    take.fadeOut = restored.fadeOut;
   });
 }
 
