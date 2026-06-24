@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PunchLab</title>
     <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="./styles.css?v=20260624-13" />
+    <link rel="stylesheet" href="./styles.css?v=20260624-14" />
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
-    <script src="./src/dsp.js?v=20260624-13" defer></script>
-    <script src="./src/audio.js?v=20260624-13" defer></script>
-    <script src="./src/project.js?v=20260624-13" defer></script>
-    <script src="./src/storage.js?v=20260624-13" defer></script>
-    <script src="./app.js?v=20260624-13" defer></script>
+    <script src="./src/dsp.js?v=20260624-14" defer></script>
+    <script src="./src/audio.js?v=20260624-14" defer></script>
+    <script src="./src/project.js?v=20260624-14" defer></script>
+    <script src="./src/storage.js?v=20260624-14" defer></script>
+    <script src="./app.js?v=20260624-14" defer></script>
   </head>
   <body>
     <main class="studio-shell">
@@ -99,6 +99,13 @@
                     <option>A minor</option>
                     <option>A# minor</option>
                     <option>B minor</option>
+                  </select>
+                </label>
+                <label>
+                  Scale
+                  <select id="scaleModeSelect">
+                    <option value="minor">Minor</option>
+                    <option value="chromatic">Chromatic</option>
                   </select>
                 </label>
                 <label class="gain-control">

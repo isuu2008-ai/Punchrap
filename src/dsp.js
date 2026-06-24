@@ -239,7 +239,7 @@
     };
   }
 
-  function getPitchPlan(analysis, keyValue = "C minor") {
+  function getPitchPlan(analysis, keyValue = "C minor", scaleMode = "minor") {
     if (!analysis || analysis.detectedMidi === null) {
       return {
         detectedLabel: "--",
@@ -252,11 +252,11 @@
     }
 
     const key = parseKey(keyValue);
-    const targetMidi = getNearestScaleMidi(analysis.detectedMidi, key.root);
+    const targetMidi = getNearestTargetMidi(analysis.detectedMidi, key.root, scaleMode);
     const correctionSemitones = targetMidi - analysis.detectedMidi;
-    const scaleFit = getScaleFit(analysis.noteClassCounts, key.root);
+    const scaleFit = scaleMode === "chromatic" ? 1 : getScaleFit(analysis.noteClassCounts, key.root);
     const frames = (analysis.frames || []).map((frame) => {
-      const frameTargetMidi = getNearestScaleMidi(frame.midi, key.root);
+      const frameTargetMidi = getNearestTargetMidi(frame.midi, key.root, scaleMode);
       return {
         ...frame,
         targetMidi: frameTargetMidi,
@@ -268,10 +268,11 @@
       detectedLabel: formatMidiNote(analysis.detectedMidi),
       targetLabel: formatMidiNote(targetMidi),
       correctionLabel: `${correctionSemitones >= 0 ? "+" : ""}${correctionSemitones.toFixed(1)} st`,
-      keyFitLabel: `${Math.round(scaleFit * 100)}%`,
+      keyFitLabel: scaleMode === "chromatic" ? "Chromatic" : `${Math.round(scaleFit * 100)}%`,
       correctionSemitones,
       targetMidi,
       detectedMidi: analysis.detectedMidi,
+      scaleMode,
       frames,
     };
   }
@@ -410,6 +411,14 @@
     }
 
     return best;
+  }
+
+  function getNearestTargetMidi(midi, root, scaleMode) {
+    if (scaleMode === "chromatic") {
+      return Math.round(midi);
+    }
+
+    return getNearestScaleMidi(midi, root);
   }
 
   function isScalePitchClass(midi, root) {

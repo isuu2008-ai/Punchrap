@@ -2,7 +2,7 @@
 
 이 문서는 PunchLab을 단순한 브라우저 녹음 장난감이 아니라, 실제로 쓸 수 있는 랩 녹음 스튜디오로 키우기 위한 체크리스트입니다.
 
-현재 PunchLab은 브라우저 기반 프로토타입입니다. 이미 녹음, 여러 트랙, take 관리, pitch 분석, frame-level 튠 렌더, 보컬 체인, 전체 믹스 export, A/B 비교, batch render까지 들어가 있습니다. 지금 단계에서는 브라우저로 계속 빠르게 기능을 검증하는 것이 맞습니다.
+현재 PunchLab은 브라우저 기반 프로토타입입니다. 이미 녹음, 여러 트랙, take 관리, pitch 분석, frame-level 튠 렌더, 보컬 체인, 전체 믹스 export, A/B 비교, batch render, minor/chromatic 튠 모드까지 들어가 있습니다. 지금 단계에서는 브라우저로 계속 빠르게 기능을 검증하는 것이 맞습니다.
 
 현재 추가 완료:
 
@@ -40,6 +40,8 @@
 - Vocal gate slider
 - Vocal de-ess slider
 - Gate/De-ess 값 custom preset과 render chain에 반영
+- Chromatic tune mode
+- Minor key lock / Chromatic 튠 모드 프로젝트 저장/복원
 
 ## 결론부터
 
@@ -388,9 +390,12 @@ VST3/AU 플러그인은 마지막에 가는 것이 맞습니다.
 5. stem export
 6. latency compensation
 7. pitch engine 개선
-8. DSP 모듈 분리
-9. desktop wrapper
-10. native audio engine
-11. VST3/AU plugin
+8. manual pitch lane
+9. undo/redo
+10. render/export queue
+11. DSP 모듈 추가 분리
+12. desktop wrapper
+13. native audio engine
+14. VST3/AU plugin
 
-현재는 1번에 들어온 상태입니다. 다음으로는 processed take 버전 관리와 project save/load가 중요합니다.
+현재는 1-7번의 기본선이 들어온 상태입니다. 다음으로는 manual pitch lane, undo/redo, render/export queue가 중요합니다.

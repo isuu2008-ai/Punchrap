@@ -93,6 +93,7 @@ const els = {
   bpmInput: document.querySelector("#bpmInput"),
   countInSelect: document.querySelector("#countInSelect"),
   keySelect: document.querySelector("#keySelect"),
+  scaleModeSelect: document.querySelector("#scaleModeSelect"),
   inputGainSlider: document.querySelector("#inputGainSlider"),
   inputGainText: document.querySelector("#inputGainText"),
   micButton: document.querySelector("#micButton"),
@@ -219,7 +220,14 @@ function bindEvents() {
   els.punchInInput.addEventListener("input", updatePunchFromInputs);
   els.punchOutInput.addEventListener("input", updatePunchFromInputs);
   els.recordLatencyInput.addEventListener("input", updateRecordLatency);
-  els.keySelect.addEventListener("change", renderVocalPanel);
+  els.keySelect.addEventListener("change", () => {
+    renderVocalPanel();
+    scheduleAutosave();
+  });
+  els.scaleModeSelect.addEventListener("change", () => {
+    renderVocalPanel();
+    scheduleAutosave();
+  });
   els.setPunchInButton.addEventListener("click", () => setPunchPoint("in"));
   els.setPunchOutButton.addEventListener("click", () => setPunchPoint("out"));
   els.beatAudio.addEventListener("timeupdate", maintainLoopPlayback);
@@ -647,6 +655,7 @@ function getProjectSettings() {
     bpm: Number(els.bpmInput.value) || 140,
     countIn: els.countInSelect.value,
     key: els.keySelect.value,
+    scaleMode: els.scaleModeSelect.value,
     inputGain: state.inputGain,
     armedTrackId: state.armedTrackId,
     selectedPresetId: state.selectedPresetId,
@@ -664,6 +673,7 @@ function applyProjectSettings(settings = {}) {
   els.bpmInput.value = settings.bpm || 140;
   els.countInSelect.value = settings.countIn || "0";
   els.keySelect.value = settings.key || "C minor";
+  els.scaleModeSelect.value = settings.scaleMode || "minor";
   els.inputGainSlider.value = settings.inputGain || 2;
   state.armedTrackId = tracks.some((track) => track.id === settings.armedTrackId)
     ? settings.armedTrackId
@@ -2056,6 +2066,7 @@ async function renderProcessedTake(sourceTake, preset, tuneSettings) {
       preset: { ...preset },
       tuneSettings: { ...tuneSettings },
       key: els.keySelect.value,
+      scaleMode: els.scaleModeSelect.value,
     },
     pitchAnalysis: renderedAnalysis,
     pitchPlan: getPitchPlan(renderedAnalysis),
@@ -2082,7 +2093,7 @@ function renderPitchPanel(analysis) {
   }
 
   const plan = getPitchPlan(analysis);
-  els.pitchKeyText.textContent = els.keySelect.value;
+  els.pitchKeyText.textContent = els.scaleModeSelect.value === "chromatic" ? "Chromatic" : els.keySelect.value;
   els.pitchDetectedText.textContent = plan.detectedLabel;
   els.pitchTargetText.textContent = plan.targetLabel;
   els.pitchCorrectionText.textContent = plan.correctionLabel;
@@ -2090,7 +2101,7 @@ function renderPitchPanel(analysis) {
 }
 
 function getPitchPlan(analysis) {
-  return window.PunchLabDSP.getPitchPlan(analysis, els.keySelect.value);
+  return window.PunchLabDSP.getPitchPlan(analysis, els.keySelect.value, els.scaleModeSelect.value);
 }
 
 function renderTakes() {

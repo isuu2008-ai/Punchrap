@@ -20,7 +20,7 @@ Then open `http://localhost:4173`.
 - Main, Double, Adlib L, Adlib R, and Hook tracks
 - Take recording and download
 - Rap vocal chain preset UI
-- Pitch analysis against the selected minor key
+- Pitch analysis against the selected minor key or chromatic mode
 - Frame-level pitch correction and offline vocal chain render to a new processed WAV take
 - Retune speed, humanize, and formant controls for rendered vocal takes
 - A/B comparison between raw and tuned takes
@@ -38,6 +38,7 @@ Then open `http://localhost:4173`.
 - Input monitoring toggle through the Web Audio mic chain
 - Custom vocal preset saving and project restore
 - Vocal gate and de-ess controls in the offline render chain
+- Chromatic pitch-correction mode for rap-style hard tune without key locking
 
 ## Planning
 
@@ -45,6 +46,7 @@ See [COMMERCIAL_STUDIO_ROADMAP.md](./COMMERCIAL_STUDIO_ROADMAP.md) for the comme
 
 ## Next DSP Steps
 
+- Manual pitch lane and custom scale editing
 - Formant-aware pitch shifting
 - Better EQ, compressor, delay, reverb, and limiter controls
 - Timeline region editing and stem export
