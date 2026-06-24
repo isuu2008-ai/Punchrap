@@ -6497,33 +6497,24 @@ function getNextProcessedVersion(sourceTakeId, presetId) {
 }
 
 function getBatchSourceTargets(selectedTake) {
-  const rawTakes = getAllTakes().filter((take) => !take.processed);
-  const scope = els.batchScopeSelect.value;
-  if (scope === "all") {
-    return rawTakes;
-  }
-
-  if (scope === "comp") {
-    return getCompTakes().filter((take) => !take.processed);
-  }
-
-  if (scope === "best") {
-    return rawTakes.filter((take) => take.bestTake);
-  }
-
-  const trackId = selectedTake?.trackId || state.armedTrackId;
-  return rawTakes.filter((take) => take.trackId === trackId);
+  return window.PunchLabTakes.getBatchSourceTargets({
+    allTakes: getAllTakes(),
+    compTakes: getCompTakes(),
+    scope: els.batchScopeSelect.value,
+    trackId: selectedTake?.trackId || state.armedTrackId,
+  });
 }
 
 function getBatchTargets(selectedTake) {
   const sourceTargets = getBatchSourceTargets(selectedTake);
-  if (!shouldSkipRenderedBatchTargets()) {
-    return sourceTargets;
-  }
-
-  const preset = getSelectedPreset();
-  const tuneSettings = getTuneSettings();
-  return sourceTargets.filter((take) => !hasProcessedTakeForChain(take, preset, tuneSettings));
+  return window.PunchLabTakes.getBatchTargets({
+    getTuneSignature,
+    preset: getSelectedPreset(),
+    skipRendered: shouldSkipRenderedBatchTargets(),
+    sourceTargets,
+    takes: getAllTakes(),
+    tuneSettings: getTuneSettings(),
+  });
 }
 
 function shouldSkipRenderedBatchTargets() {
@@ -6531,17 +6522,12 @@ function shouldSkipRenderedBatchTargets() {
 }
 
 function hasProcessedTakeForChain(sourceTake, preset, tuneSettings) {
-  if (!sourceTake || !preset) {
-    return false;
-  }
-
-  const tuneSignature = getTuneSignature(tuneSettings);
-  return getAllTakes().some((take) => {
-    const takeTuneSettings = take.tuneSettings || take.chainSnapshot?.tuneSettings || null;
-    return take.processed
-      && take.sourceTakeId === sourceTake.id
-      && take.presetId === preset.id
-      && getTuneSignature(takeTuneSettings) === tuneSignature;
+  return window.PunchLabTakes.hasProcessedTakeForChain({
+    getTuneSignature,
+    preset,
+    sourceTake,
+    takes: getAllTakes(),
+    tuneSignature: getTuneSignature(tuneSettings),
   });
 }
 

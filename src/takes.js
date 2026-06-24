@@ -75,6 +75,54 @@
     return messages[scope] || messages.track;
   }
 
+  function getBatchSourceTargets({ allTakes = [], compTakes = [], scope = "track", trackId = "" } = {}) {
+    const rawTakes = (Array.isArray(allTakes) ? allTakes : []).filter((take) => !take.processed);
+    if (scope === "all") {
+      return rawTakes;
+    }
+
+    if (scope === "comp") {
+      return (Array.isArray(compTakes) ? compTakes : []).filter((take) => !take.processed);
+    }
+
+    if (scope === "best") {
+      return rawTakes.filter((take) => take.bestTake);
+    }
+
+    return rawTakes.filter((take) => take.trackId === trackId);
+  }
+
+  function getBatchTargets({ sourceTargets = [], takes = [], preset = null, tuneSettings = null, skipRendered = false, getTuneSignature = null } = {}) {
+    const targets = Array.isArray(sourceTargets) ? sourceTargets : [];
+    if (!skipRendered) {
+      return targets;
+    }
+
+    const tuneSignature = typeof getTuneSignature === "function" ? getTuneSignature(tuneSettings) : String(tuneSettings || "");
+    return targets.filter((take) => !hasProcessedTakeForChain({
+      getTuneSignature,
+      preset,
+      sourceTake: take,
+      takes,
+      tuneSignature,
+    }));
+  }
+
+  function hasProcessedTakeForChain({ takes = [], sourceTake = null, preset = null, tuneSignature = "", getTuneSignature = null } = {}) {
+    if (!sourceTake || !preset) {
+      return false;
+    }
+
+    const makeTuneSignature = typeof getTuneSignature === "function" ? getTuneSignature : (settings) => String(settings || "");
+    return (Array.isArray(takes) ? takes : []).some((take) => {
+      const takeTuneSettings = take.tuneSettings || take.chainSnapshot?.tuneSettings || null;
+      return take.processed
+        && take.sourceTakeId === sourceTake.id
+        && take.presetId === preset.id
+        && makeTuneSignature(takeTuneSettings) === tuneSignature;
+    });
+  }
+
   function getTakeCompOrder(take = {}) {
     if (take.compOrder == null || take.compOrder === "") {
       return Number.POSITIVE_INFINITY;
@@ -168,13 +216,16 @@
     compareProcessedVersions,
     compareTakeCreatedAt,
     formatTakeLatencyTag,
+    getBatchSourceTargets,
     getBatchScopeEmptyText,
     getBatchScopeReadyText,
+    getBatchTargets,
     getNextCompOrder,
     getNextProcessedVersion,
     getTakeCreatedTime,
     getTakeShortName,
     getTakeTitle,
+    hasProcessedTakeForChain,
     makeTakeFilename,
     moveCompTakeOrder,
     normalizeCompOrder,

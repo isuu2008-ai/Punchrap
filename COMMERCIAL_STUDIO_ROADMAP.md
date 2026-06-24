@@ -240,6 +240,8 @@
 - take 파일명, title, short name, latency tag 생성을 `src/takes.js`로 분리
 - Take batch copy policy split 1차
 - batch render scope별 ready/empty 안내 문구 생성을 `src/takes.js`로 분리
+- Take batch target policy split 1차
+- batch render scope별 target 선별과 이미 렌더된 chain duplicate guard를 `src/takes.js`로 분리
 - Format utility module split 1차
 - duration, gain/dB, LUFS, pan, percent, semitone, HTML escape 표시 포맷을 `src/format.js`로 분리
 - Native display formatter split 1차
