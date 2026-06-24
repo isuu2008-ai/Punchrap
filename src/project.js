@@ -51,6 +51,7 @@
       version: take.version || null,
       renderLabel: take.renderLabel || null,
       chainSnapshot: take.chainSnapshot || null,
+      manualPitchTargets: sanitizeManualPitchTargets(take.manualPitchTargets),
       pitchAnalysis: take.pitchAnalysis || null,
       pitchPlan: take.pitchPlan || null,
       sourcePitchPlan: take.sourcePitchPlan || null,
@@ -123,6 +124,7 @@
       version: take.version || null,
       renderLabel: take.renderLabel || null,
       chainSnapshot: take.chainSnapshot || null,
+      manualPitchTargets: sanitizeManualPitchTargets(take.manualPitchTargets),
       pitchAnalysis: take.pitchAnalysis || null,
       pitchPlan: take.pitchPlan || null,
       sourcePitchPlan: take.sourcePitchPlan || null,
@@ -159,6 +161,18 @@
     }
 
     return new Blob([bytes], { type });
+  }
+
+  function sanitizeManualPitchTargets(targets) {
+    if (!targets || typeof targets !== "object" || Array.isArray(targets)) {
+      return null;
+    }
+
+    return Object.fromEntries(
+      Object.entries(targets)
+        .map(([key, value]) => [String(key), Number(value)])
+        .filter(([, value]) => Number.isFinite(value)),
+    );
   }
 
   function makeProjectFilename(beatFileName) {

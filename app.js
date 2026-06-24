@@ -154,6 +154,9 @@ const els = {
   pitchTargetText: document.querySelector("#pitchTargetText"),
   pitchCorrectionText: document.querySelector("#pitchCorrectionText"),
   pitchConfidenceText: document.querySelector("#pitchConfidenceText"),
+  pitchLane: document.querySelector("#pitchLane"),
+  pitchLaneMeta: document.querySelector("#pitchLaneMeta"),
+  resetPitchLaneButton: document.querySelector("#resetPitchLaneButton"),
   batchScopeSelect: document.querySelector("#batchScopeSelect"),
   batchRenderButton: document.querySelector("#batchRenderButton"),
   batchStatus: document.querySelector("#batchStatus"),
@@ -263,6 +266,8 @@ function bindEvents() {
   els.renderVocalButton.addEventListener("click", renderSelectedVocalTake);
   els.compareSourceButton.addEventListener("click", () => playComparisonTake("source"));
   els.compareProcessedButton.addEventListener("click", () => playComparisonTake("processed"));
+  els.pitchLane.addEventListener("click", handlePitchLaneClick);
+  els.resetPitchLaneButton.addEventListener("click", clearManualPitchLane);
   els.batchScopeSelect.addEventListener("change", renderVocalPanel);
   els.batchRenderButton.addEventListener("click", renderBatchVocalTakes);
   els.saveProjectButton.addEventListener("click", saveProject);
@@ -1826,7 +1831,7 @@ function renderVocalPanel() {
   els.analyzeVocalButton.querySelector(".button-label").textContent = state.isAnalyzingVocal ? "Analyzing" : "Analyze";
   els.renderVocalButton.querySelector(".button-label").textContent = state.isRenderingVocal ? "Rendering" : "Render";
   els.batchRenderButton.querySelector(".button-label").textContent = state.isBatchRendering ? "Rendering" : "Render batch";
-  renderPitchPanel(selectedTake?.pitchAnalysis || null);
+  renderPitchPanel(selectedTake);
   renderBatchPanel(batchTargets);
 
   if (!selectedTake) {
@@ -1885,8 +1890,10 @@ async function analyzeSelectedVocalTake() {
     const decodeContext = new OfflineAudioContext(2, 1, 48000);
     const sourceBuffer = await decodeContext.decodeAudioData(await selectedTake.blob.arrayBuffer());
     selectedTake.pitchAnalysis = analyzePitchBuffer(sourceBuffer);
-    const plan = getPitchPlan(selectedTake.pitchAnalysis);
+    selectedTake.pitchPlan = getPitchPlan(selectedTake.pitchAnalysis, selectedTake);
+    const plan = selectedTake.pitchPlan;
     els.sessionState.textContent = plan.detectedLabel === "--" ? "Pitch not found" : `${plan.detectedLabel} detected`;
+    scheduleAutosave();
   } catch (error) {
     els.sessionState.textContent = "Analyze failed";
     console.error(error);
@@ -2037,7 +2044,8 @@ async function renderProcessedTake(sourceTake, preset, tuneSettings) {
   const decodeContext = new OfflineAudioContext(2, 1, 48000);
   const sourceBuffer = await decodeContext.decodeAudioData(await sourceTake.blob.arrayBuffer());
   sourceTake.pitchAnalysis ||= analyzePitchBuffer(sourceBuffer);
-  const pitchPlan = getPitchPlan(sourceTake.pitchAnalysis);
+  const pitchPlan = getPitchPlan(sourceTake.pitchAnalysis, sourceTake);
+  sourceTake.pitchPlan = pitchPlan;
   const rendered = await renderVocalBuffer(sourceBuffer, preset, pitchPlan, tuneSettings);
   const renderedAnalysis = analyzePitchBuffer(rendered);
   const blob = encodeWav(rendered);
@@ -2087,21 +2095,203 @@ function analyzePitchBuffer(audioBuffer) {
   return window.PunchLabDSP.analyzePitchBuffer(audioBuffer);
 }
 
-function renderPitchPanel(analysis) {
+function renderPitchPanel(take) {
   if (!els.pitchDetectedText) {
     return;
   }
 
-  const plan = getPitchPlan(analysis);
+  const analysis = take?.pitchAnalysis || null;
+  const plan = getPitchPlan(analysis, take);
   els.pitchKeyText.textContent = els.scaleModeSelect.value === "chromatic" ? "Chromatic" : els.keySelect.value;
   els.pitchDetectedText.textContent = plan.detectedLabel;
-  els.pitchTargetText.textContent = plan.targetLabel;
-  els.pitchCorrectionText.textContent = plan.correctionLabel;
+  els.pitchTargetText.textContent = plan.manualCount ? `${plan.manualCount} edits` : plan.targetLabel;
+  els.pitchCorrectionText.textContent = plan.manualCount
+    ? `${formatSemitones(getAverageCorrection(plan.frames.filter((frame) => frame.manual)))} avg`
+    : plan.correctionLabel;
   els.pitchConfidenceText.textContent = plan.keyFitLabel;
+  renderPitchLane(take, plan);
 }
 
-function getPitchPlan(analysis) {
+function getPitchPlan(analysis, take = null) {
+  return applyManualPitchTargets(getBasePitchPlan(analysis), take);
+}
+
+function getBasePitchPlan(analysis) {
   return window.PunchLabDSP.getPitchPlan(analysis, els.keySelect.value, els.scaleModeSelect.value);
+}
+
+function applyManualPitchTargets(plan, take) {
+  const manualTargets = take?.manualPitchTargets || {};
+  if (!plan.frames?.length || !Object.keys(manualTargets).length) {
+    return { ...plan, manualCount: 0 };
+  }
+
+  let manualCount = 0;
+  const frames = plan.frames.map((frame) => {
+    const manualTarget = Number(manualTargets[getPitchFrameKey(frame)]);
+    if (!Number.isFinite(manualTarget)) {
+      return frame;
+    }
+
+    manualCount += 1;
+    return {
+      ...frame,
+      targetMidi: manualTarget,
+      correctionSemitones: manualTarget - frame.midi,
+      manual: true,
+    };
+  });
+
+  return { ...plan, frames, manualCount };
+}
+
+function renderPitchLane(take, plan) {
+  if (!els.pitchLane) {
+    return;
+  }
+
+  const manualCount = getManualPitchCount(take);
+  const hasAnalysis = Boolean(take?.pitchAnalysis && plan.frames.length);
+  els.pitchLaneMeta.textContent = !take ? "No take" : hasAnalysis ? `${manualCount} edits` : "Analyze first";
+  els.resetPitchLaneButton.disabled = isVocalBusy() || manualCount === 0;
+
+  if (!take) {
+    els.pitchLane.innerHTML = `<span class="empty-takes">Record a take first.</span>`;
+    return;
+  }
+
+  if (!hasAnalysis) {
+    els.pitchLane.innerHTML = `<span class="empty-takes">Analyze this take before editing pitch targets.</span>`;
+    return;
+  }
+
+  const frames = getPitchLaneFrames(plan.frames);
+  els.pitchLane.innerHTML = frames.map(renderPitchLaneFrame).join("");
+}
+
+function renderPitchLaneFrame(frame) {
+  const key = getPitchFrameKey(frame);
+  const sourceLabel = formatPitchNote(frame.midi);
+  const targetLabel = formatPitchNote(frame.targetMidi);
+  const timeLabel = Number.isFinite(frame.time) ? formatDuration(frame.time) : `#${key}`;
+  const confidence = Math.round((frame.confidence || 0) * 100);
+
+  return `
+    <div class="pitch-frame ${frame.manual ? "manual" : ""}" title="${timeLabel} / ${confidence}% confidence">
+      <button type="button" data-pitch-frame="${key}" data-pitch-step="1" aria-label="Target up">+</button>
+      <button class="pitch-frame-note" type="button" data-pitch-reset="${key}" aria-label="Reset this target">
+        <span>${sourceLabel}</span>
+        <strong>${targetLabel}</strong>
+      </button>
+      <button type="button" data-pitch-frame="${key}" data-pitch-step="-1" aria-label="Target down">-</button>
+    </div>
+  `;
+}
+
+function getPitchLaneFrames(frames) {
+  const limit = 18;
+  if (frames.length <= limit) {
+    return frames;
+  }
+
+  const visible = [];
+  const usedKeys = new Set();
+  const step = (frames.length - 1) / (limit - 1);
+  for (let index = 0; index < limit; index += 1) {
+    const frame = frames[Math.round(index * step)];
+    const key = getPitchFrameKey(frame);
+    if (!usedKeys.has(key)) {
+      visible.push(frame);
+      usedKeys.add(key);
+    }
+  }
+
+  return visible;
+}
+
+function handlePitchLaneClick(event) {
+  const stepButton = event.target.closest("[data-pitch-step]");
+  if (stepButton) {
+    adjustManualPitchTarget(stepButton.dataset.pitchFrame, Number(stepButton.dataset.pitchStep));
+    return;
+  }
+
+  const resetButton = event.target.closest("[data-pitch-reset]");
+  if (resetButton) {
+    resetManualPitchTarget(resetButton.dataset.pitchReset);
+  }
+}
+
+function adjustManualPitchTarget(frameKey, step) {
+  const take = getSelectedVocalTake();
+  if (!take?.pitchAnalysis || !Number.isFinite(step)) {
+    return;
+  }
+
+  const baseFrame = getBasePitchPlan(take.pitchAnalysis).frames.find((frame) => getPitchFrameKey(frame) === frameKey);
+  if (!baseFrame) {
+    return;
+  }
+
+  const currentTarget = Number(take.manualPitchTargets?.[frameKey] ?? baseFrame.targetMidi);
+  const nextTarget = clampMidi(Math.round(currentTarget + step));
+  take.manualPitchTargets = { ...(take.manualPitchTargets || {}), [frameKey]: nextTarget };
+  take.pitchPlan = getPitchPlan(take.pitchAnalysis, take);
+  els.sessionState.textContent = `Manual target ${formatPitchNote(nextTarget)}`;
+  renderVocalPanel();
+  scheduleAutosave();
+}
+
+function resetManualPitchTarget(frameKey) {
+  const take = getSelectedVocalTake();
+  if (!take?.manualPitchTargets || !(frameKey in take.manualPitchTargets)) {
+    return;
+  }
+
+  take.manualPitchTargets = { ...take.manualPitchTargets };
+  delete take.manualPitchTargets[frameKey];
+  take.pitchPlan = getPitchPlan(take.pitchAnalysis, take);
+  els.sessionState.textContent = "Pitch target reset";
+  renderVocalPanel();
+  scheduleAutosave();
+}
+
+function clearManualPitchLane() {
+  const take = getSelectedVocalTake();
+  if (!take || !getManualPitchCount(take)) {
+    return;
+  }
+
+  take.manualPitchTargets = {};
+  take.pitchPlan = getPitchPlan(take.pitchAnalysis, take);
+  els.sessionState.textContent = "Pitch edits cleared";
+  renderVocalPanel();
+  scheduleAutosave();
+}
+
+function getManualPitchCount(take) {
+  return Object.values(take?.manualPitchTargets || {}).filter((value) => Number.isFinite(Number(value))).length;
+}
+
+function getPitchFrameKey(frame) {
+  return String(Math.round(frame.start || 0));
+}
+
+function formatPitchNote(midi) {
+  return Number.isFinite(Number(midi)) ? window.PunchLabDSP.formatMidiNote(Number(midi)) : "--";
+}
+
+function getAverageCorrection(frames) {
+  const corrected = frames.filter((frame) => Number.isFinite(frame.correctionSemitones));
+  if (!corrected.length) {
+    return 0;
+  }
+
+  return corrected.reduce((sum, frame) => sum + frame.correctionSemitones, 0) / corrected.length;
+}
+
+function clampMidi(midi) {
+  return Math.min(127, Math.max(0, midi));
 }
 
 function renderTakes() {
@@ -2706,6 +2896,11 @@ function formatGainDb(gain) {
 
 function formatSigned(value) {
   return `${value >= 0 ? "+" : ""}${value}`;
+}
+
+function formatSemitones(value) {
+  const safeValue = Number.isFinite(value) ? value : 0;
+  return `${safeValue >= 0 ? "+" : ""}${safeValue.toFixed(1)} st`;
 }
 
 function findTake(takeId) {

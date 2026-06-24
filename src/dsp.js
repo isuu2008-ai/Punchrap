@@ -208,6 +208,7 @@
       pitches.push({ midi, confidence: result.confidence, weight: rms * result.confidence });
       frames.push({
         start,
+        time: start / sampleRate,
         midi,
         confidence: result.confidence,
         rms,

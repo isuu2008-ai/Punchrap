@@ -39,6 +39,7 @@ Then open `http://localhost:4173`.
 - Custom vocal preset saving and project restore
 - Vocal gate and de-ess controls in the offline render chain
 - Chromatic pitch-correction mode for rap-style hard tune without key locking
+- Manual pitch lane edits for analyzed vocal frames, persisted in project files
 
 ## Planning
 
@@ -46,7 +47,7 @@ See [COMMERCIAL_STUDIO_ROADMAP.md](./COMMERCIAL_STUDIO_ROADMAP.md) for the comme
 
 ## Next DSP Steps
 
-- Manual pitch lane and custom scale editing
+- Custom scale editing
 - Formant-aware pitch shifting
 - Better EQ, compressor, delay, reverb, and limiter controls
 - Timeline region editing and stem export

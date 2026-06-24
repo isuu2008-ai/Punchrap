@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PunchLab</title>
     <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="./styles.css?v=20260624-14" />
+    <link rel="stylesheet" href="./styles.css?v=20260624-15" />
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
-    <script src="./src/dsp.js?v=20260624-14" defer></script>
-    <script src="./src/audio.js?v=20260624-14" defer></script>
-    <script src="./src/project.js?v=20260624-14" defer></script>
-    <script src="./src/storage.js?v=20260624-14" defer></script>
-    <script src="./app.js?v=20260624-14" defer></script>
+    <script src="./src/dsp.js?v=20260624-15" defer></script>
+    <script src="./src/audio.js?v=20260624-15" defer></script>
+    <script src="./src/project.js?v=20260624-15" defer></script>
+    <script src="./src/storage.js?v=20260624-15" defer></script>
+    <script src="./app.js?v=20260624-15" defer></script>
   </head>
   <body>
     <main class="studio-shell">
@@ -460,6 +460,17 @@
                 <div><span>Target</span><strong id="pitchTargetText">--</strong></div>
                 <div><span>Correction</span><strong id="pitchCorrectionText">--</strong></div>
                 <div><span>Key fit</span><strong id="pitchConfidenceText">--</strong></div>
+              </div>
+
+              <div class="pitch-lane-card">
+                <div class="panel-heading compact">
+                  <span>Manual lane</span>
+                  <span id="pitchLaneMeta">Analyze first</span>
+                </div>
+                <div id="pitchLane" class="pitch-lane" aria-live="polite">
+                  <span class="empty-takes">Analyze a take to edit pitch targets.</span>
+                </div>
+                <button id="resetPitchLaneButton" class="mini-button" type="button" disabled>Clear edits</button>
               </div>
 
               <div class="batch-card">
