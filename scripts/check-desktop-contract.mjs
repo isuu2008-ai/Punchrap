@@ -5,6 +5,7 @@ const host = readJson("desktop-host-manifest.json");
 const plugin = readJson("plugin-host-manifest.json");
 const packageManifest = readJson("desktop-package-manifest.json");
 const tauriConfig = readJson("src-tauri/tauri.conf.json");
+const mainCapability = readJson("src-tauri/capabilities/main.json");
 const indexHtml = readFileSync("index.html", "utf8");
 const desktopSource = readFileSync("src/desktop.js", "utf8");
 let failed = false;
@@ -139,6 +140,9 @@ for (const artifact of ["desktop-package-manifest.json", "desktop-host-manifest.
 if (!packageArtifacts.includes(wrapper.shell?.tauriConfig)) {
   fail("Desktop package manifest must list the Tauri shell config artifact.");
 }
+if (!packageArtifacts.includes("src-tauri/capabilities/main.json")) {
+  fail("Desktop package manifest must list the Tauri main capability artifact.");
+}
 
 const packageStageIds = new Set((packageManifest.packagingStages || []).map((stage) => stage.id));
 for (const stageId of ["wrapper-scaffold", "file-association", "native-audio-bridge", "plugin-host-bridge"]) {
@@ -226,6 +230,9 @@ if (!desktopSource.includes("tauriConfig")) {
 if (!desktopSource.includes("FILE_ASSOCIATIONS") || !desktopSource.includes(".punchlab.json") || !desktopSource.includes(".punchlab.zip")) {
   fail("Desktop runtime manifest must expose PunchLab file associations.");
 }
+if (!desktopSource.includes("TAURI_CAPABILITIES") || !desktopSource.includes("src-tauri/capabilities/main.json")) {
+  fail("Desktop runtime manifest must expose Tauri capability paths.");
+}
 
 if (tauriConfig.$schema !== "https://schema.tauri.app/config/2") {
   fail("Tauri config must use the Tauri v2 schema.");
@@ -242,6 +249,10 @@ if (tauriConfig.build?.devUrl !== wrapper.shell?.devServer) {
 if (tauriConfig.build?.frontendDist !== "../") {
   fail("Tauri config frontendDist must point to the static PunchLab shell.");
 }
+const selectedCapabilities = tauriConfig.app?.security?.capabilities || [];
+if (!Array.isArray(selectedCapabilities) || !selectedCapabilities.includes("main")) {
+  fail("Tauri config security.capabilities must include the main capability.");
+}
 const mainWindow = (tauriConfig.app?.windows || []).find((windowConfig) => windowConfig.label === "main");
 if (!mainWindow) {
   fail("Tauri config must define a main window.");
@@ -254,6 +265,44 @@ if (!mainWindow) {
   }
   if (Number(mainWindow.minHeight || 0) !== Number(wrapper.shell?.minHeight || 0)) {
     fail("Tauri main window minHeight must match wrapper shell minHeight.");
+  }
+}
+const expectedTauriCapability = {
+  id: "main",
+  path: "src-tauri/capabilities/main.json",
+  windows: ["main"],
+  permissions: ["core:default", "dialog:default", "fs:default"],
+};
+if (mainCapability.identifier !== expectedTauriCapability.id) {
+  fail("Tauri main capability identifier must be main.");
+}
+if (!Array.isArray(mainCapability.windows) || !expectedTauriCapability.windows.every((windowName) => mainCapability.windows.includes(windowName))) {
+  fail("Tauri main capability must target the main window.");
+}
+if (!Array.isArray(mainCapability.permissions) || !expectedTauriCapability.permissions.every((permission) => mainCapability.permissions.includes(permission))) {
+  fail("Tauri main capability must include core, dialog, and fs default permissions.");
+}
+if (mainCapability.remote) {
+  fail("PunchLab main capability must remain local-only.");
+}
+const wrapperTauriCapability = (wrapper.tauriCapabilities || []).find((capability) => capability.id === expectedTauriCapability.id);
+const packageTauriCapability = (packageManifest.tauriCapabilities || []).find((capability) => capability.id === expectedTauriCapability.id);
+for (const [label, capability] of [
+  ["wrapper", wrapperTauriCapability],
+  ["package", packageTauriCapability],
+]) {
+  if (!capability) {
+    fail(`Desktop ${label} manifest missing main Tauri capability.`);
+    continue;
+  }
+  if (capability.path !== expectedTauriCapability.path) {
+    fail(`Desktop ${label} main Tauri capability path mismatch.`);
+  }
+  if (!expectedTauriCapability.windows.every((windowName) => capability.windows?.includes(windowName))) {
+    fail(`Desktop ${label} main Tauri capability must target the main window.`);
+  }
+  if (!expectedTauriCapability.permissions.every((permission) => capability.permissions?.includes(permission))) {
+    fail(`Desktop ${label} main Tauri capability permissions mismatch.`);
   }
 }
 const tauriResources = tauriConfig.bundle?.resources || [];

@@ -57,6 +57,20 @@
       "role": "Editor"
     }
   ],
+  "tauriCapabilities": [
+    {
+      "id": "main",
+      "path": "src-tauri/capabilities/main.json",
+      "windows": [
+        "main"
+      ],
+      "permissions": [
+        "core:default",
+        "dialog:default",
+        "fs:default"
+      ]
+    }
+  ],
   "handoffStages": [
     {
       "id": "browser-shell",

@@ -82,10 +82,14 @@
 - Tauri/Electron wrapper에 필요한 shell, 권한, bridge, handoff stage 계약을 `desktop-wrapper-manifest.json`으로 분리
 - Tauri shell config scaffold 1차
 - `src-tauri/tauri.conf.json`에 PunchLab app id, dev server, main window, bundle resource 계약을 추가
+- Tauri main capability scaffold 1차
+- `src-tauri/capabilities/main.json`에 main window, core/dialog/fs 기본 permission 계약을 추가
 - Desktop wrapper contract check 1차
 - shell size, local-first permission, native bridge, plugin host, handoff stage 조건을 `scripts/check-desktop-contract.mjs`에서 검증
 - Tauri shell contract check 1차
 - Tauri config의 schema/app id/dev server/window/bundle resource 정합성을 `scripts/check-desktop-contract.mjs`에서 검증
+- Tauri capability contract check 1차
+- `tauri.conf.json` security.capabilities, capability permissions, package/wrapper manifest 정합성을 검증
 - Tauri file association scaffold 1차
 - `.punchlab.json`, `.punchlab.zip` file association을 Tauri bundle config와 desktop manifests에 등록
 - Desktop file association contract check 1차

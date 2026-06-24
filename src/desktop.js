@@ -38,6 +38,14 @@
       role: "Editor",
     },
   ];
+  const TAURI_CAPABILITIES = [
+    {
+      id: "main",
+      path: "src-tauri/capabilities/main.json",
+      windows: ["main"],
+      permissions: ["core:default", "dialog:default", "fs:default"],
+    },
+  ];
 
   const NATIVE_AUDIO_ENGINE_CONTRACT = {
     sampleRates: [44100, 48000],
@@ -74,6 +82,11 @@
           network: false,
         },
         handoffStages: WRAPPER_HANDOFF_STAGES.map((stage) => ({ ...stage })),
+        tauriCapabilities: TAURI_CAPABILITIES.map((capability) => ({
+          ...capability,
+          windows: [...capability.windows],
+          permissions: [...capability.permissions],
+        })),
         pluginHost: {
           manifest: "plugin-host-manifest.json",
           scanMethod: "scanPluginHosts",

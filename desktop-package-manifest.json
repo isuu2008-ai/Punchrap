@@ -29,6 +29,20 @@
       "role": "Editor"
     }
   ],
+  "tauriCapabilities": [
+    {
+      "id": "main",
+      "path": "src-tauri/capabilities/main.json",
+      "windows": [
+        "main"
+      ],
+      "permissions": [
+        "core:default",
+        "dialog:default",
+        "fs:default"
+      ]
+    }
+  ],
   "requiredArtifacts": [
     "index.html",
     "desktop-package-manifest.json",
@@ -36,6 +50,7 @@
     "desktop-wrapper-manifest.json",
     "plugin-host-manifest.json",
     "src-tauri/tauri.conf.json",
+    "src-tauri/capabilities/main.json",
     "src/engine-contract.js",
     "src/native-bridge.js",
     "src/native-adapter.js",
