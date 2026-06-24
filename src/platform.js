@@ -5,6 +5,7 @@
     preferences: {
       nativeBufferSize: 128,
     },
+    latencyStats: null,
     serviceWorker: {
       supported: "serviceWorker" in navigator,
       registered: false,
@@ -101,6 +102,21 @@
     return result ? { supported: !result.unsupported, method: "native", native: result } : null;
   }
 
+  async function refreshLatencyStats() {
+    const bridge = window.PunchLabNativeBridge;
+    const status = bridge?.getStatus?.();
+    if (!status?.available || status.missingOptionalMethods?.includes("getLatencyStats")) {
+      platform.latencyStats = null;
+      emitPlatformReady();
+      return null;
+    }
+
+    const result = await bridge.callOptionalNative("getLatencyStats");
+    platform.latencyStats = result || null;
+    emitPlatformReady();
+    return platform.latencyStats;
+  }
+
   function setNativeBufferSizePreference(bufferSize = 128) {
     const size = Number(bufferSize || 128);
     platform.preferences.nativeBufferSize = [64, 128, 256, 512, 1024].includes(size) ? size : 128;
@@ -134,6 +150,7 @@
   window.PunchLabPlatform = {
     openProjectFile,
     platform,
+    refreshLatencyStats,
     registerServiceWorker,
     saveProjectFile,
     setBufferSize,

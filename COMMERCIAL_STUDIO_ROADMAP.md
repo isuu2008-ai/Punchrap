@@ -42,6 +42,8 @@
 - 선택한 native buffer size 선호값을 platform preferences와 desktop readiness payload에 노출
 - Native buffer size tooltip 1차
 - engine status tooltip에 현재 선택한 native buffer size를 표시
+- Native latency stats refresh 1차
+- getLatencyStats 결과를 platform latencyStats와 desktop readiness runtimeRoundTripLatencyMs로 노출
 - Native adapter 1차
 - `src/native-adapter.js`가 native host bridge를 swappable engine interface로 연결
 - Desktop wrapper manifest 1차

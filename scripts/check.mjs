@@ -147,8 +147,16 @@ if (!readFileSync("src/platform.js", "utf8").includes("setNativeBufferSizePrefer
   console.error("Platform must expose the native buffer-size preference.");
   failed = true;
 }
+if (!readFileSync("src/platform.js", "utf8").includes("refreshLatencyStats")) {
+  console.error("Platform must expose native latency stat refresh.");
+  failed = true;
+}
 if (!readFileSync("src/desktop.js", "utf8").includes("preferredRuntimeBufferSize")) {
   console.error("Desktop readiness must expose the preferred runtime buffer size.");
+  failed = true;
+}
+if (!readFileSync("src/desktop.js", "utf8").includes("runtimeRoundTripLatencyMs")) {
+  console.error("Desktop readiness must expose runtime round-trip latency.");
   failed = true;
 }
 if (!indexHtml.includes("nativeBufferSizeSelect")) {

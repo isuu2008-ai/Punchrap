@@ -1971,6 +1971,7 @@ async function applyNativeBufferSize() {
   window.PunchLabPlatform?.setNativeBufferSizePreference?.(state.nativeBufferSize);
   try {
     const result = await window.PunchLabPlatform?.setBufferSize?.(state.nativeBufferSize);
+    await window.PunchLabPlatform?.refreshLatencyStats?.();
     if (result?.supported) {
       renderEngineStatus();
     }

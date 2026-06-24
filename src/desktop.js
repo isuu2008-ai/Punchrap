@@ -100,6 +100,7 @@
     const missingPluginMethods = getMissingOptionalMethods(bridgeStatus, ["scanPluginHosts"]);
     const hasPluginScan = missingPluginMethods.length === 0;
     const nativeAudioContract = getNativeAudioContractStatus(capabilities);
+    const latencyStats = normalizeLatencyStats(platform.latencyStats);
     const handoffStages = getWrapperHandoffStages(bridgeStatus, capabilities);
     const serviceWorker = platform.serviceWorker || {};
     const checks = [
@@ -196,9 +197,11 @@
         available: hasLatencyControl,
         missingMethods: missingLatencyMethods,
         preferredBufferSize: preferredNativeBufferSize,
+        stats: latencyStats,
       },
       nativeAudioEngine: {
         ...nativeAudioContract,
+        runtimeRoundTripLatencyMs: latencyStats?.roundTripLatencyMs ?? nativeAudioContract.roundTripLatencyMs,
         preferredRuntimeBufferSize: preferredNativeBufferSize,
       },
       outputRouting: {
@@ -345,6 +348,25 @@
   function normalizeNativeBufferSize(value) {
     const size = Number(value || NATIVE_AUDIO_ENGINE_CONTRACT.preferredBufferSize);
     return NATIVE_AUDIO_ENGINE_CONTRACT.bufferSizes.includes(size) ? size : NATIVE_AUDIO_ENGINE_CONTRACT.preferredBufferSize;
+  }
+
+  function normalizeLatencyStats(stats) {
+    if (!stats || typeof stats !== "object") {
+      return null;
+    }
+
+    return {
+      inputLatencyMs: finiteOrNull(stats.inputLatencyMs),
+      outputLatencyMs: finiteOrNull(stats.outputLatencyMs),
+      roundTripLatencyMs: finiteOrNull(stats.roundTripLatencyMs ?? stats.latencyMs),
+      bufferSize: finiteOrNull(stats.bufferSize),
+      sampleRate: finiteOrNull(stats.sampleRate),
+    };
+  }
+
+  function finiteOrNull(value) {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : null;
   }
 
   window.PunchLabDesktop = {
