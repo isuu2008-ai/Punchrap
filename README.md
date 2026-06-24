@@ -60,6 +60,7 @@ node .\scripts\check.mjs
 - Batch render for the current track or all raw vocal takes
 - Batch render for comp lane raw takes and best raw takes
 - Vocal batch render panel previews target raw takes before rendering
+- Vocal batch render can skip raw takes already rendered with the same preset/tune chain
 - Processed take version labels, vocal version history, and zip lineage metadata for repeated renders from the same source take
 - Project save/open as a local `.punchlab.json` bundle
 - File System Access project save/open when available, with browser download/input fallback

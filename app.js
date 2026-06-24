@@ -267,6 +267,7 @@ const els = {
   customScaleGrid: document.querySelector("#customScaleGrid"),
   customScaleMeta: document.querySelector("#customScaleMeta"),
   batchScopeSelect: document.querySelector("#batchScopeSelect"),
+  batchSkipRenderedInput: document.querySelector("#batchSkipRenderedInput"),
   batchRenderButton: document.querySelector("#batchRenderButton"),
   batchStatus: document.querySelector("#batchStatus"),
   batchMeta: document.querySelector("#batchMeta"),
@@ -670,6 +671,7 @@ function bindEvents() {
   els.resetPitchLaneButton.addEventListener("click", clearManualPitchLane);
   els.customScaleGrid.addEventListener("click", handleCustomScaleClick);
   els.batchScopeSelect.addEventListener("change", renderVocalPanel);
+  els.batchSkipRenderedInput.addEventListener("change", renderVocalPanel);
   els.batchRenderButton.addEventListener("click", renderBatchVocalTakes);
   els.saveProjectButton.addEventListener("click", saveProject);
   els.saveProjectZipButton.addEventListener("click", saveProjectZip);
@@ -3897,7 +3899,9 @@ function renderVocalPanel() {
 
   const selectedTake = getSelectedVocalTake();
   const comparisonPair = getComparisonPair(selectedTake);
+  const batchSourceTargets = getBatchSourceTargets(selectedTake);
   const batchTargets = getBatchTargets(selectedTake);
+  const skippedBatchTargets = Math.max(0, batchSourceTargets.length - batchTargets.length);
   const vocalBusy = isVocalBusy();
   els.vocalTakeSelect.innerHTML = allTakes.length
     ? allTakes
@@ -3918,6 +3922,7 @@ function renderVocalPanel() {
   els.compareSourceButton.disabled = vocalBusy || !comparisonPair;
   els.compareProcessedButton.disabled = vocalBusy || !comparisonPair;
   els.batchScopeSelect.disabled = vocalBusy || allTakes.length === 0;
+  els.batchSkipRenderedInput.disabled = vocalBusy || allTakes.length === 0;
   els.batchRenderButton.disabled = vocalBusy || batchTargets.length === 0;
   els.compareSourceButton.classList.toggle("active", Boolean(comparisonPair?.source.id === state.currentTakeId));
   els.compareProcessedButton.classList.toggle("active", Boolean(comparisonPair?.processed.id === state.currentTakeId));
@@ -3930,7 +3935,7 @@ function renderVocalPanel() {
   els.batchRenderButton.querySelector(".button-label").textContent = state.isBatchRendering ? "Rendering" : "Render batch";
   renderCustomScaleEditor();
   renderPitchPanel(selectedTake);
-  renderBatchPanel(batchTargets);
+  renderBatchPanel(batchTargets, skippedBatchTargets);
 
   if (!selectedTake) {
     els.vocalStatus.textContent = "No take";
@@ -4098,16 +4103,16 @@ function renderVersionPanel(take) {
   });
 }
 
-function renderBatchPanel(targets) {
+function renderBatchPanel(targets, skippedCount = 0) {
   const scope = els.batchScopeSelect.value;
-  els.batchStatus.textContent = targets.length ? `${targets.length} raw` : "No raw";
+  els.batchStatus.textContent = targets.length ? `${targets.length} raw` : skippedCount ? "Skipped" : "No raw";
   renderBatchTargetList(targets);
   if (targets.length) {
-    els.batchMeta.textContent = getBatchScopeReadyText(scope, targets.length);
+    els.batchMeta.textContent = getBatchScopeReadyText(scope, targets.length, skippedCount);
     return;
   }
 
-  els.batchMeta.textContent = getBatchScopeEmptyText(scope);
+  els.batchMeta.textContent = getBatchScopeEmptyText(scope, skippedCount);
 }
 
 function renderBatchTargetList(targets) {
@@ -4192,7 +4197,8 @@ async function renderBatchVocalTakes() {
 
   const targets = getBatchTargets(getSelectedVocalTake());
   if (!targets.length) {
-    els.sessionState.textContent = "No raw takes";
+    const skippedCount = getBatchSourceTargets(getSelectedVocalTake()).length;
+    els.sessionState.textContent = shouldSkipRenderedBatchTargets() && skippedCount ? "Already rendered" : "No raw takes";
     return;
   }
 
@@ -6696,7 +6702,7 @@ function getNextProcessedVersion(sourceTakeId, presetId) {
   return currentMax + 1;
 }
 
-function getBatchTargets(selectedTake) {
+function getBatchSourceTargets(selectedTake) {
   const rawTakes = getAllTakes().filter((take) => !take.processed);
   const scope = els.batchScopeSelect.value;
   if (scope === "all") {
@@ -6715,17 +6721,52 @@ function getBatchTargets(selectedTake) {
   return rawTakes.filter((take) => take.trackId === trackId);
 }
 
-function getBatchScopeReadyText(scope, count) {
+function getBatchTargets(selectedTake) {
+  const sourceTargets = getBatchSourceTargets(selectedTake);
+  if (!shouldSkipRenderedBatchTargets()) {
+    return sourceTargets;
+  }
+
+  const preset = getSelectedPreset();
+  const tuneSettings = getTuneSettings();
+  return sourceTargets.filter((take) => !hasProcessedTakeForChain(take, preset, tuneSettings));
+}
+
+function shouldSkipRenderedBatchTargets() {
+  return Boolean(els.batchSkipRenderedInput?.checked);
+}
+
+function hasProcessedTakeForChain(sourceTake, preset, tuneSettings) {
+  if (!sourceTake || !preset) {
+    return false;
+  }
+
+  const tuneSignature = getTuneSignature(tuneSettings);
+  return getAllTakes().some((take) => {
+    const takeTuneSettings = take.tuneSettings || take.chainSnapshot?.tuneSettings || null;
+    return take.processed
+      && take.sourceTakeId === sourceTake.id
+      && take.presetId === preset.id
+      && getTuneSignature(takeTuneSettings) === tuneSignature;
+  });
+}
+
+function getBatchScopeReadyText(scope, count, skippedCount = 0) {
   const messages = {
     all: `Will render ${count} raw take(s) across all vocal tracks.`,
     best: `Will render ${count} best raw take(s).`,
     comp: `Will render ${count} raw take(s) from the comp lane.`,
     track: `Will render ${count} raw take(s) on this track.`,
   };
-  return messages[scope] || messages.track;
+  const skippedText = skippedCount ? ` Skipping ${skippedCount} already rendered.` : "";
+  return `${messages[scope] || messages.track}${skippedText}`;
 }
 
-function getBatchScopeEmptyText(scope) {
+function getBatchScopeEmptyText(scope, skippedCount = 0) {
+  if (skippedCount) {
+    return "All matching raw takes already have this preset/tune render.";
+  }
+
   const messages = {
     all: "No raw vocal takes available.",
     best: "No best raw takes selected.",

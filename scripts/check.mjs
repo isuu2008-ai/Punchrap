@@ -174,6 +174,10 @@ if (!indexHtml.includes("batchTargetList") || !appSource.includes("renderBatchTa
   console.error("Vocal batch render panel must preview the raw take targets before rendering.");
   failed = true;
 }
+if (!indexHtml.includes("batchSkipRenderedInput") || !appSource.includes("shouldSkipRenderedBatchTargets") || !appSource.includes("hasProcessedTakeForChain")) {
+  console.error("Vocal batch render must support skipping raw takes already rendered with the same chain.");
+  failed = true;
+}
 if (!appSource.includes("summarizeNativeAudioEnvironment") || !appSource.includes("nativeAudio: summarizeNativeAudioEnvironment()")) {
   console.error("Project zip manifest must include native audio environment summary.");
   failed = true;

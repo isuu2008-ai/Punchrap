@@ -214,6 +214,8 @@
 - comp lane raw takes와 best raw takes에 현재 체인을 batch render
 - Batch target preview 1차
 - Vocal batch render 실행 전 대상 raw take 리스트 표시
+- Batch duplicate guard 1차
+- 같은 preset/tune chain으로 이미 렌더된 raw take는 batch 대상에서 제외하는 옵션 제공
 - Custom scale editor
 - 12 pitch-class toggle로 target scale 편집
 - Custom scale 프로젝트 저장/복원
