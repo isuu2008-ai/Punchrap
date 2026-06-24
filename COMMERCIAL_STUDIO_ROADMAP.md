@@ -228,6 +228,8 @@
 - region input time formatting과 timeline number 비교 허용 오차를 `src/timeline.js`로 분리
 - Timeline snapshot policy split 1차
 - undo/redo snapshot 생성과 take snapshot restore 정규화를 `src/timeline.js`로 분리
+- Take policy module split 1차
+- take 생성시각 정렬, comp order 정렬, processed version 계산을 `src/takes.js`로 분리
 - Project zip asset/timeline formatter split 1차
 - project zip preview의 beat section, marker rows, comp lane rows를 `src/project-zip.js`로 분리
 - Project zip take card formatter split 1차

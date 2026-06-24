@@ -10,6 +10,7 @@ const syntaxFiles = [
   "src/export-mastering.js",
   "src/export-plan.js",
   "src/timeline.js",
+  "src/takes.js",
   "src/dsp.js",
   "src/files.js",
   "src/templates.js",
@@ -37,6 +38,7 @@ const requiredScripts = [
   "src/export-mastering.js",
   "src/export-plan.js",
   "src/timeline.js",
+  "src/takes.js",
   "src/files.js",
   "src/templates.js",
   "src/devices.js",
@@ -182,6 +184,10 @@ if (!indexHtml.includes("src/timeline.js") || !readFileSync("sw.js", "utf8").inc
   console.error("Timeline policy module must be loaded by index.html and cached by the service worker.");
   failed = true;
 }
+if (!indexHtml.includes("src/takes.js") || !readFileSync("sw.js", "utf8").includes("./src/takes.js")) {
+  console.error("Take policy module must be loaded by index.html and cached by the service worker.");
+  failed = true;
+}
 if (!tauriBridgeSource.includes("window.__TAURI__?.core?.invoke") || !tauriBridgeSource.includes("get_punchlab_bridge_status") || !tauriBridgeSource.includes("nativeBridgeReady")) {
   console.error("Tauri bridge adapter must probe Tauri invoke and gate native activation on nativeBridgeReady.");
   failed = true;
@@ -294,6 +300,11 @@ if (!exportPlanSource.includes("window.PunchLabExportPlan") || !exportPlanSource
 const timelineSource = readFileSync("src/timeline.js", "utf8");
 if (!timelineSource.includes("window.PunchLabTimeline") || !timelineSource.includes("normalizeTimelineSnapMode") || !timelineSource.includes("makeTimelineGridLines") || !timelineSource.includes("timelinePercent") || !timelineSource.includes("normalizeTakeTrim") || !timelineSource.includes("normalizeRegionColor") || !timelineSource.includes("getRegionGroups") || !timelineSource.includes("normalizeRegionGroup") || !timelineSource.includes("getDefaultRegionGroupForTrack") || !timelineSource.includes("formatTimelineInputTime") || !timelineSource.includes("isSameTimelineNumber") || !timelineSource.includes("createTimelineSnapshot") || !timelineSource.includes("normalizeTimelineTakeSnapshot") || !appSource.includes("PunchLabTimeline.snapTimelineTime") || !appSource.includes("PunchLabTimeline.normalizeMarkers") || !appSource.includes("PunchLabTimeline.makeTimelineTicks") || !appSource.includes("PunchLabTimeline.getTakeVisibleDuration") || !appSource.includes("PunchLabTimeline.getRegionGroups") || !appSource.includes("PunchLabTimeline.normalizeRegionGroup") || !appSource.includes("PunchLabTimeline.formatTimelineInputTime") || !appSource.includes("PunchLabTimeline.isSameTimelineNumber") || !appSource.includes("PunchLabTimeline.createTimelineSnapshot") || !appSource.includes("PunchLabTimeline.normalizeTimelineTakeSnapshot")) {
   console.error("Timeline snap, grid, marker, region trim, region group, and snapshot policy must live in src/timeline.js and be used by app.js.");
+  failed = true;
+}
+const takesSource = readFileSync("src/takes.js", "utf8");
+if (!takesSource.includes("window.PunchLabTakes") || !takesSource.includes("sortTakesByCreatedAt") || !takesSource.includes("sortCompTakes") || !takesSource.includes("sortProcessedVersions") || !takesSource.includes("getNextProcessedVersion") || !appSource.includes("PunchLabTakes.sortTakesByCreatedAt") || !appSource.includes("PunchLabTakes.sortCompTakes") || !appSource.includes("PunchLabTakes.sortProcessedVersions") || !appSource.includes("PunchLabTakes.getNextProcessedVersion")) {
+  console.error("Take sorting and processed-version policy must live in src/takes.js and be used by app.js.");
   failed = true;
 }
 if (!indexHtml.includes("quickTakeList") || !appSource.includes("data-quick-play-take") || !appSource.includes("data-quick-vocal-take") || !appSource.includes("sendTakeToVocal")) {

@@ -6447,19 +6447,11 @@ function findTrack(trackId) {
 }
 
 function getAllTakes() {
-  return tracks
-    .flatMap((track) => track.takes)
-    .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  return window.PunchLabTakes.sortTakesByCreatedAt(tracks.flatMap((track) => track.takes));
 }
 
 function getCompTakes() {
-  return getAllTakes()
-    .filter((take) => take.compSelected)
-    .sort((a, b) => {
-      const leftOrder = Number.isFinite(Number(a.compOrder)) ? Number(a.compOrder) : Number.POSITIVE_INFINITY;
-      const rightOrder = Number.isFinite(Number(b.compOrder)) ? Number(b.compOrder) : Number.POSITIVE_INFINITY;
-      return leftOrder - rightOrder || (a.startTime || 0) - (b.startTime || 0) || a.createdAt.getTime() - b.createdAt.getTime();
-    });
+  return window.PunchLabTakes.sortCompTakes(getAllTakes().filter((take) => take.compSelected));
 }
 
 function getSelectedPreset() {
@@ -6526,31 +6518,21 @@ function getProcessedVersionsForSource(sourceTakeId) {
     return [];
   }
 
-  return getAllTakes()
-    .filter((take) => take.processed && take.sourceTakeId === sourceTakeId)
-    .sort(compareProcessedVersions);
+  return window.PunchLabTakes.sortProcessedVersions(
+    getAllTakes().filter((take) => take.processed && take.sourceTakeId === sourceTakeId),
+  );
 }
 
 function compareProcessedVersions(a, b) {
-  const presetDelta = String(a.presetName || "").localeCompare(String(b.presetName || ""));
-  if (presetDelta) {
-    return presetDelta;
-  }
-
-  const versionDelta = (a.version || 1) - (b.version || 1);
-  return versionDelta || a.createdAt.getTime() - b.createdAt.getTime();
+  return window.PunchLabTakes.compareProcessedVersions(a, b);
 }
 
 function compareProcessedTimeline(a, b) {
-  const versionDelta = (a.version || 1) - (b.version || 1);
-  return versionDelta || a.createdAt.getTime() - b.createdAt.getTime();
+  return window.PunchLabTakes.compareProcessedTimeline(a, b);
 }
 
 function getNextProcessedVersion(sourceTakeId, presetId) {
-  const currentMax = getAllTakes()
-    .filter((take) => take.processed && take.sourceTakeId === sourceTakeId && take.presetId === presetId)
-    .reduce((max, take) => Math.max(max, Number(take.version) || 1), 0);
-  return currentMax + 1;
+  return window.PunchLabTakes.getNextProcessedVersion(getAllTakes(), sourceTakeId, presetId);
 }
 
 function getBatchSourceTargets(selectedTake) {
