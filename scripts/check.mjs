@@ -6,6 +6,7 @@ const syntaxFiles = [
   "scripts/check-desktop-contract.mjs",
   "app.js",
   "src/chain-params.js",
+  "src/presets.js",
   "src/audio.js",
   "src/export-mastering.js",
   "src/export-plan.js",
@@ -34,6 +35,7 @@ const syntaxFiles = [
 
 const requiredScripts = [
   "src/chain-params.js",
+  "src/presets.js",
   "src/dsp.js",
   "src/audio.js",
   "src/export-mastering.js",
@@ -316,6 +318,11 @@ if (!takesSource.includes("window.PunchLabTakes") || !takesSource.includes("sort
 const formatSource = readFileSync("src/format.js", "utf8");
 if (!formatSource.includes("window.PunchLabFormat") || !formatSource.includes("formatDuration") || !formatSource.includes("formatGainDb") || !formatSource.includes("formatLufs") || !formatSource.includes("formatRuntimeLatency") || !formatSource.includes("formatDisplaySampleRate") || !formatSource.includes("formatDisplayTimestamp") || !formatSource.includes("escapeHtml") || !appSource.includes("PunchLabFormat.formatDuration") || !appSource.includes("PunchLabFormat.formatGainDb") || !appSource.includes("PunchLabFormat.formatLufs") || !appSource.includes("PunchLabFormat.formatRuntimeLatency") || !appSource.includes("PunchLabFormat.formatDisplaySampleRate") || !appSource.includes("PunchLabFormat.formatDisplayTimestamp") || !appSource.includes("PunchLabFormat.escapeHtml")) {
   console.error("Shared display formatting must live in src/format.js and be used by app.js.");
+  failed = true;
+}
+const presetsSource = readFileSync("src/presets.js", "utf8");
+if (!presetsSource.includes("window.PunchLabPresets") || !presetsSource.includes("normalizePreset") || !presetsSource.includes("createCustomPresetSnapshot") || !presetsSource.includes("getTuneSettingsForPreset") || !presetsSource.includes("getDefaultCompThreshold") || !presetsSource.includes("getDefaultCompRatio") || !presetsSource.includes("getDefaultCompRelease") || !appSource.includes("PunchLabPresets.normalizePreset") || !appSource.includes("PunchLabPresets.createCustomPresetSnapshot") || !appSource.includes("PunchLabPresets.getTuneSettingsForPreset") || !appSource.includes("PunchLabPresets.getDefaultCompThreshold") || !appSource.includes("PunchLabPresets.getDefaultCompRatio") || !appSource.includes("PunchLabPresets.getDefaultCompRelease")) {
+  console.error("Vocal preset normalization, custom preset snapshots, tune settings, and compressor defaults must live in src/presets.js and be used by app.js.");
   failed = true;
 }
 if (!indexHtml.includes("quickTakeList") || !appSource.includes("data-quick-play-take") || !appSource.includes("data-quick-vocal-take") || !appSource.includes("sendTakeToVocal")) {

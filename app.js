@@ -1386,26 +1386,7 @@ function summarizeSessionManifest(bundle = {}) {
 }
 
 function getTuneSettingsForPreset(preset) {
-  return {
-    retuneSpeed: preset.retune,
-    humanize: preset.humanize,
-    vibrato: preset.vibrato,
-    formant: preset.formant,
-    gate: preset.gate,
-    deEss: preset.deEss,
-    comp: preset.comp,
-    compThreshold: preset.compThreshold,
-    compRatio: preset.compRatio,
-    saturation: preset.saturation,
-    space: preset.space,
-    delay: preset.delay,
-    reverb: preset.reverb,
-    width: preset.width,
-    lowEq: preset.lowEq,
-    midEq: preset.midEq,
-    airEq: preset.airEq,
-    limiterCeiling: preset.limiterCeiling,
-  };
+  return window.PunchLabPresets.getTuneSettingsForPreset(preset);
 }
 
 function summarizeProjectNotes(bundle = {}) {
@@ -3509,32 +3490,11 @@ function updateCustomPreset() {
 }
 
 function createCustomPresetSnapshot(id, name) {
-  const tuneSettings = getTuneSettings();
-  return {
+  return window.PunchLabPresets.createCustomPresetSnapshot({
     id,
     name,
-    retune: tuneSettings.retuneSpeed,
-    humanize: tuneSettings.humanize,
-    vibrato: tuneSettings.vibrato,
-    formant: tuneSettings.formant,
-    gate: tuneSettings.gate,
-    deEss: tuneSettings.deEss,
-    comp: tuneSettings.comp,
-    compThreshold: tuneSettings.compThreshold,
-    compRatio: tuneSettings.compRatio,
-    compAttack: tuneSettings.compAttack,
-    compRelease: tuneSettings.compRelease,
-    saturation: tuneSettings.saturation,
-    space: tuneSettings.space,
-    delay: tuneSettings.delay,
-    reverb: tuneSettings.reverb,
-    width: tuneSettings.width,
-    lowEq: tuneSettings.lowEq,
-    midEq: tuneSettings.midEq,
-    airEq: tuneSettings.airEq,
-    limiterCeiling: tuneSettings.limiterCeiling,
-    custom: true,
-  };
+    tuneSettings: getTuneSettings(),
+  });
 }
 
 function deleteCustomPreset(presetId) {
@@ -3557,47 +3517,21 @@ function deleteCustomPreset(presetId) {
 }
 
 function normalizePreset(preset) {
-  const comp = Number(preset.comp ?? 60);
-  return {
-    id: preset.id || `custom-${crypto.randomUUID()}`,
-    name: preset.name || "Custom",
-    retune: Number(preset.retune ?? 50),
-    humanize: Number(preset.humanize ?? 25),
-    vibrato: Number(preset.vibrato ?? 55),
-    formant: Number(preset.formant ?? 0),
-    gate: Number(preset.gate ?? 0),
-    deEss: Number(preset.deEss ?? 0),
-    comp,
-    compThreshold: Number(preset.compThreshold ?? getDefaultCompThreshold(comp)),
-    compRatio: Number(preset.compRatio ?? getDefaultCompRatio(comp)),
-    compAttack: Number(preset.compAttack ?? 4),
-    compRelease: Number(preset.compRelease ?? getDefaultCompRelease(comp)),
-    saturation: Number(preset.saturation ?? 35),
-    space: Number(preset.space ?? 12),
-    delay: Number(preset.delay ?? preset.space ?? 12),
-    reverb: Number(preset.reverb ?? Math.round(Number(preset.space ?? 12) * 0.65)),
-    width: Number(preset.width ?? 24),
-    lowEq: Number(preset.lowEq ?? 0),
-    midEq: Number(preset.midEq ?? 0),
-    airEq: Number(preset.airEq ?? 0),
-    limiterCeiling: Number(preset.limiterCeiling ?? -3),
-    custom: Boolean(preset.custom),
-  };
+  return window.PunchLabPresets.normalizePreset(preset, {
+    createId: () => `custom-${crypto.randomUUID()}`,
+  });
 }
 
 function getDefaultCompThreshold(comp) {
-  const amount = Math.min(1, Math.max(0, Number(comp) || 0) / 100);
-  return Math.round(-18 - amount * 18);
+  return window.PunchLabPresets.getDefaultCompThreshold(comp);
 }
 
 function getDefaultCompRatio(comp) {
-  const amount = Math.min(1, Math.max(0, Number(comp) || 0) / 100);
-  return Math.round((2.5 + amount * 8) * 2) / 2;
+  return window.PunchLabPresets.getDefaultCompRatio(comp);
 }
 
 function getDefaultCompRelease(comp) {
-  const amount = Math.min(1, Math.max(0, Number(comp) || 0) / 100);
-  return Math.round((80 + (1 - amount) * 180) / 10) * 10;
+  return window.PunchLabPresets.getDefaultCompRelease(comp);
 }
 
 function syncCompDetailDefaults() {
