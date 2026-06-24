@@ -122,6 +122,11 @@
       : "";
   }
 
+  function formatSampleRate(value) {
+    const sampleRate = Number(value);
+    return Number.isFinite(sampleRate) && sampleRate > 0 ? `${(sampleRate / 1000).toFixed(sampleRate % 1000 ? 1 : 0)} kHz` : "";
+  }
+
   function normalizeTimelineSnapMode(value) {
     return ["off", "beat", "bar"].includes(value) ? value : "off";
   }
@@ -393,6 +398,61 @@
       .join(" ");
   }
 
+  function formatProjectZipPreviewExportSettings(settings) {
+    const bitDepth = Number(settings?.wav?.bitDepth || 16);
+    const normalize = settings?.normalize?.enabled ? "norm" : "raw";
+    const loudness = settings?.loudnessNormalize?.enabled ? `${settings.loudnessNormalize.targetLufs} LUFS` : "no LUFS";
+    return `${bitDepth}-bit / ${normalize} / ${loudness}`;
+  }
+
+  function formatProjectZipPreviewPluginHostScan(pluginHost = {}) {
+    if (!pluginHost.scanAvailable) {
+      return "Plugin scan unavailable";
+    }
+    if (!pluginHost.scanned) {
+      return "Plugin scan ready / not scanned";
+    }
+
+    const formats = Array.isArray(pluginHost.formats) && pluginHost.formats.length ? pluginHost.formats.join(", ") : "formats unknown";
+    const scannedAt = formatTimestamp(pluginHost.scannedAt);
+    return [`Plugin ${pluginHost.pluginCount || 0}`, formats, scannedAt].filter(Boolean).join(" / ");
+  }
+
+  function formatProjectZipPreviewNativeAudio(nativeAudio = {}) {
+    const driver = nativeAudio.nativeAvailable ? nativeAudio.fixture ? "native fixture" : nativeAudio.driver || "native" : "web";
+    const buffer = Number(nativeAudio.preferredBufferSize || 0);
+    const latency = Number(nativeAudio.roundTripLatencyMs);
+    const sampleRateText = formatSampleRate(nativeAudio.stats?.sampleRate);
+    const updatedText = formatTimestamp(nativeAudio.statsUpdatedAt);
+    const parts = [driver];
+    if (buffer > 0) {
+      parts.push(`${buffer} samples`);
+    }
+    if (Number.isFinite(latency)) {
+      parts.push(`${Math.round(latency)}ms`);
+    }
+    if (sampleRateText) {
+      parts.push(sampleRateText);
+    }
+    if (updatedText) {
+      parts.push(updatedText);
+    }
+    return parts.join(" / ");
+  }
+
+  function formatProjectZipPreviewDesktopReadiness(desktopReadiness = {}) {
+    if (!desktopReadiness || !Object.keys(desktopReadiness).length) {
+      return "Desktop snapshot unavailable";
+    }
+
+    const nativeAudio = desktopReadiness.nativeAudioEngine || {};
+    const pluginHost = desktopReadiness.pluginHost || {};
+    const parts = [desktopReadiness.desktopReady ? "Desktop ready" : "Desktop pending"];
+    parts.push(nativeAudio.ready ? "Native audio ready" : "Native audio pending");
+    parts.push(pluginHost.scanAvailable ? "Plugin scan ready" : "Plugin scan pending");
+    return parts.join(" / ");
+  }
+
   window.PunchLabProjectZip = {
     README_MANIFEST_LINES,
     createProjectZipManifest,
@@ -409,5 +469,9 @@
     buildProjectZipPreviewPluginHostRows,
     buildProjectZipPreviewNotesRows,
     buildProjectZipPreviewHandoffRows,
+    formatProjectZipPreviewExportSettings,
+    formatProjectZipPreviewPluginHostScan,
+    formatProjectZipPreviewNativeAudio,
+    formatProjectZipPreviewDesktopReadiness,
   };
 })();

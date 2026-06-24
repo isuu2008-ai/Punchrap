@@ -1346,10 +1346,10 @@ ${window.PunchLabProjectZip.getProjectZipPreviewStyles()}
           <span>${escapeHtml(artist)}</span>
           <span>${escapeHtml(String(bpm))} BPM</span>
           <span>${escapeHtml(key)}</span>
-          <span>${escapeHtml(formatPreviewExportSettings(exportSettings))}</span>
-          <span>${escapeHtml(formatPreviewPluginHostScan(pluginHost))}</span>
-          <span>${escapeHtml(formatPreviewNativeAudio(nativeAudio))}</span>
-          <span>${escapeHtml(formatPreviewDesktopReadiness(desktopReadiness))}</span>
+          <span>${escapeHtml(window.PunchLabProjectZip.formatProjectZipPreviewExportSettings(exportSettings))}</span>
+          <span>${escapeHtml(window.PunchLabProjectZip.formatProjectZipPreviewPluginHostScan(pluginHost))}</span>
+          <span>${escapeHtml(window.PunchLabProjectZip.formatProjectZipPreviewNativeAudio(nativeAudio))}</span>
+          <span>${escapeHtml(window.PunchLabProjectZip.formatProjectZipPreviewDesktopReadiness(desktopReadiness))}</span>
           <span>${presetManifest.length} presets</span>
           <span>${takes.length} takes</span>
           <span>${manifest.markers.length} markers</span>
@@ -1546,61 +1546,6 @@ function formatPreviewFade(take) {
   const fadeIn = Number(take?.fadeIn || 0);
   const fadeOut = Number(take?.fadeOut || 0);
   return fadeIn > 0 || fadeOut > 0 ? `In ${formatDuration(fadeIn)} / Out ${formatDuration(fadeOut)}` : "None";
-}
-
-function formatPreviewExportSettings(settings) {
-  const bitDepth = Number(settings?.wav?.bitDepth || 16);
-  const normalize = settings?.normalize?.enabled ? "norm" : "raw";
-  const loudness = settings?.loudnessNormalize?.enabled ? `${settings.loudnessNormalize.targetLufs} LUFS` : "no LUFS";
-  return `${bitDepth}-bit / ${normalize} / ${loudness}`;
-}
-
-function formatPreviewNativeAudio(nativeAudio = {}) {
-  const driver = nativeAudio.nativeAvailable ? nativeAudio.fixture ? "native fixture" : nativeAudio.driver || "native" : "web";
-  const buffer = Number(nativeAudio.preferredBufferSize || 0);
-  const latency = Number(nativeAudio.roundTripLatencyMs);
-  const sampleRateText = formatDisplaySampleRate(nativeAudio.stats?.sampleRate);
-  const updatedText = formatDisplayTimestamp(nativeAudio.statsUpdatedAt);
-  const parts = [driver];
-  if (buffer > 0) {
-    parts.push(`${buffer} samples`);
-  }
-  if (Number.isFinite(latency)) {
-    parts.push(`${Math.round(latency)}ms`);
-  }
-  if (sampleRateText) {
-    parts.push(sampleRateText);
-  }
-  if (updatedText) {
-    parts.push(updatedText);
-  }
-  return parts.join(" / ");
-}
-
-function formatPreviewPluginHostScan(pluginHost = {}) {
-  if (!pluginHost.scanAvailable) {
-    return "Plugin scan unavailable";
-  }
-  if (!pluginHost.scanned) {
-    return "Plugin scan ready / not scanned";
-  }
-
-  const formats = Array.isArray(pluginHost.formats) && pluginHost.formats.length ? pluginHost.formats.join(", ") : "formats unknown";
-  const scannedAt = formatDisplayTimestamp(pluginHost.scannedAt);
-  return [`Plugin ${pluginHost.pluginCount || 0}`, formats, scannedAt].filter(Boolean).join(" / ");
-}
-
-function formatPreviewDesktopReadiness(desktopReadiness = {}) {
-  if (!desktopReadiness || !Object.keys(desktopReadiness).length) {
-    return "Desktop snapshot unavailable";
-  }
-
-  const nativeAudio = desktopReadiness.nativeAudioEngine || {};
-  const pluginHost = desktopReadiness.pluginHost || {};
-  const parts = [desktopReadiness.desktopReady ? "Desktop ready" : "Desktop pending"];
-  parts.push(nativeAudio.ready ? "Native audio ready" : "Native audio pending");
-  parts.push(pluginHost.scanAvailable ? "Plugin scan ready" : "Plugin scan pending");
-  return parts.join(" / ");
 }
 
 function summarizeExportSettings() {

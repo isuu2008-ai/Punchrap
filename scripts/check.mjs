@@ -274,15 +274,15 @@ if (!appSource.includes("formatPreviewLatency") || !appSource.includes("formatPr
   console.error("Project zip preview must display take latency, trim, and fade metadata.");
   failed = true;
 }
-if (!appSource.includes("formatPreviewNativeAudio")) {
+if (!projectZipSource.includes("formatProjectZipPreviewNativeAudio") || !appSource.includes("window.PunchLabProjectZip.formatProjectZipPreviewNativeAudio")) {
   console.error("Project zip preview must display the native audio environment summary.");
   failed = true;
 }
-if (!appSource.includes("formatPreviewDesktopReadiness") || !appSource.includes("manifest.desktopReadiness || {}")) {
+if (!projectZipSource.includes("formatProjectZipPreviewDesktopReadiness") || !appSource.includes("window.PunchLabProjectZip.formatProjectZipPreviewDesktopReadiness") || !appSource.includes("manifest.desktopReadiness || {}")) {
   console.error("Project zip preview must display the desktop readiness snapshot.");
   failed = true;
 }
-if (!appSource.includes("formatPreviewPluginHostScan") || !appSource.includes("manifest.pluginHost || {}")) {
+if (!projectZipSource.includes("formatProjectZipPreviewPluginHostScan") || !appSource.includes("window.PunchLabProjectZip.formatProjectZipPreviewPluginHostScan") || !appSource.includes("manifest.pluginHost || {}")) {
   console.error("Project zip preview must display plugin host scan summary.");
   failed = true;
 }
@@ -298,7 +298,7 @@ if (!appSource.includes("Desktop Handoff") || !projectZipSource.includes("buildP
   console.error("Project zip preview must list desktop handoff stages.");
   failed = true;
 }
-if (!appSource.includes("formatDisplaySampleRate(nativeAudio.stats?.sampleRate)")) {
+if (!projectZipSource.includes("formatSampleRate(nativeAudio.stats?.sampleRate)")) {
   console.error("Project zip preview must include native audio sample-rate context.");
   failed = true;
 }
