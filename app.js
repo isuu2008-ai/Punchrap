@@ -1267,6 +1267,11 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
       .map((take, index) => `<li><span>${index + 1}</span>${escapeHtml(take.name)} <small>${escapeHtml(take.trackName)}</small></li>`)
       .join("")
     : `<li>No comp lane takes selected.</li>`;
+  const handoffStageRows = Array.isArray(desktopReadiness.handoffStages) && desktopReadiness.handoffStages.length
+    ? desktopReadiness.handoffStages
+      .map((stage, index) => `<li><span>${index + 1}</span>${escapeHtml(formatPreviewHandoffStageName(stage.id))} <small>${escapeHtml(stage.status || "pending")}</small></li>`)
+      .join("")
+    : `<li>No desktop handoff snapshot.</li>`;
 
   return `<!doctype html>
 <html lang="en">
@@ -1328,6 +1333,10 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
           <span id="previewStatus">Ready</span>
         </div>
       </header>
+      <section>
+        <h2>Desktop Handoff</h2>
+        <ol>${handoffStageRows}</ol>
+      </section>
       ${beatSection}
       <section>
         <h2>Comp Lane</h2>
@@ -1482,6 +1491,13 @@ function formatPreviewDesktopReadiness(desktopReadiness = {}) {
   parts.push(nativeAudio.ready ? "Native audio ready" : "Native audio pending");
   parts.push(pluginHost.scanAvailable ? "Plugin scan ready" : "Plugin scan pending");
   return parts.join(" / ");
+}
+
+function formatPreviewHandoffStageName(id) {
+  return String(id || "stage")
+    .split("-")
+    .map((part) => part ? `${part.charAt(0).toUpperCase()}${part.slice(1)}` : "")
+    .join(" ");
 }
 
 function summarizeExportSettings() {

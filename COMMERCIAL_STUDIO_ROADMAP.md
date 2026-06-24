@@ -58,6 +58,8 @@
 - project zip preview header에 native audio sample rate를 함께 표시
 - Desktop readiness zip preview summary 1차
 - project zip preview header에 desktop/native/plugin readiness snapshot 요약을 표시
+- Desktop handoff zip preview stage list 1차
+- project zip preview에 browser, wrapper, native audio, plugin host handoff stage 상태 목록을 표시
 - Native audio project bundle summary 1차
 - `.punchlab.json` project bundle에 native audio 환경 요약을 저장
 - Native audio project environment restore 1차
