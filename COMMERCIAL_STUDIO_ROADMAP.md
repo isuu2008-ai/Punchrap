@@ -60,6 +60,8 @@
 - settings.nativeBufferSize가 없는 project load에서 environment.nativeAudio.preferredBufferSize를 fallback으로 복원
 - Native latency environment fallback 1차
 - runtime latency가 없을 때 loaded project environment의 round-trip latency를 engine status에 fallback 표시
+- Native sample-rate tooltip 1차
+- runtime stats 또는 loaded project environment의 sample rate를 engine status tooltip에 표시
 - Native adapter 1차
 - `src/native-adapter.js`가 native host bridge를 swappable engine interface로 연결
 - Desktop wrapper manifest 1차

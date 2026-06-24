@@ -147,6 +147,10 @@ if (!appSource.includes("getDisplayRoundTripLatency") || !appSource.includes("lo
   console.error("Engine status must fall back to loaded project round-trip latency.");
   failed = true;
 }
+if (!appSource.includes("getDisplaySampleRate") || !appSource.includes("loadedProjectEnvironment?.nativeAudio?.stats?.sampleRate")) {
+  console.error("Engine status must surface sample rate from runtime or loaded project environment.");
+  failed = true;
+}
 if (!appSource.includes("summarizeNativeAudioEnvironment") || !appSource.includes("nativeAudio: summarizeNativeAudioEnvironment()")) {
   console.error("Project zip manifest must include native audio environment summary.");
   failed = true;

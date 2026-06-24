@@ -367,6 +367,7 @@ function renderEngineStatus() {
       desktopReadiness.wrapper?.summary || "wrapper pending",
       `Buffer ${desktopReadiness.nativeAudioEngine?.preferredRuntimeBufferSize || state.nativeBufferSize} samples`,
       formatRuntimeLatency(getDisplayRoundTripLatency(desktopReadiness)),
+      formatDisplaySampleRate(getDisplaySampleRate(desktopReadiness)),
       desktopReadiness.nativeAudioEngine?.detail || "",
     ].filter(Boolean).join(" / ")
     : descriptor.title;
@@ -381,6 +382,17 @@ function formatRuntimeLatency(value) {
 function getDisplayRoundTripLatency(desktopReadiness) {
   return desktopReadiness?.nativeAudioEngine?.runtimeRoundTripLatencyMs
     ?? state.loadedProjectEnvironment?.nativeAudio?.roundTripLatencyMs
+    ?? null;
+}
+
+function formatDisplaySampleRate(value) {
+  const sampleRate = Number(value);
+  return Number.isFinite(sampleRate) && sampleRate > 0 ? `${(sampleRate / 1000).toFixed(sampleRate % 1000 ? 1 : 0)} kHz` : "";
+}
+
+function getDisplaySampleRate(desktopReadiness) {
+  return desktopReadiness?.latencyControl?.stats?.sampleRate
+    ?? state.loadedProjectEnvironment?.nativeAudio?.stats?.sampleRate
     ?? null;
 }
 

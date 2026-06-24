@@ -93,6 +93,7 @@ node .\scripts\check.mjs
 - Project load and autosave preserve native audio environment summaries
 - Project load restores native buffer-size preference from saved environment fallback when settings are missing
 - Engine status latency display falls back to loaded project native audio environment when runtime stats are missing
+- Engine status tooltip shows runtime or loaded-project sample rate when available
 - Project zip README documents the native audio environment summary for extracted archives
 - Project zip preview shows native audio driver, buffer, and latency context in the header
 - Desktop contract check enforces native audio engine sample-rate, buffer-size, and latency targets
