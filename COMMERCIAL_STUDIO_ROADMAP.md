@@ -30,6 +30,9 @@
 - recording/session playback 중 metronome tick
 - Keyboard shortcuts: Space 재생, R 녹음, S 정지, M metronome, 1-7 탭 이동
 - 입력칸 포커스 중 shortcut 비활성화
+- Recording latency compensation
+- 새 take 저장 시 latency ms만큼 start time 자동 보정
+- latency 설정 프로젝트 저장/복원
 
 ## 결론부터
 

@@ -34,6 +34,7 @@ Then open `http://localhost:4173`.
 - IndexedDB autosave with project recovery
 - BPM-based metronome toggle for recording and session playback
 - Global shortcuts for transport, metronome, stop, and tab switching outside text inputs
+- Recording latency compensation in milliseconds, applied to new take placement
 
 ## Planning
 

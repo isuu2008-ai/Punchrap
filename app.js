@@ -10,6 +10,7 @@ const state = {
   isRecording: false,
   recordStart: 0,
   recordStartPosition: 0,
+  recordLatencyMs: 0,
   timerFrame: 0,
   waveFrame: 0,
   latestTake: null,
@@ -111,6 +112,7 @@ const els = {
   punchStatus: document.querySelector("#punchStatus"),
   punchInInput: document.querySelector("#punchInInput"),
   punchOutInput: document.querySelector("#punchOutInput"),
+  recordLatencyInput: document.querySelector("#recordLatencyInput"),
   setPunchInButton: document.querySelector("#setPunchInButton"),
   setPunchOutButton: document.querySelector("#setPunchOutButton"),
   punchWindowText: document.querySelector("#punchWindowText"),
@@ -205,6 +207,7 @@ function bindEvents() {
   els.metronomeToggle.addEventListener("click", toggleMetronome);
   els.punchInInput.addEventListener("input", updatePunchFromInputs);
   els.punchOutInput.addEventListener("input", updatePunchFromInputs);
+  els.recordLatencyInput.addEventListener("input", updateRecordLatency);
   els.keySelect.addEventListener("change", renderVocalPanel);
   els.setPunchInButton.addEventListener("click", () => setPunchPoint("in"));
   els.setPunchOutButton.addEventListener("click", () => setPunchPoint("out"));
@@ -575,6 +578,7 @@ function getProjectSettings() {
     punchEnabled: state.punchEnabled,
     loopEnabled: state.loopEnabled,
     metronomeEnabled: state.metronomeEnabled,
+    recordLatencyMs: state.recordLatencyMs,
     punchIn: state.punchIn,
     punchOut: state.punchOut,
   };
@@ -591,6 +595,8 @@ function applyProjectSettings(settings = {}) {
   state.punchEnabled = Boolean(settings.punchEnabled);
   state.loopEnabled = Boolean(settings.loopEnabled);
   state.metronomeEnabled = Boolean(settings.metronomeEnabled);
+  state.recordLatencyMs = Math.max(0, Number(settings.recordLatencyMs || 0));
+  els.recordLatencyInput.value = state.recordLatencyMs;
   state.punchIn = Number(settings.punchIn || 0);
   state.punchOut = Number(settings.punchOut || 4);
 
@@ -645,6 +651,11 @@ function updatePunchFromInputs() {
   state.punchIn = Math.max(0, Number(els.punchInInput.value) || 0);
   state.punchOut = Math.max(0, Number(els.punchOutInput.value) || 0);
   updatePunchControls(false);
+  scheduleAutosave();
+}
+
+function updateRecordLatency() {
+  state.recordLatencyMs = Math.max(0, Number(els.recordLatencyInput.value) || 0);
   scheduleAutosave();
 }
 
@@ -1280,6 +1291,7 @@ function saveTake() {
   const extension = state.mimeType.includes("mp4") ? "m4a" : "webm";
   const blob = new Blob(state.chunks, { type: state.mimeType || "audio/webm" });
   const url = URL.createObjectURL(blob);
+  const latencySeconds = state.recordLatencyMs / 1000;
   const take = {
     id: crypto.randomUUID(),
     trackId: track.id,
@@ -1288,8 +1300,9 @@ function saveTake() {
     blob,
     extension,
     createdAt: new Date(),
-    startTime: state.recordStartPosition,
+    startTime: Math.max(0, state.recordStartPosition - latencySeconds),
     duration: (performance.now() - state.recordStart) / 1000,
+    recordLatencyMs: state.recordLatencyMs,
   };
 
   track.takes.push(take);

@@ -823,11 +823,19 @@ textarea:focus {
   border-color: var(--lime);
 }
 
+.mode-row.set-row {
+  grid-template-columns: 1fr 1fr;
+}
+
 .punch-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
   margin-bottom: 12px;
+}
+
+.punch-grid.single {
+  grid-template-columns: 1fr;
 }
 
 .punch-readout {
