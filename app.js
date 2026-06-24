@@ -45,6 +45,9 @@ const state = {
   sessionPlayingTakeIds: new Set(),
   punchEnabled: false,
   loopEnabled: false,
+  metronomeEnabled: false,
+  metronomeTimer: 0,
+  metronomeBeat: 0,
   punchIn: 0,
   punchOut: 4,
   punchTimers: [],
@@ -104,6 +107,7 @@ const els = {
   armedTrackName: document.querySelector("#armedTrackName"),
   punchToggle: document.querySelector("#punchToggle"),
   loopToggle: document.querySelector("#loopToggle"),
+  metronomeToggle: document.querySelector("#metronomeToggle"),
   punchStatus: document.querySelector("#punchStatus"),
   punchInInput: document.querySelector("#punchInInput"),
   punchOutInput: document.querySelector("#punchOutInput"),
@@ -197,6 +201,7 @@ function bindEvents() {
   els.inputGainSlider.addEventListener("input", updateInputGain);
   els.punchToggle.addEventListener("click", togglePunchMode);
   els.loopToggle.addEventListener("click", toggleLoopMode);
+  els.metronomeToggle.addEventListener("click", toggleMetronome);
   els.punchInInput.addEventListener("input", updatePunchFromInputs);
   els.punchOutInput.addEventListener("input", updatePunchFromInputs);
   els.keySelect.addEventListener("change", renderVocalPanel);
@@ -524,6 +529,7 @@ function getProjectSettings() {
     tune: getTuneSettings(),
     punchEnabled: state.punchEnabled,
     loopEnabled: state.loopEnabled,
+    metronomeEnabled: state.metronomeEnabled,
     punchIn: state.punchIn,
     punchOut: state.punchOut,
   };
@@ -539,6 +545,7 @@ function applyProjectSettings(settings = {}) {
     : tracks[0]?.id || "main";
   state.punchEnabled = Boolean(settings.punchEnabled);
   state.loopEnabled = Boolean(settings.loopEnabled);
+  state.metronomeEnabled = Boolean(settings.metronomeEnabled);
   state.punchIn = Number(settings.punchIn || 0);
   state.punchOut = Number(settings.punchOut || 4);
 
@@ -569,17 +576,31 @@ function updateInputGain() {
 function togglePunchMode() {
   state.punchEnabled = !state.punchEnabled;
   updatePunchControls();
+  scheduleAutosave();
 }
 
 function toggleLoopMode() {
   state.loopEnabled = !state.loopEnabled;
   updatePunchControls();
+  scheduleAutosave();
+}
+
+function toggleMetronome() {
+  state.metronomeEnabled = !state.metronomeEnabled;
+  updatePunchControls();
+  if (state.metronomeEnabled && (state.isRecording || state.isSessionPlaying)) {
+    startMetronome();
+  } else if (!state.metronomeEnabled) {
+    stopMetronome();
+  }
+  scheduleAutosave();
 }
 
 function updatePunchFromInputs() {
   state.punchIn = Math.max(0, Number(els.punchInInput.value) || 0);
   state.punchOut = Math.max(0, Number(els.punchOutInput.value) || 0);
   updatePunchControls(false);
+  scheduleAutosave();
 }
 
 function setPunchPoint(point) {
@@ -594,6 +615,7 @@ function setPunchPoint(point) {
   }
 
   updatePunchControls();
+  scheduleAutosave();
 }
 
 function updatePunchControls(syncInputs = true) {
@@ -606,8 +628,10 @@ function updatePunchControls(syncInputs = true) {
 
   els.punchToggle.classList.toggle("active", state.punchEnabled);
   els.loopToggle.classList.toggle("active", state.loopEnabled);
+  els.metronomeToggle.classList.toggle("active", state.metronomeEnabled);
   els.punchToggle.setAttribute("aria-pressed", String(state.punchEnabled));
   els.loopToggle.setAttribute("aria-pressed", String(state.loopEnabled));
+  els.metronomeToggle.setAttribute("aria-pressed", String(state.metronomeEnabled));
   els.punchStatus.textContent = state.punchEnabled ? (isValid ? "Ready" : "Check range") : "Off";
   els.punchWindowText.textContent = `${formatDuration(state.punchIn)} - ${formatDuration(state.punchOut)}`;
 }
@@ -721,6 +745,7 @@ async function playSession() {
   }
 
   els.sessionState.textContent = "Mix playing";
+  startMetronome();
   renderTracks();
   renderTakes();
 }
@@ -814,6 +839,9 @@ function stopSessionPlayback(shouldRender = true, resetBeat = false) {
   state.sessionPlayers = [];
   state.sessionPlayingTakeIds.clear();
   state.isSessionPlaying = false;
+  if (!state.isRecording) {
+    stopMetronome();
+  }
 
   els.beatAudio.pause();
   if (resetBeat) {
@@ -1161,6 +1189,7 @@ function startRecording(options = {}) {
   state.isRecording = true;
   els.recordButton.classList.add("active");
   els.sessionState.textContent = options.punch ? "Punch recording" : "Recording";
+  startMetronome();
 
   if (els.beatAudio.src && els.beatAudio.paused) {
     els.beatAudio.play();
@@ -1188,6 +1217,9 @@ function stopRecording() {
   state.isPunchRecording = false;
   els.recordButton.classList.remove("active");
   els.sessionState.textContent = wasPunchRecording ? "Punch saved" : "Take saved";
+  if (!state.isSessionPlaying) {
+    stopMetronome();
+  }
 
   if (wasPunchRecording && state.loopEnabled && els.beatAudio.src && state.punchOut > state.punchIn) {
     els.beatAudio.currentTime = state.punchIn;
@@ -1244,7 +1276,35 @@ async function countIn(bars) {
   els.countdown.hidden = true;
 }
 
-function tick(frequency) {
+async function startMetronome() {
+  if (!state.metronomeEnabled || state.metronomeTimer) {
+    return;
+  }
+
+  await ensureAudioContext();
+  state.metronomeBeat = 0;
+
+  const pulse = () => {
+    if (!state.metronomeEnabled || (!state.isRecording && !state.isSessionPlaying)) {
+      stopMetronome();
+      return;
+    }
+
+    const beatMs = 60000 / (Number(els.bpmInput.value) || 140);
+    tick(state.metronomeBeat % 4 === 0 ? 1040 : 720, 0.075);
+    state.metronomeBeat += 1;
+    state.metronomeTimer = window.setTimeout(pulse, beatMs);
+  };
+
+  pulse();
+}
+
+function stopMetronome() {
+  window.clearTimeout(state.metronomeTimer);
+  state.metronomeTimer = 0;
+}
+
+function tick(frequency, duration = 0.08) {
   if (!state.audioContext) {
     return;
   }
@@ -1254,10 +1314,10 @@ function tick(frequency) {
   osc.frequency.value = frequency;
   gain.gain.setValueAtTime(0.0001, state.audioContext.currentTime);
   gain.gain.exponentialRampToValueAtTime(0.14, state.audioContext.currentTime + 0.01);
-  gain.gain.exponentialRampToValueAtTime(0.0001, state.audioContext.currentTime + 0.08);
+  gain.gain.exponentialRampToValueAtTime(0.0001, state.audioContext.currentTime + duration);
   osc.connect(gain).connect(state.audioContext.destination);
   osc.start();
-  osc.stop(state.audioContext.currentTime + 0.09);
+  osc.stop(state.audioContext.currentTime + duration + 0.01);
 }
 
 function wait(ms) {

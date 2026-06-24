@@ -32,6 +32,7 @@ Then open `http://localhost:4173`.
 - Region rename, clip gain, and fade in/out controls persisted in project files
 - Export tab for track stems, dry vocals, and tuned vocals
 - IndexedDB autosave with project recovery
+- BPM-based metronome toggle for recording and session playback
 
 ## Planning
 

@@ -26,6 +26,8 @@
 - IndexedDB autosave
 - Recover 버튼으로 autosave 복원
 - Storage Layer `src/storage.js` 분리
+- BPM 기반 metronome toggle
+- recording/session playback 중 metronome tick
 
 ## 결론부터
 
