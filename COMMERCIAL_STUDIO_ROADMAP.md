@@ -88,6 +88,8 @@
 - Region row에서 take copy/delete를 직접 실행하고 timeline/take/export 상태를 즉시 갱신
 - Track rename 1차
 - Track 이름 변경 시 기존 take 라벨, arm strip, timeline/export 표시까지 같이 갱신
+- BPM grid/snap 1차
+- Timeline에 BPM 기반 beat/bar grid를 그리고 marker/region start를 beat 또는 bar 단위로 snap
 - Waveform recording view
 - 녹음 중 waveform peak trail 표시
 - take별 waveform thumbnail 저장/복원

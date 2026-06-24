@@ -45,6 +45,7 @@ node .\scripts\check.mjs
 - Node package scripts for local start and smoke checks
 - PWA manifest, local icon, platform bootstrap, and service worker shell cache for desktop-install preparation
 - Timeline view with marker management and take region start/nudge controls
+- BPM-based timeline grid with optional beat/bar snap for markers and region starts
 - Region rename, clip gain, and fade in/out controls persisted in project files
 - Timeline undo/redo for marker and region edits
 - Export tab for track stems, dry vocals, and tuned vocals

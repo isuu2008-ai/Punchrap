@@ -220,6 +220,9 @@ const els = {
   markerTypeSelect: document.querySelector("#markerTypeSelect"),
   markerTimeInput: document.querySelector("#markerTimeInput"),
   addMarkerButton: document.querySelector("#addMarkerButton"),
+  timelineGrid: document.querySelector("#timelineGrid"),
+  timelineSnapSelect: document.querySelector("#timelineSnapSelect"),
+  timelineGridMeta: document.querySelector("#timelineGridMeta"),
   markerList: document.querySelector("#markerList"),
   regionList: document.querySelector("#regionList"),
   timelineUndoButton: document.querySelector("#timelineUndoButton"),
@@ -275,6 +278,8 @@ function bindEvents() {
   els.stopButton.addEventListener("click", stopAll);
   els.recordButton.addEventListener("click", toggleRecord);
   els.beatInput.addEventListener("change", loadBeat);
+  els.bpmInput.addEventListener("input", updateTempoSettings);
+  els.countInSelect.addEventListener("change", scheduleAutosave);
   els.templateSelect.addEventListener("change", updateTemplateMeta);
   els.applyTemplateButton.addEventListener("click", applySelectedTemplate);
   els.inputGainSlider.addEventListener("input", updateInputGain);
@@ -377,6 +382,7 @@ function bindEvents() {
   els.projectInput.addEventListener("change", loadProject);
   els.recoverProjectButton.addEventListener("click", recoverAutosave);
   els.addMarkerButton.addEventListener("click", addTimelineMarker);
+  els.timelineSnapSelect.addEventListener("change", updateTimelineSnapMode);
   els.timelineUndoButton.addEventListener("click", undoTimelineEdit);
   els.timelineRedoButton.addEventListener("click", redoTimelineEdit);
   els.exportStemsButton.addEventListener("click", exportTrackStems);
@@ -985,6 +991,7 @@ function getProjectSettings() {
     exportMetadata: getExportMetadata(),
     exportNormalize: els.exportNormalizeInput.checked,
     lyrics: els.lyricsInput.value,
+    timelineSnap: getTimelineSnapMode(),
     punchEnabled: state.punchEnabled,
     loopEnabled: state.loopEnabled,
     metronomeEnabled: state.metronomeEnabled,
@@ -1004,6 +1011,7 @@ function applyProjectSettings(settings = {}) {
   els.exportTitleInput.value = settings.exportMetadata?.title || "";
   els.exportNormalizeInput.checked = settings.exportNormalize !== false;
   els.lyricsInput.value = settings.lyrics || "";
+  els.timelineSnapSelect.value = normalizeTimelineSnapMode(settings.timelineSnap || "off");
   els.inputGainSlider.value = settings.inputGain || 2;
   state.armedTrackId = tracks.some((track) => track.id === settings.armedTrackId)
     ? settings.armedTrackId
@@ -3232,6 +3240,17 @@ function updateProjectLyrics() {
   scheduleAutosave();
 }
 
+function updateTempoSettings() {
+  renderTimeline();
+  renderExportPanel();
+  scheduleAutosave();
+}
+
+function updateTimelineSnapMode() {
+  renderTimeline();
+  scheduleAutosave();
+}
+
 function renderLyrics() {
   if (!els.lyricSectionList) {
     return;
@@ -3325,6 +3344,17 @@ function renderTimeline() {
     )
     .join("");
 
+  els.timelineGrid.innerHTML = makeTimelineGridLines(timelineEnd)
+    .map(
+      (line) => `
+        <span class="timeline-grid-line ${line.isBar ? "bar" : "beat"}" style="left: ${timelinePercent(line.time, timelineEnd)}%">
+          ${line.label ? `<span>${line.label}</span>` : ""}
+        </span>
+      `,
+    )
+    .join("");
+  updateTimelineGridMeta();
+
   els.timelineMarkers.innerHTML = markers
     .map(
       (marker) => `
@@ -3375,7 +3405,7 @@ function renderTimeline() {
             <input class="region-name-input" type="text" value="${escapeHtml(getTakeTitle(take, index))}" data-region-name="${take.id}" />
             <div class="region-actions">
               <button class="mini-button" type="button" data-nudge-region="${take.id}" data-delta="-0.1">-0.1</button>
-              <input type="number" min="0" step="0.1" value="${(take.startTime || 0).toFixed(1)}" data-region-start="${take.id}" />
+              <input type="number" min="0" step="0.1" value="${formatTimelineInputTime(take.startTime || 0)}" data-region-start="${take.id}" />
               <button class="mini-button" type="button" data-nudge-region="${take.id}" data-delta="0.1">+0.1</button>
             </div>
             <div class="region-controls">
@@ -3553,11 +3583,11 @@ function addTimelineMarker() {
   const marker = {
     id: crypto.randomUUID(),
     type: els.markerTypeSelect.value,
-    time: Math.max(0, Number(els.markerTimeInput.value) || 0),
+    time: snapTimelineTime(els.markerTimeInput.value),
   };
   state.markers.push(marker);
   state.markers = normalizeMarkers(state.markers);
-  els.markerTimeInput.value = marker.time.toFixed(1);
+  els.markerTimeInput.value = formatTimelineInputTime(marker.time);
   els.sessionState.textContent = "Marker added";
   refreshTimelineEdit();
 }
@@ -3579,7 +3609,7 @@ function setRegionStart(takeId, value) {
     return;
   }
 
-  const nextStart = Math.max(0, Number(value) || 0);
+  const nextStart = snapTimelineTime(value);
   if (isSameTimelineNumber(take.startTime || 0, nextStart)) {
     renderTimeline();
     return;
@@ -3653,7 +3683,7 @@ function nudgeRegionStart(takeId, delta) {
     return;
   }
 
-  setRegionStart(takeId, (take.startTime || 0) + delta);
+  setRegionStart(takeId, nudgeTimelineTime(take.startTime || 0, delta));
 }
 
 function duplicateTimelineRegion(takeId) {
@@ -3729,8 +3759,98 @@ function getTimelineTickStep(rawStep) {
   return [1, 2, 5, 10, 15, 30, 60, 120].find((step) => step >= rawStep) || 240;
 }
 
+function makeTimelineGridLines(end) {
+  const beatDuration = getBeatDuration();
+  const maxLines = 192;
+  const beatCount = Math.min(maxLines, Math.ceil(end / beatDuration) + 1);
+  const lines = [];
+
+  for (let beat = 0; beat < beatCount; beat += 1) {
+    const time = beat * beatDuration;
+    if (time > end + 0.001) {
+      break;
+    }
+
+    const isBar = beat % 4 === 0;
+    lines.push({
+      time,
+      isBar,
+      label: isBar ? String(Math.floor(beat / 4) + 1) : "",
+    });
+  }
+
+  return lines;
+}
+
+function updateTimelineGridMeta() {
+  if (!els.timelineGridMeta) {
+    return;
+  }
+
+  const bpm = Number(els.bpmInput.value) || 140;
+  const snapLabel = {
+    off: "snap off",
+    beat: "beat snap",
+    bar: "bar snap",
+  }[getTimelineSnapMode()];
+  els.timelineGridMeta.textContent = `${bpm} BPM / ${snapLabel}`;
+}
+
 function timelinePercent(value, end) {
   return Math.max(0, Math.min(100, (value / Math.max(1, end)) * 100));
+}
+
+function getBeatDuration() {
+  return 60 / (Number(els.bpmInput.value) || 140);
+}
+
+function getTimelineSnapMode() {
+  return normalizeTimelineSnapMode(els.timelineSnapSelect?.value || "off");
+}
+
+function normalizeTimelineSnapMode(value) {
+  return ["off", "beat", "bar"].includes(value) ? value : "off";
+}
+
+function getTimelineSnapStep() {
+  const mode = getTimelineSnapMode();
+  if (mode === "off") {
+    return 0;
+  }
+
+  return getBeatDuration() * (mode === "bar" ? 4 : 1);
+}
+
+function snapTimelineTime(value) {
+  const safeValue = Math.max(0, Number(value) || 0);
+  const step = getTimelineSnapStep();
+  if (!step) {
+    return safeValue;
+  }
+
+  return Math.max(0, Math.round(safeValue / step) * step);
+}
+
+function nudgeTimelineTime(value, delta) {
+  const safeValue = Math.max(0, Number(value) || 0);
+  const step = getTimelineSnapStep();
+  if (!step) {
+    return Math.max(0, safeValue + delta);
+  }
+
+  if (delta > 0) {
+    return Math.ceil((safeValue + 0.0001) / step) * step;
+  }
+
+  return Math.max(0, Math.floor((safeValue - 0.0001) / step) * step);
+}
+
+function formatTimelineInputTime(value) {
+  return snapToInputPrecision(value).toString();
+}
+
+function snapToInputPrecision(value) {
+  return Number(Math.max(0, Number(value) || 0).toFixed(3));
 }
 
 function normalizeMarkers(markers = []) {

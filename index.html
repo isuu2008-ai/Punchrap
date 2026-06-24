@@ -7,20 +7,20 @@
     <title>PunchLab</title>
     <link rel="icon" href="./assets/punchlab-icon.svg" type="image/svg+xml" />
     <link rel="manifest" href="./manifest.webmanifest" />
-    <link rel="stylesheet" href="./styles.css?v=20260624-43" />
+    <link rel="stylesheet" href="./styles.css?v=20260624-44" />
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
-    <script src="./src/dsp.js?v=20260624-43" defer></script>
-    <script src="./src/audio.js?v=20260624-43" defer></script>
-    <script src="./src/files.js?v=20260624-43" defer></script>
-    <script src="./src/templates.js?v=20260624-43" defer></script>
-    <script src="./src/mix.js?v=20260624-43" defer></script>
-    <script src="./src/vocal.js?v=20260624-43" defer></script>
-    <script src="./src/native-bridge.js?v=20260624-43" defer></script>
-    <script src="./src/engine.js?v=20260624-43" defer></script>
-    <script src="./src/project.js?v=20260624-43" defer></script>
-    <script src="./src/storage.js?v=20260624-43" defer></script>
-    <script src="./src/platform.js?v=20260624-43" defer></script>
-    <script src="./app.js?v=20260624-43" defer></script>
+    <script src="./src/dsp.js?v=20260624-44" defer></script>
+    <script src="./src/audio.js?v=20260624-44" defer></script>
+    <script src="./src/files.js?v=20260624-44" defer></script>
+    <script src="./src/templates.js?v=20260624-44" defer></script>
+    <script src="./src/mix.js?v=20260624-44" defer></script>
+    <script src="./src/vocal.js?v=20260624-44" defer></script>
+    <script src="./src/native-bridge.js?v=20260624-44" defer></script>
+    <script src="./src/engine.js?v=20260624-44" defer></script>
+    <script src="./src/project.js?v=20260624-44" defer></script>
+    <script src="./src/storage.js?v=20260624-44" defer></script>
+    <script src="./src/platform.js?v=20260624-44" defer></script>
+    <script src="./app.js?v=20260624-44" defer></script>
   </head>
   <body>
     <main class="studio-shell">
@@ -258,6 +258,7 @@
               </div>
               <div class="timeline-surface">
                 <div class="timeline-ruler" id="timelineRuler"></div>
+                <div class="timeline-grid-lines" id="timelineGrid"></div>
                 <div class="timeline-markers" id="timelineMarkers"></div>
                 <div class="timeline-regions" id="timelineRegions"></div>
               </div>
@@ -273,6 +274,18 @@
                   <i data-lucide="redo-2"></i>
                   <span>Redo</span>
                 </button>
+              </div>
+
+              <div class="timeline-grid-control">
+                <label>
+                  Grid snap
+                  <select id="timelineSnapSelect">
+                    <option value="off">Off</option>
+                    <option value="beat">Beat</option>
+                    <option value="bar">Bar</option>
+                  </select>
+                </label>
+                <small id="timelineGridMeta">140 BPM / grid</small>
               </div>
 
               <div class="panel-heading">
