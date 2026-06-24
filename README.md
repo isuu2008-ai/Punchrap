@@ -84,6 +84,7 @@ node .\scripts\check.mjs
 - Native bridge exposes optional latency statistics and buffer-size control through the engine adapter
 - Project settings persist a native buffer-size preference and apply it through `setBufferSize` when available
 - Record setup includes a compact native buffer-size selector for future desktop low-latency tuning
+- Desktop readiness includes the selected native buffer-size preference for runtime diagnostics
 - Desktop contract check enforces native audio engine sample-rate, buffer-size, and latency targets
 - Desktop readiness exposes native audio engine performance contract status at runtime
 - Engine status tooltip includes native audio engine readiness detail without adding another visible panel

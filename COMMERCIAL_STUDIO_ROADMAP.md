@@ -38,6 +38,8 @@
 - 프로젝트 설정에 native buffer size 선호값을 저장하고 복원 시 setBufferSize native handoff로 적용
 - Native buffer size control 1차
 - Record 화면의 Session 설정에 compact native buffer size selector를 추가하고 변경 시 setBufferSize handoff를 시도
+- Native buffer size readiness payload 1차
+- 선택한 native buffer size 선호값을 platform preferences와 desktop readiness payload에 노출
 - Native adapter 1차
 - `src/native-adapter.js`가 native host bridge를 swappable engine interface로 연결
 - Desktop wrapper manifest 1차

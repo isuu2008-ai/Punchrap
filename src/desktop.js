@@ -83,6 +83,7 @@
 
   function getReadiness() {
     const platform = window.PunchLabPlatform?.platform || {};
+    const preferredNativeBufferSize = normalizeNativeBufferSize(platform.preferences?.nativeBufferSize);
     const bridgeStatus = window.PunchLabNativeBridge?.getStatus?.() || null;
     const engineDriver = window.PunchLabEngine?.getDriver?.() || null;
     const capabilities = engineDriver?.capabilities || {};
@@ -194,8 +195,12 @@
       latencyControl: {
         available: hasLatencyControl,
         missingMethods: missingLatencyMethods,
+        preferredBufferSize: preferredNativeBufferSize,
       },
-      nativeAudioEngine: nativeAudioContract,
+      nativeAudioEngine: {
+        ...nativeAudioContract,
+        preferredRuntimeBufferSize: preferredNativeBufferSize,
+      },
       outputRouting: {
         nativeAvailable: hasNativeOutputRouting,
         missingMethods: missingOutputMethods,
@@ -335,6 +340,11 @@
     }
     const missing = new Set(status.missingOptionalMethods || []);
     return methods.filter((method) => missing.has(method));
+  }
+
+  function normalizeNativeBufferSize(value) {
+    const size = Number(value || NATIVE_AUDIO_ENGINE_CONTRACT.preferredBufferSize);
+    return NATIVE_AUDIO_ENGINE_CONTRACT.bufferSizes.includes(size) ? size : NATIVE_AUDIO_ENGINE_CONTRACT.preferredBufferSize;
   }
 
   window.PunchLabDesktop = {

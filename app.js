@@ -1967,6 +1967,7 @@ function updateRecordLatency() {
 }
 
 async function applyNativeBufferSize() {
+  window.PunchLabPlatform?.setNativeBufferSizePreference?.(state.nativeBufferSize);
   try {
     const result = await window.PunchLabPlatform?.setBufferSize?.(state.nativeBufferSize);
     if (result?.supported) {

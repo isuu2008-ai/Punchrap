@@ -139,6 +139,14 @@ if (!appSource.includes("nativeBufferSize") || !appSource.includes("applyNativeB
   console.error("app.js must persist and apply the native buffer-size preference.");
   failed = true;
 }
+if (!readFileSync("src/platform.js", "utf8").includes("setNativeBufferSizePreference")) {
+  console.error("Platform must expose the native buffer-size preference.");
+  failed = true;
+}
+if (!readFileSync("src/desktop.js", "utf8").includes("preferredRuntimeBufferSize")) {
+  console.error("Desktop readiness must expose the preferred runtime buffer size.");
+  failed = true;
+}
 if (!indexHtml.includes("nativeBufferSizeSelect")) {
   console.error("index.html must include the native buffer-size selector.");
   failed = true;

@@ -2,6 +2,9 @@
   const platform = {
     displayMode: getDisplayMode(),
     nativeBridge: window.PunchLabNativeBridge?.getStatus() || null,
+    preferences: {
+      nativeBufferSize: 128,
+    },
     serviceWorker: {
       supported: "serviceWorker" in navigator,
       registered: false,
@@ -98,6 +101,13 @@
     return result ? { supported: !result.unsupported, method: "native", native: result } : null;
   }
 
+  function setNativeBufferSizePreference(bufferSize = 128) {
+    const size = Number(bufferSize || 128);
+    platform.preferences.nativeBufferSize = [64, 128, 256, 512, 1024].includes(size) ? size : 128;
+    emitPlatformReady();
+    return platform.preferences.nativeBufferSize;
+  }
+
   function blobToDataUrl(blob) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -127,6 +137,7 @@
     registerServiceWorker,
     saveProjectFile,
     setBufferSize,
+    setNativeBufferSizePreference,
     setOutputDevice,
   };
 
