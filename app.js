@@ -3854,6 +3854,7 @@ function renderVersionPanel(take) {
         const isSelected = versionTake.id === state.selectedVocalTakeId;
         const isPlaying = versionTake.id === state.currentTakeId || state.sessionPlayingTakeIds.has(versionTake.id);
         const isBest = Boolean(versionTake.bestTake);
+        const isComp = Boolean(versionTake.compSelected);
         return `
           <div class="version-row ${isSelected ? "selected" : ""} ${isPlaying ? "active" : ""}">
             <button class="version-main" type="button" data-select-version="${versionTake.id}" ${vocalBusy ? "disabled" : ""}>
@@ -3866,6 +3867,7 @@ function renderVersionPanel(take) {
                 ${isPlaying ? "Pause" : "Play"}
               </button>
               <button class="mini-button ${isBest ? "active" : ""}" type="button" data-best-version="${versionTake.id}" ${vocalBusy ? "disabled" : ""}>Best</button>
+              <button class="mini-button ${isComp ? "active" : ""}" type="button" data-comp-version="${versionTake.id}" ${vocalBusy ? "disabled" : ""}>Comp</button>
               <a class="mini-button" href="${versionTake.url}" download="${makeTakeFilename(versionTake)}">Save</a>
               <button class="mini-button danger" type="button" data-delete-version="${versionTake.id}" ${vocalBusy ? "disabled" : ""}>Del</button>
             </div>
@@ -3883,6 +3885,9 @@ function renderVersionPanel(take) {
   });
   els.versionList.querySelectorAll("[data-best-version]").forEach((button) => {
     button.addEventListener("click", () => toggleBestTake(button.dataset.bestVersion));
+  });
+  els.versionList.querySelectorAll("[data-comp-version]").forEach((button) => {
+    button.addEventListener("click", () => toggleCompTake(button.dataset.compVersion));
   });
   els.versionList.querySelectorAll("[data-delete-version]").forEach((button) => {
     button.addEventListener("click", () => deleteVocalVersion(button.dataset.deleteVersion));
@@ -6280,6 +6285,7 @@ function addCompTake(takeId) {
   normalizeCompOrder();
   els.sessionState.textContent = "Added to comp";
   renderTakes();
+  renderVocalPanel();
   scheduleAutosave();
 }
 
@@ -6294,6 +6300,7 @@ function removeCompTake(takeId) {
   normalizeCompOrder();
   els.sessionState.textContent = "Removed from comp";
   renderTakes();
+  renderVocalPanel();
   scheduleAutosave();
 }
 

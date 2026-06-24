@@ -43,7 +43,7 @@ node .\scripts\check.mjs
 - Project zip preview shows take latency compensation, source trim, and fade metadata
 - Project zip manifests include processed-take source, version, preset, tune, and automation summaries
 - Vocal screen render-version history for source take retunes
-- Vocal render-version history supports separate select, audition, best, save, and delete actions
+- Vocal render-version history supports separate select, audition, best, comp, save, and delete actions
 - Pitch analysis against the selected minor key or chromatic mode
 - Adaptive pitch detection with low-level thresholding, lag refinement, and octave-jump smoothing
 - Frame-level pitch correction and offline vocal chain render to a new processed WAV take
