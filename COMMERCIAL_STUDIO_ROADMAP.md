@@ -216,6 +216,8 @@
 - beat/vocal/comp/dry/tuned 단일 WAV export group 계획을 `src/export-plan.js`로 분리
 - Export queue display policy split 1차
 - export row count, queue status label, job detail 표시 정책을 `src/export-plan.js`로 분리
+- Export loudness/status policy split 1차
+- loudness clipping risk와 compressed export readiness 문구를 `src/export-plan.js`로 분리
 - Export WAV option policy split 1차
 - WAV bit-depth 정규화와 encode option 생성을 `src/export-plan.js`로 분리
 - Audible export source alignment 1차

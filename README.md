@@ -166,7 +166,7 @@ node .\scripts\check.mjs
 - Project zip preview plugin-host, notes, and desktop-handoff rows are formatted in `src/project-zip.js`
 - Project zip preview header summaries for export, plugin scan, native audio, and desktop readiness are formatted in `src/project-zip.js`
 - Export mastering finalize logic for loudness normalize, peak normalize, and true-peak ceiling lives in `src/export-mastering.js`
-- Export filename, single group, stem group, WAV bit-depth options, compressed-format, queue row count, status label, and job-detail planning lives in `src/export-plan.js`
+- Export filename, single group, stem group, WAV bit-depth options, compressed-format, queue row count, status label, clipping risk, compressed-status, and job-detail planning lives in `src/export-plan.js`
 - Timeline snap, grid, marker normalization, region trim, fade, color, region group, input formatting, numeric comparison, undo snapshot, and percent mapping policy lives in `src/timeline.js`
 - Take sorting, best-to-comp ordering, comp order moves, filename, display metadata, batch target copy/selection/duplicate guard, and processed-version policy lives in `src/takes.js`
 - Vocal preset normalization, custom preset snapshots, tune-setting snapshots, and compressor defaults live in `src/presets.js`

@@ -89,6 +89,41 @@
     return [detail, job.compressedStatus].filter(Boolean).join(" / ");
   }
 
+  function getClippingRisk(report = {}, stale = false, { formatDb = formatDbValue } = {}) {
+    if (stale) {
+      return { warning: true, label: "Re-analyze mix" };
+    }
+
+    const truePeakDb = Number(report?.truePeakDbfs ?? report?.peakDbfs ?? -Infinity);
+    const clippingSamples = Number(report?.clippingSamples || 0);
+    if (clippingSamples > 0) {
+      return { warning: true, label: `${clippingSamples} clipped samples` };
+    }
+
+    if (truePeakDb >= -0.1) {
+      return { warning: true, label: `${formatDb(truePeakDb)} dBTP near ceiling` };
+    }
+
+    if (truePeakDb >= -1) {
+      return { warning: false, label: `${formatDb(truePeakDb)} dBTP close` };
+    }
+
+    return { warning: false, label: "Safe headroom" };
+  }
+
+  function getCompressedExportStatus(ready = false) {
+    return ready ? "Native MP3/M4A ready" : "Native required";
+  }
+
+  function formatDbValue(value) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) {
+      return "-inf";
+    }
+
+    return `${number.toFixed(1)}`;
+  }
+
   function slugify(value) {
     return String(value || "session")
       .toLowerCase()
@@ -103,6 +138,8 @@
     buildStemExportGroups,
     formatExportRowCount,
     formatExportJobDetail,
+    getClippingRisk,
+    getCompressedExportStatus,
     getExportJobStatusLabel,
     makeExportBaseSlug,
     makeMixFilename,

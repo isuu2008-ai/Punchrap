@@ -4671,25 +4671,7 @@ function renderLoudnessReport() {
 }
 
 function getClippingRisk(report, stale = false) {
-  if (stale) {
-    return { warning: true, label: "Re-analyze mix" };
-  }
-
-  const truePeakDb = Number(report?.truePeakDbfs ?? report?.peakDbfs ?? -Infinity);
-  const clippingSamples = Number(report?.clippingSamples || 0);
-  if (clippingSamples > 0) {
-    return { warning: true, label: `${clippingSamples} clipped samples` };
-  }
-
-  if (truePeakDb >= -0.1) {
-    return { warning: true, label: `${formatDb(truePeakDb)} dBTP near ceiling` };
-  }
-
-  if (truePeakDb >= -1) {
-    return { warning: false, label: `${formatDb(truePeakDb)} dBTP close` };
-  }
-
-  return { warning: false, label: "Safe headroom" };
+  return window.PunchLabExportPlan.getClippingRisk(report, stale, { formatDb });
 }
 
 function formatExportRowCount(row) {
@@ -4697,7 +4679,7 @@ function formatExportRowCount(row) {
 }
 
 function getCompressedExportStatus() {
-  return canExportCompressedAudio() ? "Native MP3/M4A ready" : "Native required";
+  return window.PunchLabExportPlan.getCompressedExportStatus(canExportCompressedAudio());
 }
 
 function canExportCompressedAudio() {
