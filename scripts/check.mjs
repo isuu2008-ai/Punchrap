@@ -151,6 +151,10 @@ if (!appSource.includes("manifest.json includes nativeAudio")) {
   console.error("Project zip README must describe the native audio manifest summary.");
   failed = true;
 }
+if (!appSource.includes("formatPreviewNativeAudio")) {
+  console.error("Project zip preview must display the native audio environment summary.");
+  failed = true;
+}
 if (!appSource.includes("nativeBufferSize") || !appSource.includes("applyNativeBufferSize") || !appSource.includes("changeNativeBufferSize")) {
   console.error("app.js must persist and apply the native buffer-size preference.");
   failed = true;

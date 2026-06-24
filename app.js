@@ -1146,6 +1146,7 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
   const bpm = settings.bpm || Number(els.bpmInput.value) || 140;
   const key = settings.key || els.keySelect.value || "C minor";
   const exportSettings = manifest.exportSettings || {};
+  const nativeAudio = manifest.nativeAudio || {};
   const takes = [...manifest.takes].sort(
     (left, right) => (left.startTime || 0) - (right.startTime || 0) || String(left.trackName).localeCompare(String(right.trackName)),
   );
@@ -1269,6 +1270,7 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
           <span>${escapeHtml(String(bpm))} BPM</span>
           <span>${escapeHtml(key)}</span>
           <span>${escapeHtml(formatPreviewExportSettings(exportSettings))}</span>
+          <span>${escapeHtml(formatPreviewNativeAudio(nativeAudio))}</span>
           <span>${takes.length} takes</span>
           <span>${manifest.markers.length} markers</span>
         </div>
@@ -1402,6 +1404,20 @@ function formatPreviewExportSettings(settings) {
   const normalize = settings?.normalize?.enabled ? "norm" : "raw";
   const loudness = settings?.loudnessNormalize?.enabled ? `${settings.loudnessNormalize.targetLufs} LUFS` : "no LUFS";
   return `${bitDepth}-bit / ${normalize} / ${loudness}`;
+}
+
+function formatPreviewNativeAudio(nativeAudio = {}) {
+  const driver = nativeAudio.nativeAvailable ? nativeAudio.driver || "native" : "web";
+  const buffer = Number(nativeAudio.preferredBufferSize || 0);
+  const latency = Number(nativeAudio.roundTripLatencyMs);
+  const parts = [driver];
+  if (buffer > 0) {
+    parts.push(`${buffer} samples`);
+  }
+  if (Number.isFinite(latency)) {
+    parts.push(`${Math.round(latency)}ms`);
+  }
+  return parts.join(" / ");
 }
 
 function summarizeExportSettings() {

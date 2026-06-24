@@ -50,6 +50,8 @@
 - project zip manifest에 native audio driver, buffer, latency 환경 요약을 포함
 - Native audio zip README note 1차
 - project zip README에 nativeAudio 환경 요약 포함 사실을 명시
+- Native audio zip preview summary 1차
+- project zip preview header에 native audio driver, buffer, latency 요약을 표시
 - Native adapter 1차
 - `src/native-adapter.js`가 native host bridge를 swappable engine interface로 연결
 - Desktop wrapper manifest 1차
