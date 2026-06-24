@@ -27,7 +27,7 @@ Then open `http://localhost:4173`.
 - Batch render for the current track or all raw vocal takes
 - Processed take version labels for repeated renders from the same source take
 - Project save/open as a local `.punchlab.json` bundle
-- Separated DSP, audio utility, and project storage modules under `src/`
+- Separated DSP, audio utility, offline mix render, and project storage modules under `src/`
 - Timeline view with marker management and take region start/nudge controls
 - Region rename, clip gain, and fade in/out controls persisted in project files
 - Timeline undo/redo for marker and region edits

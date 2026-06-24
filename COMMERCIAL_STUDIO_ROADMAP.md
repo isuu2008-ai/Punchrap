@@ -8,6 +8,7 @@
 
 - DSP 코드를 `src/dsp.js`로 분리
 - WAV 인코딩/다운로드 유틸을 `src/audio.js`로 분리
+- Offline mix render 엔진을 `src/mix.js`로 분리
 - 프로젝트 저장/불러오기 계층을 `src/project.js`로 분리
 - `.punchlab.json` 로컬 프로젝트 저장/복원
 - processed take `v1`, `v2` 버전 관리
@@ -426,11 +427,11 @@ VST3/AU 플러그인은 마지막에 가는 것이 맞습니다.
 5. stem export
 6. latency compensation
 7. pitch engine 개선
-8. DSP 모듈 추가 분리
-9. formant-aware pitch shifting
-10. true peak and K-weighted loudness refinement
+8. formant-aware pitch shifting
+9. true peak and K-weighted loudness refinement
+10. Audio Engine Layer 추가 분리
 11. desktop wrapper
 12. native audio engine
 13. VST3/AU plugin
 
-현재는 1-8번의 기본선과 timeline undo/redo, render/export queue, custom scale editor, take comping, comp lane editing, export metadata, export preview, project zip export asset 포함형, waveform recording view, export peak normalize, LUFS loudness analysis 기본형이 들어온 상태입니다. 다음으로는 DSP 모듈 추가 분리, formant-aware pitch shifting, true peak/K-weighted loudness refinement가 중요합니다.
+현재는 1-8번의 기본선과 timeline undo/redo, render/export queue, custom scale editor, take comping, comp lane editing, export metadata, export preview, project zip export asset 포함형, waveform recording view, export peak normalize, LUFS loudness analysis 기본형, offline mix render 모듈 분리가 들어온 상태입니다. 다음으로는 formant-aware pitch shifting, true peak/K-weighted loudness refinement, Audio Engine Layer 추가 분리가 중요합니다.

@@ -3386,6 +3386,10 @@ async function renderFullMixBlob() {
 }
 
 async function renderFullMixBuffer() {
+  if (!window.PunchLabMix?.renderMixBuffer) {
+    throw new Error("Mix engine missing.");
+  }
+
   const audibleTakes = getAudibleTakes();
   const sampleRate = state.audioContext?.sampleRate || 48000;
   const decodeContext = new OfflineAudioContext(2, 1, sampleRate);
@@ -3399,23 +3403,12 @@ async function renderFullMixBuffer() {
       buffer: await decodeContext.decodeAudioData(await take.blob.arrayBuffer()),
     })),
   );
-  const endPosition = Math.max(
-    beatBuffer?.duration || 0,
-    ...takeBuffers.map(({ take, buffer }) => (take.startTime || 0) + buffer.duration),
-    0.1,
-  );
-  const frameCount = Math.ceil(endPosition * sampleRate);
-  const renderContext = new OfflineAudioContext(2, frameCount, sampleRate);
 
-  if (beatBuffer) {
-    scheduleBuffer(renderContext, beatBuffer, 0, 1, 0);
-  }
-
-  takeBuffers.forEach(({ take, track, buffer }) => {
-    scheduleBuffer(renderContext, buffer, take.startTime || 0, getTrackOutputVolume(track), track.pan, take);
+  return window.PunchLabMix.renderMixBuffer({
+    sampleRate,
+    beatBuffer,
+    takes: takeBuffers.map(makeMixTakeSource),
   });
-
-  return renderContext.startRendering();
 }
 
 async function analyzeLoudness() {
@@ -3670,6 +3663,10 @@ function getExportJobStatusLabel(status) {
 }
 
 async function renderTakeMixBlob(takes, includeBeat = false) {
+  if (!window.PunchLabMix?.renderMixBuffer) {
+    throw new Error("Mix engine missing.");
+  }
+
   const sampleRate = state.audioContext?.sampleRate || 48000;
   const decodeContext = new OfflineAudioContext(2, 1, sampleRate);
   const beatBuffer = includeBeat && state.beatArrayBuffer
@@ -3682,23 +3679,27 @@ async function renderTakeMixBlob(takes, includeBeat = false) {
       buffer: await decodeContext.decodeAudioData(await take.blob.arrayBuffer()),
     })),
   );
-  const endPosition = Math.max(
-    beatBuffer?.duration || 0,
-    ...takeBuffers.map(({ take, buffer }) => (take.startTime || 0) + buffer.duration),
-    0.1,
-  );
-  const frameCount = Math.ceil(endPosition * sampleRate);
-  const renderContext = new OfflineAudioContext(2, frameCount, sampleRate);
 
-  if (beatBuffer) {
-    scheduleBuffer(renderContext, beatBuffer, 0, 1, 0);
-  }
-
-  takeBuffers.forEach(({ take, track, buffer }) => {
-    scheduleBuffer(renderContext, buffer, take.startTime || 0, getTrackOutputVolume(track), track.pan, take);
+  const renderedBuffer = await window.PunchLabMix.renderMixBuffer({
+    sampleRate,
+    beatBuffer,
+    takes: takeBuffers.map(makeMixTakeSource),
   });
 
-  return encodeWav(applyExportNormalize(await renderContext.startRendering()), getExportMetadata());
+  return encodeWav(applyExportNormalize(renderedBuffer), getExportMetadata());
+}
+
+function makeMixTakeSource({ take, track, buffer }) {
+  return {
+    buffer,
+    startTime: take.startTime || 0,
+    duration: take.duration || buffer.duration,
+    volume: getTrackOutputVolume(track),
+    pan: track?.pan || 0,
+    clipGain: getTakeClipGain(take),
+    fadeIn: getTakeFadeIn(take),
+    fadeOut: getTakeFadeOut(take),
+  };
 }
 
 function getStemExportGroups() {
@@ -3727,29 +3728,6 @@ function getStemExportGroups() {
   });
 
   return groups;
-}
-
-function scheduleBuffer(context, buffer, startTime, volume, pan, take = null) {
-  const source = context.createBufferSource();
-  const gain = context.createGain();
-  const panner = context.createStereoPanner ? context.createStereoPanner() : null;
-
-  source.buffer = buffer;
-  if (take) {
-    applyTakeGainAutomation(gain.gain, volume * getTakeClipGain(take), take, 0, Math.max(0, startTime));
-  } else {
-    gain.gain.value = volume;
-  }
-  source.connect(gain);
-
-  if (panner) {
-    panner.pan.value = pan;
-    gain.connect(panner).connect(context.destination);
-  } else {
-    gain.connect(context.destination);
-  }
-
-  source.start(Math.max(0, startTime));
 }
 
 function applyExportNormalize(audioBuffer) {

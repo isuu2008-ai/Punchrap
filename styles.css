@@ -120,7 +120,7 @@ h1 {
 
 .view-tabs {
   display: inline-grid;
-  grid-template-columns: repeat(7, minmax(68px, 1fr));
+  grid-template-columns: repeat(8, minmax(62px, 1fr));
   gap: 6px;
   padding: 4px;
   border: 1px solid var(--line);
@@ -1625,6 +1625,26 @@ textarea:focus {
   color: var(--muted);
   font-size: 13px;
   align-self: center;
+}
+
+@media (max-width: 1320px) {
+  .topbar {
+    grid-template-columns: minmax(200px, 1fr) auto;
+  }
+
+  .view-tabs {
+    width: 100%;
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .project-actions {
+    justify-content: flex-start;
+  }
+
+  .session-readout {
+    min-width: auto;
+  }
 }
 
 @media (max-width: 1080px) {
