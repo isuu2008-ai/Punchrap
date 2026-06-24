@@ -99,6 +99,14 @@
     return Number(Math.max(0, Number(value) || 0).toFixed(3));
   }
 
+  function formatTimelineInputTime(value) {
+    return snapToInputPrecision(value).toString();
+  }
+
+  function isSameTimelineNumber(left, right) {
+    return Math.abs(Number(left || 0) - Number(right || 0)) < 0.0001;
+  }
+
   function normalizeMarkers(markers = [], createId = null) {
     const makeId = typeof createId === "function" ? createId : () => crypto.randomUUID();
     return (Array.isArray(markers) ? markers : [])
@@ -211,6 +219,8 @@
     getTakeVisibleDuration,
     getTimelineSnapStep,
     getTimelineTickStep,
+    formatTimelineInputTime,
+    isSameTimelineNumber,
     makeTimelineGridLines,
     makeTimelineTicks,
     normalizeMarkers,

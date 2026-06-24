@@ -5545,7 +5545,7 @@ function duplicateTimelineRegion(takeId) {
 }
 
 function isSameTimelineNumber(left, right) {
-  return Math.abs(Number(left || 0) - Number(right || 0)) < 0.0001;
+  return window.PunchLabTimeline.isSameTimelineNumber(left, right);
 }
 
 function clonePlainObject(value) {
@@ -5638,7 +5638,7 @@ function nudgeTimelineTime(value, delta) {
 }
 
 function formatTimelineInputTime(value) {
-  return snapToInputPrecision(value).toString();
+  return window.PunchLabTimeline.formatTimelineInputTime(value);
 }
 
 function snapToInputPrecision(value) {
