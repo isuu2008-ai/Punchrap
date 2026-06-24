@@ -61,6 +61,123 @@
     ].join("\n");
   }
 
+  function createProjectZipArchiveFiles(projectFilename = "session.punchlab.json", bundle = {}) {
+    const files = {
+      [projectFilename]: JSON.stringify(bundle, null, 2),
+    };
+    return {
+      files,
+      usedPaths: new Set(Object.keys(files)),
+    };
+  }
+
+  function reserveProjectZipPath(usedPaths, requestedPath) {
+    if (!usedPaths.has(requestedPath)) {
+      usedPaths.add(requestedPath);
+      return requestedPath;
+    }
+
+    const dotIndex = requestedPath.lastIndexOf(".");
+    const base = dotIndex >= 0 ? requestedPath.slice(0, dotIndex) : requestedPath;
+    const extension = dotIndex >= 0 ? requestedPath.slice(dotIndex) : "";
+    let suffix = 2;
+    let nextPath = `${base}-${suffix}${extension}`;
+    while (usedPaths.has(nextPath)) {
+      suffix += 1;
+      nextPath = `${base}-${suffix}${extension}`;
+    }
+    usedPaths.add(nextPath);
+    return nextPath;
+  }
+
+  function createProjectZipBeatAssetPath(usedPaths, fileName = "beat") {
+    const extension = getProjectZipFileExtension(fileName, "bin");
+    const baseName = slugifyProjectZipAssetName(fileName, "beat");
+    return reserveProjectZipPath(usedPaths, `assets/beat/${baseName}.${extension}`);
+  }
+
+  function createProjectZipTakeAssetPath(usedPaths, { index = 0, trackName = "track", takeName = "take", extension = "wav" } = {}) {
+    const safeExtension = getProjectZipFileExtension(`take.${extension || "wav"}`, "wav");
+    const baseName = slugifyProjectZipAssetName([String(index + 1).padStart(3, "0"), trackName, takeName].join("-"), "take");
+    return reserveProjectZipPath(usedPaths, `assets/takes/${baseName}.${safeExtension}`);
+  }
+
+  function createProjectZipBeatManifestEntry({ path = "", fileName = "beat", bytes = 0 } = {}) {
+    return {
+      path,
+      fileName: fileName || "beat",
+      bytes: Number(bytes) || 0,
+    };
+  }
+
+  function createProjectZipTakeManifestEntry({
+    take = {},
+    path = "",
+    name = "",
+    sourceTakeName = null,
+    processedChain = null,
+    trackVolume = 0,
+    pan = 0,
+    clipGain = 1,
+    regionColor = "",
+    regionGroup = "verse",
+    visibleDuration = 0,
+    sourceOffset = 0,
+    sourceDuration = 0,
+    fadeIn = 0,
+    fadeOut = 0,
+    automationState = null,
+    bytes = 0,
+  } = {}) {
+    const clipGainValue = Number(clipGain);
+    return {
+      id: take.id,
+      path,
+      trackId: take.trackId,
+      trackName: take.trackName,
+      name,
+      processed: Boolean(take.processed),
+      sourceTakeId: take.sourceTakeId || null,
+      sourceTakeName,
+      renderVersion: processedChain?.renderVersion || null,
+      renderLabel: processedChain?.renderLabel || null,
+      presetId: processedChain?.presetId || null,
+      presetName: processedChain?.presetName || null,
+      tuneSignature: processedChain?.tuneSignature || null,
+      chain: processedChain,
+      compSelected: Boolean(take.compSelected),
+      compOrder: Number.isFinite(Number(take.compOrder)) ? Number(take.compOrder) : null,
+      bestTake: Boolean(take.bestTake),
+      regionColor,
+      regionGroup,
+      volume: Number(trackVolume) || 0,
+      pan: Number(pan) || 0,
+      clipGain: Number.isFinite(clipGainValue) ? clipGainValue : 1,
+      recordLatencyMs: Number(take.recordLatencyMs || 0),
+      startTime: take.startTime || 0,
+      duration: Number(visibleDuration) || 0,
+      sourceOffset: Number(sourceOffset) || 0,
+      sourceDuration: Number(sourceDuration) || 0,
+      fadeIn: Number(fadeIn) || 0,
+      fadeOut: Number(fadeOut) || 0,
+      automationState: processedChain?.automationState || automationState,
+      bytes: Number(bytes) || 0,
+    };
+  }
+
+  function getProjectZipFileExtension(fileName, fallback = "bin") {
+    const match = /\.([a-z0-9]{1,8})$/i.exec(fileName || "");
+    return (match?.[1] || fallback).toLowerCase();
+  }
+
+  function slugifyProjectZipAssetName(value, fallback = "asset") {
+    return String(value || fallback)
+      .toLowerCase()
+      .replace(/\.[^.]+$/, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "") || fallback;
+  }
+
   function sortProjectZipPreviewTakes(manifest = {}) {
     return [...(Array.isArray(manifest.takes) ? manifest.takes : [])].sort(
       (left, right) => (left.startTime || 0) - (right.startTime || 0) || String(left.trackName).localeCompare(String(right.trackName)),
@@ -778,6 +895,12 @@ ${getProjectZipPreviewPlayerScript()}
     README_MANIFEST_LINES,
     createProjectZipManifest,
     buildProjectZipReadme,
+    createProjectZipArchiveFiles,
+    reserveProjectZipPath,
+    createProjectZipBeatAssetPath,
+    createProjectZipTakeAssetPath,
+    createProjectZipBeatManifestEntry,
+    createProjectZipTakeManifestEntry,
     sortProjectZipPreviewTakes,
     sortProjectZipPreviewCompTakes,
     buildProjectZipPreviewPlaybackData,

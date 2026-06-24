@@ -1146,10 +1146,7 @@ async function saveProjectZip() {
 }
 
 async function buildProjectZipFiles(bundle, projectFilename) {
-  const files = {
-    [projectFilename]: JSON.stringify(bundle, null, 2),
-  };
-  const usedPaths = new Set(Object.keys(files));
+  const { files, usedPaths } = window.PunchLabProjectZip.createProjectZipArchiveFiles(projectFilename, bundle);
   const manifest = window.PunchLabProjectZip.createProjectZipManifest({
     projectFilename,
     session: summarizeSessionManifest(bundle),
@@ -1163,17 +1160,13 @@ async function buildProjectZipFiles(bundle, projectFilename) {
   });
 
   if (state.beatArrayBuffer) {
-    const beatExtension = getFileExtension(state.beatFileName, "bin");
-    const beatPath = reserveZipPath(
-      usedPaths,
-      `assets/beat/${slugify(state.beatFileName || "beat") || "beat"}.${beatExtension}`,
-    );
+    const beatPath = window.PunchLabProjectZip.createProjectZipBeatAssetPath(usedPaths, state.beatFileName || "beat");
     files[beatPath] = state.beatArrayBuffer;
-    manifest.beat = {
+    manifest.beat = window.PunchLabProjectZip.createProjectZipBeatManifestEntry({
       path: beatPath,
       fileName: state.beatFileName || "beat",
       bytes: state.beatArrayBuffer.byteLength,
-    };
+    });
   }
 
   const allTakes = getAllTakes();
@@ -1183,47 +1176,37 @@ async function buildProjectZipFiles(bundle, projectFilename) {
       continue;
     }
 
-    const extension = getFileExtension(`take.${take.extension || "wav"}`, "wav");
-    const baseName = slugify([String(index + 1).padStart(3, "0"), take.trackName, getTakeShortName(take)].join("-"));
-    const takePath = reserveZipPath(usedPaths, `assets/takes/${baseName}.${extension}`);
+    const takeName = getTakeShortName(take);
+    const takePath = window.PunchLabProjectZip.createProjectZipTakeAssetPath(usedPaths, {
+      index,
+      trackName: take.trackName,
+      takeName,
+      extension: take.extension || "wav",
+    });
     const data = await take.blob.arrayBuffer();
     files[takePath] = data;
     const track = findTrack(take.trackId);
     const sourceTake = take.sourceTakeId ? findTake(take.sourceTakeId) : null;
     const processedChain = summarizeProcessedChain(take);
-    manifest.takes.push({
-      id: take.id,
+    manifest.takes.push(window.PunchLabProjectZip.createProjectZipTakeManifestEntry({
+      take,
       path: takePath,
-      trackId: take.trackId,
-      trackName: take.trackName,
-      name: getTakeShortName(take),
-      processed: Boolean(take.processed),
-      sourceTakeId: take.sourceTakeId || null,
+      name: takeName,
       sourceTakeName: sourceTake ? getTakeShortName(sourceTake) : null,
-      renderVersion: processedChain?.renderVersion || null,
-      renderLabel: processedChain?.renderLabel || null,
-      presetId: processedChain?.presetId || null,
-      presetName: processedChain?.presetName || null,
-      tuneSignature: processedChain?.tuneSignature || null,
-      chain: processedChain,
-      compSelected: Boolean(take.compSelected),
-      compOrder: Number.isFinite(Number(take.compOrder)) ? Number(take.compOrder) : null,
-      bestTake: Boolean(take.bestTake),
+      processedChain,
       regionColor: getTakeRegionColor(take),
       regionGroup: getTakeRegionGroup(take),
-      volume: getTrackOutputVolume(track),
+      trackVolume: getTrackOutputVolume(track),
       pan: Number(track?.pan || 0),
       clipGain: getTakeClipGain(take),
-      recordLatencyMs: Number(take.recordLatencyMs || 0),
-      startTime: take.startTime || 0,
-      duration: getTakeVisibleDuration(take),
+      visibleDuration: getTakeVisibleDuration(take),
       sourceOffset: getTakeSourceOffset(take),
       sourceDuration: getTakeSourceDuration(take),
       fadeIn: getTakeFadeIn(take),
       fadeOut: getTakeFadeOut(take),
       automationState: processedChain?.automationState || summarizeAutomationState(take.chainSnapshot?.automationState),
       bytes: data.byteLength,
-    });
+    }));
   }
 
   manifest.markers = normalizeMarkers(bundle.markers).map((marker) => ({
@@ -1519,30 +1502,6 @@ function summarizeAutomationState(automationState) {
       value: Number(parameter.value || 0),
     })),
   };
-}
-
-function reserveZipPath(usedPaths, requestedPath) {
-  if (!usedPaths.has(requestedPath)) {
-    usedPaths.add(requestedPath);
-    return requestedPath;
-  }
-
-  const dotIndex = requestedPath.lastIndexOf(".");
-  const base = dotIndex >= 0 ? requestedPath.slice(0, dotIndex) : requestedPath;
-  const extension = dotIndex >= 0 ? requestedPath.slice(dotIndex) : "";
-  let suffix = 2;
-  let nextPath = `${base}-${suffix}${extension}`;
-  while (usedPaths.has(nextPath)) {
-    suffix += 1;
-    nextPath = `${base}-${suffix}${extension}`;
-  }
-  usedPaths.add(nextPath);
-  return nextPath;
-}
-
-function getFileExtension(fileName, fallback) {
-  const match = /\.([a-z0-9]{1,8})$/i.exec(fileName || "");
-  return (match?.[1] || fallback).toLowerCase();
 }
 
 async function loadProject(event) {

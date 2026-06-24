@@ -242,6 +242,18 @@ if (!projectZipSource.includes("buildProjectZipReadme") || !appSource.includes("
   console.error("Project zip README policy must live in src/project-zip.js and be used by app.js.");
   failed = true;
 }
+if (!projectZipSource.includes("createProjectZipArchiveFiles") || !projectZipSource.includes("reserveProjectZipPath") || !appSource.includes("window.PunchLabProjectZip.createProjectZipArchiveFiles") || appSource.includes("function reserveZipPath")) {
+  console.error("Project zip archive file map and path reservation policy must live in src/project-zip.js.");
+  failed = true;
+}
+if (!projectZipSource.includes("createProjectZipBeatAssetPath") || !projectZipSource.includes("createProjectZipTakeAssetPath") || !appSource.includes("window.PunchLabProjectZip.createProjectZipBeatAssetPath") || !appSource.includes("window.PunchLabProjectZip.createProjectZipTakeAssetPath")) {
+  console.error("Project zip beat and take asset path policy must live in src/project-zip.js.");
+  failed = true;
+}
+if (!projectZipSource.includes("createProjectZipBeatManifestEntry") || !projectZipSource.includes("createProjectZipTakeManifestEntry") || !appSource.includes("window.PunchLabProjectZip.createProjectZipBeatManifestEntry") || !appSource.includes("window.PunchLabProjectZip.createProjectZipTakeManifestEntry")) {
+  console.error("Project zip beat and take manifest entry policy must live in src/project-zip.js.");
+  failed = true;
+}
 if (!projectZipSource.includes("buildProjectZipPreviewPlaybackData") || !projectZipSource.includes("buildProjectZipPreviewPlaybackData(manifest, takes)") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewHtml")) {
   console.error("Project zip preview playback data policy must live in src/project-zip.js and be used by app.js.");
   failed = true;
