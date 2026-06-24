@@ -7,18 +7,19 @@
     <title>PunchLab</title>
     <link rel="icon" href="./assets/punchlab-icon.svg" type="image/svg+xml" />
     <link rel="manifest" href="./manifest.webmanifest" />
-    <link rel="stylesheet" href="./styles.css?v=20260624-38" />
+    <link rel="stylesheet" href="./styles.css?v=20260624-39" />
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
-    <script src="./src/dsp.js?v=20260624-38" defer></script>
-    <script src="./src/audio.js?v=20260624-38" defer></script>
-    <script src="./src/mix.js?v=20260624-38" defer></script>
-    <script src="./src/vocal.js?v=20260624-38" defer></script>
-    <script src="./src/native-bridge.js?v=20260624-38" defer></script>
-    <script src="./src/engine.js?v=20260624-38" defer></script>
-    <script src="./src/project.js?v=20260624-38" defer></script>
-    <script src="./src/storage.js?v=20260624-38" defer></script>
-    <script src="./src/platform.js?v=20260624-38" defer></script>
-    <script src="./app.js?v=20260624-38" defer></script>
+    <script src="./src/dsp.js?v=20260624-39" defer></script>
+    <script src="./src/audio.js?v=20260624-39" defer></script>
+    <script src="./src/files.js?v=20260624-39" defer></script>
+    <script src="./src/mix.js?v=20260624-39" defer></script>
+    <script src="./src/vocal.js?v=20260624-39" defer></script>
+    <script src="./src/native-bridge.js?v=20260624-39" defer></script>
+    <script src="./src/engine.js?v=20260624-39" defer></script>
+    <script src="./src/project.js?v=20260624-39" defer></script>
+    <script src="./src/storage.js?v=20260624-39" defer></script>
+    <script src="./src/platform.js?v=20260624-39" defer></script>
+    <script src="./app.js?v=20260624-39" defer></script>
   </head>
   <body>
     <main class="studio-shell">
@@ -51,11 +52,11 @@
             <i data-lucide="package"></i>
             <span>Zip</span>
           </button>
-          <label class="mini-icon-button file-action" title="Open project">
-            <input id="projectInput" type="file" accept=".json,.punchlab.json,application/json" />
+          <button id="openProjectButton" class="mini-icon-button" type="button" title="Open project">
             <i data-lucide="folder-open"></i>
             <span>Open</span>
-          </label>
+          </button>
+          <input id="projectInput" type="file" accept=".json,.punchlab.json,application/json" hidden />
           <button id="recoverProjectButton" class="mini-icon-button" type="button" title="Recover autosave" disabled>
             <i data-lucide="history"></i>
             <span>Recover</span>

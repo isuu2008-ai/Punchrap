@@ -99,6 +99,7 @@ const els = {
   viewTabs: document.querySelectorAll("[data-view]"),
   viewPanels: document.querySelectorAll("[data-view-panel]"),
   projectInput: document.querySelector("#projectInput"),
+  openProjectButton: document.querySelector("#openProjectButton"),
   saveProjectButton: document.querySelector("#saveProjectButton"),
   saveProjectZipButton: document.querySelector("#saveProjectZipButton"),
   recoverProjectButton: document.querySelector("#recoverProjectButton"),
@@ -363,6 +364,7 @@ function bindEvents() {
   els.batchRenderButton.addEventListener("click", renderBatchVocalTakes);
   els.saveProjectButton.addEventListener("click", saveProject);
   els.saveProjectZipButton.addEventListener("click", saveProjectZip);
+  els.openProjectButton.addEventListener("click", openProject);
   els.projectInput.addEventListener("change", loadProject);
   els.recoverProjectButton.addEventListener("click", recoverAutosave);
   els.addMarkerButton.addEventListener("click", addTimelineMarker);
@@ -601,8 +603,19 @@ async function saveProject() {
       settings: getProjectSettings(),
     });
     const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: "application/json" });
-    downloadBlob(blob, window.PunchLabProject.makeProjectFilename(state.beatFileName));
-    els.sessionState.textContent = "Project saved";
+    const result = await saveBlobWithPlatform(blob, window.PunchLabProject.makeProjectFilename(state.beatFileName), {
+      types: [
+        {
+          description: "PunchLab project",
+          accept: { "application/json": [".json"] },
+        },
+      ],
+    });
+    els.sessionState.textContent = result.canceled
+      ? "Save canceled"
+      : result.method === "file-system"
+        ? "Project saved"
+        : "Project downloaded";
   } catch (error) {
     els.sessionState.textContent = "Save failed";
     console.error(error);
@@ -629,8 +642,19 @@ async function saveProjectZip() {
     const projectFilename = window.PunchLabProject.makeProjectFilename(state.beatFileName);
     const files = await buildProjectZipFiles(bundle, projectFilename);
     const zipBlob = window.PunchLabProject.buildProjectZip(files);
-    downloadBlob(zipBlob, window.PunchLabProject.makeProjectZipFilename(state.beatFileName));
-    els.sessionState.textContent = "Zip saved with assets";
+    const result = await saveBlobWithPlatform(zipBlob, window.PunchLabProject.makeProjectZipFilename(state.beatFileName), {
+      types: [
+        {
+          description: "PunchLab project archive",
+          accept: { "application/zip": [".zip"] },
+        },
+      ],
+    });
+    els.sessionState.textContent = result.canceled
+      ? "Zip canceled"
+      : result.method === "file-system"
+        ? "Zip saved with assets"
+        : "Zip downloaded with assets";
   } catch (error) {
     els.sessionState.textContent = "Zip failed";
     console.error(error);
@@ -737,6 +761,43 @@ async function loadProject(event) {
   }
 
   try {
+    await loadProjectFile(file);
+  } finally {
+    els.projectInput.value = "";
+  }
+}
+
+async function openProject() {
+  if (!window.PunchLabProject) {
+    els.sessionState.textContent = "Project module missing";
+    return;
+  }
+  if (!window.PunchLabFiles?.openProjectFile) {
+    els.projectInput.click();
+    return;
+  }
+
+  try {
+    els.openProjectButton.disabled = true;
+    const result = await window.PunchLabFiles.openProjectFile(els.projectInput);
+    if (result.canceled) {
+      els.sessionState.textContent = "Open canceled";
+      return;
+    }
+    if (result.file) {
+      await loadProjectFile(result.file);
+    }
+  } finally {
+    els.openProjectButton.disabled = false;
+  }
+}
+
+async function loadProjectFile(file) {
+  if (!file || !window.PunchLabProject) {
+    return;
+  }
+
+  try {
     els.sessionState.textContent = "Opening project";
     stopAll();
     const bundle = JSON.parse(await file.text());
@@ -747,8 +808,6 @@ async function loadProject(event) {
   } catch (error) {
     els.sessionState.textContent = "Open failed";
     console.error(error);
-  } finally {
-    els.projectInput.value = "";
   }
 }
 
@@ -3868,6 +3927,15 @@ function encodeWav(audioBuffer, metadata = null) {
 
 function downloadBlob(blob, filename) {
   window.PunchLabEngine.downloadBlob(blob, filename);
+}
+
+async function saveBlobWithPlatform(blob, filename, pickerOptions = {}) {
+  if (!window.PunchLabFiles?.saveBlob) {
+    downloadBlob(blob, filename);
+    return { canceled: false, method: "download" };
+  }
+
+  return window.PunchLabFiles.saveBlob(blob, filename, pickerOptions);
 }
 
 function toggleCompTake(takeId) {

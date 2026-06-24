@@ -2,7 +2,7 @@
 
 이 문서는 PunchLab을 단순한 브라우저 녹음 장난감이 아니라, 실제로 쓸 수 있는 랩 녹음 스튜디오로 키우기 위한 체크리스트입니다.
 
-현재 PunchLab은 브라우저 기반 프로토타입입니다. 이미 녹음, 여러 트랙, take 관리, pitch 분석, frame-level 튠 렌더, formant-aware pitch shifting 기본형, 보컬 체인 세부 컨트롤 1차, EQ/limiter 세부 컨트롤 1차, delay/reverb 세부 컨트롤 1차, 전체 믹스 export, A/B 비교, batch render, minor/chromatic/custom 튠 모드, manual pitch lane, timeline undo/redo, render/export queue, take comping 기본형, comp lane editing, WAV export metadata, export preview, project zip export asset 포함형, waveform recording view, export peak normalize, K-weighted LUFS/true peak analysis 기본형까지 들어가 있습니다. 지금 단계에서는 브라우저로 계속 빠르게 기능을 검증하는 것이 맞습니다.
+현재 PunchLab은 브라우저 기반 프로토타입입니다. 이미 녹음, 여러 트랙, take 관리, pitch 분석, frame-level 튠 렌더, formant-aware pitch shifting 기본형, 보컬 체인 세부 컨트롤 1차, EQ/limiter 세부 컨트롤 1차, delay/reverb 세부 컨트롤 1차, 전체 믹스 export, A/B 비교, batch render, minor/chromatic/custom 튠 모드, manual pitch lane, timeline undo/redo, render/export queue, take comping 기본형, comp lane editing, WAV export metadata, export preview, project zip export asset 포함형, File System Access 기반 프로젝트 저장/열기 fallback, waveform recording view, export peak normalize, K-weighted LUFS/true peak analysis 기본형까지 들어가 있습니다. 지금 단계에서는 브라우저로 계속 빠르게 기능을 검증하는 것이 맞습니다.
 
 현재 추가 완료:
 
@@ -78,6 +78,8 @@
 - 완료된 export queue job의 마지막 WAV를 Preview 버튼으로 재생
 - Project zip export asset 포함형
 - `.punchlab.json`, manifest, README, beat asset, take audio asset을 `.punchlab.zip`에 저장
+- File System Access 파일 계층 1차
+- 지원 브라우저에서는 Save/Open 버튼이 OS 파일 선택창을 사용하고, 미지원 환경에서는 기존 download/input으로 fallback
 - Waveform recording view
 - 녹음 중 waveform peak trail 표시
 - take별 waveform thumbnail 저장/복원
