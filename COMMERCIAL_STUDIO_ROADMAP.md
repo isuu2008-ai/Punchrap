@@ -2,7 +2,7 @@
 
 이 문서는 PunchLab을 단순한 브라우저 녹음 장난감이 아니라, 실제로 쓸 수 있는 랩 녹음 스튜디오로 키우기 위한 체크리스트입니다.
 
-현재 PunchLab은 브라우저 기반 프로토타입입니다. 이미 녹음, 여러 트랙, take 관리, pitch 분석, frame-level 튠 렌더, formant-aware pitch shifting 기본형, 보컬 체인 세부 컨트롤 1차, EQ/limiter 세부 컨트롤 1차, 전체 믹스 export, A/B 비교, batch render, minor/chromatic/custom 튠 모드, manual pitch lane, timeline undo/redo, render/export queue, take comping 기본형, comp lane editing, WAV export metadata, export preview, project zip export asset 포함형, waveform recording view, export peak normalize, K-weighted LUFS/true peak analysis 기본형까지 들어가 있습니다. 지금 단계에서는 브라우저로 계속 빠르게 기능을 검증하는 것이 맞습니다.
+현재 PunchLab은 브라우저 기반 프로토타입입니다. 이미 녹음, 여러 트랙, take 관리, pitch 분석, frame-level 튠 렌더, formant-aware pitch shifting 기본형, 보컬 체인 세부 컨트롤 1차, EQ/limiter 세부 컨트롤 1차, delay/reverb 세부 컨트롤 1차, 전체 믹스 export, A/B 비교, batch render, minor/chromatic/custom 튠 모드, manual pitch lane, timeline undo/redo, render/export queue, take comping 기본형, comp lane editing, WAV export metadata, export preview, project zip export asset 포함형, waveform recording view, export peak normalize, K-weighted LUFS/true peak analysis 기본형까지 들어가 있습니다. 지금 단계에서는 브라우저로 계속 빠르게 기능을 검증하는 것이 맞습니다.
 
 현재 추가 완료:
 
@@ -86,6 +86,8 @@
 - Compressor, space, width slider를 렌더 설정/custom preset/project bundle에 반영
 - EQ/limiter controls 1차
 - Low/Mid/Air EQ와 limiter ceiling slider를 렌더 설정/custom preset/project bundle에 반영
+- Delay/reverb controls 1차
+- Delay, reverb slider를 렌더 설정/custom preset/project bundle에 반영
 
 ## 결론부터
 
@@ -436,9 +438,8 @@ VST3/AU 플러그인은 마지막에 가는 것이 맞습니다.
 6. latency compensation
 7. pitch engine 개선
 8. Audio Engine Layer 추가 분리
-9. delay/reverb 세부 컨트롤
-10. desktop wrapper
-11. native audio engine
-12. VST3/AU plugin
+9. desktop wrapper
+10. native audio engine
+11. VST3/AU plugin
 
-현재는 1-8번의 기본선과 timeline undo/redo, render/export queue, custom scale editor, take comping, comp lane editing, export metadata, export preview, project zip export asset 포함형, waveform recording view, export peak normalize, K-weighted LUFS/true peak analysis 기본형, offline mix render 모듈 분리, formant-aware pitch shifting 기본형, vocal chain controls 1차, EQ/limiter controls 1차가 들어온 상태입니다. 다음으로는 Audio Engine Layer 추가 분리, delay/reverb 세부 컨트롤, desktop wrapper 준비가 중요합니다.
+현재는 1-8번의 기본선과 timeline undo/redo, render/export queue, custom scale editor, take comping, comp lane editing, export metadata, export preview, project zip export asset 포함형, waveform recording view, export peak normalize, K-weighted LUFS/true peak analysis 기본형, offline mix render 모듈 분리, formant-aware pitch shifting 기본형, vocal chain controls 1차, EQ/limiter controls 1차, delay/reverb controls 1차가 들어온 상태입니다. 다음으로는 Audio Engine Layer 추가 분리, desktop wrapper 준비, native audio engine 준비가 중요합니다.

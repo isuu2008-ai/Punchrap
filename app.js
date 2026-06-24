@@ -159,6 +159,10 @@ const els = {
   compText: document.querySelector("#compText"),
   spaceSlider: document.querySelector("#spaceSlider"),
   spaceText: document.querySelector("#spaceText"),
+  delaySlider: document.querySelector("#delaySlider"),
+  delayText: document.querySelector("#delayText"),
+  reverbSlider: document.querySelector("#reverbSlider"),
+  reverbText: document.querySelector("#reverbText"),
   widthSlider: document.querySelector("#widthSlider"),
   widthText: document.querySelector("#widthText"),
   lowEqSlider: document.querySelector("#lowEqSlider"),
@@ -312,6 +316,14 @@ function bindEvents() {
     scheduleAutosave();
   });
   els.spaceSlider.addEventListener("input", () => {
+    updateTuneControls();
+    scheduleAutosave();
+  });
+  els.delaySlider.addEventListener("input", () => {
+    updateTuneControls();
+    scheduleAutosave();
+  });
+  els.reverbSlider.addEventListener("input", () => {
     updateTuneControls();
     scheduleAutosave();
   });
@@ -941,6 +953,8 @@ function applyProjectSettings(settings = {}) {
     els.deEssSlider.value = settings.tune.deEss ?? els.deEssSlider.value;
     els.compSlider.value = settings.tune.comp ?? els.compSlider.value;
     els.spaceSlider.value = settings.tune.space ?? els.spaceSlider.value;
+    els.delaySlider.value = settings.tune.delay ?? els.delaySlider.value;
+    els.reverbSlider.value = settings.tune.reverb ?? els.reverbSlider.value;
     els.widthSlider.value = settings.tune.width ?? els.widthSlider.value;
     els.lowEqSlider.value = settings.tune.lowEq ?? els.lowEqSlider.value;
     els.midEqSlider.value = settings.tune.midEq ?? els.midEqSlider.value;
@@ -2103,6 +2117,8 @@ function saveCustomPreset() {
     deEss: tuneSettings.deEss,
     comp: tuneSettings.comp,
     space: tuneSettings.space,
+    delay: tuneSettings.delay,
+    reverb: tuneSettings.reverb,
     width: tuneSettings.width,
     lowEq: tuneSettings.lowEq,
     midEq: tuneSettings.midEq,
@@ -2130,6 +2146,8 @@ function normalizePreset(preset) {
     deEss: Number(preset.deEss ?? 0),
     comp: Number(preset.comp ?? 60),
     space: Number(preset.space ?? 12),
+    delay: Number(preset.delay ?? preset.space ?? 12),
+    reverb: Number(preset.reverb ?? Math.round(Number(preset.space ?? 12) * 0.65)),
     width: Number(preset.width ?? 24),
     lowEq: Number(preset.lowEq ?? 0),
     midEq: Number(preset.midEq ?? 0),
@@ -2154,6 +2172,8 @@ function applyPreset(id) {
   els.deEssSlider.value = preset.deEss || 0;
   els.compSlider.value = preset.comp;
   els.spaceSlider.value = preset.space;
+  els.delaySlider.value = preset.delay;
+  els.reverbSlider.value = preset.reverb;
   els.widthSlider.value = preset.width;
   els.lowEqSlider.value = preset.lowEq ?? 0;
   els.midEqSlider.value = preset.midEq ?? 0;
@@ -2243,6 +2263,8 @@ function updateTuneControls() {
   els.deEssText.textContent = String(settings.deEss);
   els.compText.textContent = String(settings.comp);
   els.spaceText.textContent = String(settings.space);
+  els.delayText.textContent = String(settings.delay);
+  els.reverbText.textContent = String(settings.reverb);
   els.widthText.textContent = String(settings.width);
   els.compValue.textContent = String(settings.comp);
   els.spaceValue.textContent = String(settings.space);
@@ -2261,6 +2283,8 @@ function setTuneControlsDisabled(isDisabled) {
   els.deEssSlider.disabled = isDisabled;
   els.compSlider.disabled = isDisabled;
   els.spaceSlider.disabled = isDisabled;
+  els.delaySlider.disabled = isDisabled;
+  els.reverbSlider.disabled = isDisabled;
   els.widthSlider.disabled = isDisabled;
   els.lowEqSlider.disabled = isDisabled;
   els.midEqSlider.disabled = isDisabled;
@@ -2500,6 +2524,8 @@ function getEffectivePreset(preset, tuneSettings = getTuneSettings()) {
     ...preset,
     comp: Number(tuneSettings.comp ?? preset.comp),
     space: Number(tuneSettings.space ?? preset.space),
+    delay: Number(tuneSettings.delay ?? preset.delay ?? preset.space),
+    reverb: Number(tuneSettings.reverb ?? preset.reverb ?? Math.round(Number(preset.space ?? 12) * 0.65)),
     width: Number(tuneSettings.width ?? preset.width),
     lowEq: Number(tuneSettings.lowEq ?? preset.lowEq ?? 0),
     midEq: Number(tuneSettings.midEq ?? preset.midEq ?? 0),
@@ -4065,6 +4091,8 @@ function getTuneSettings() {
     deEss: Number(els.deEssSlider?.value) || 0,
     comp: Number(els.compSlider?.value) || 0,
     space: Number(els.spaceSlider?.value) || 0,
+    delay: Number(els.delaySlider?.value) || 0,
+    reverb: Number(els.reverbSlider?.value) || 0,
     width: Number(els.widthSlider?.value) || 0,
     lowEq: Number(els.lowEqSlider?.value) || 0,
     midEq: Number(els.midEqSlider?.value) || 0,
@@ -4389,12 +4417,14 @@ function getTuneSignature(settings = {}) {
   const deEss = Number(settings.deEss ?? 0);
   const comp = Number(settings.comp ?? 0);
   const space = Number(settings.space ?? 0);
+  const delay = Number(settings.delay ?? 0);
+  const reverb = Number(settings.reverb ?? 0);
   const width = Number(settings.width ?? 0);
   const lowEq = Number(settings.lowEq ?? 0);
   const midEq = Number(settings.midEq ?? 0);
   const airEq = Number(settings.airEq ?? 0);
   const limiterCeiling = Number(settings.limiterCeiling ?? -3);
-  return `R${retuneSpeed} H${humanize} F${formatSigned(formant)} G${gate} D${deEss} C${comp} S${space} W${width} EQ${formatDb(lowEq)}/${formatDb(midEq)}/${formatDb(airEq)} Lim${formatDb(limiterCeiling)}`;
+  return `R${retuneSpeed} H${humanize} F${formatSigned(formant)} G${gate} D${deEss} C${comp} S${space} DL${delay} RV${reverb} W${width} EQ${formatDb(lowEq)}/${formatDb(midEq)}/${formatDb(airEq)} Lim${formatDb(limiterCeiling)}`;
 }
 
 function escapeHtml(value) {

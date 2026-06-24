@@ -4,7 +4,10 @@
 
   async function renderVocalBuffer(sourceBuffer, preset, pitchPlan = null, tuneSettings = {}) {
     const sampleRate = sourceBuffer.sampleRate;
-    const tailSeconds = Math.min(1.4, 0.18 + preset.space / 120);
+    const delaySetting = clamp(Number(tuneSettings.delay ?? preset.delay ?? preset.space), 0, 100);
+    const reverbSetting = clamp(Number(tuneSettings.reverb ?? preset.reverb ?? Math.round(preset.space * 0.65)), 0, 100);
+    const spaceSetting = Math.max(Number(preset.space) || 0, delaySetting, reverbSetting);
+    const tailSeconds = Math.min(1.8, 0.18 + spaceSetting / 105);
     const frameCount = Math.ceil((sourceBuffer.duration + tailSeconds) * sampleRate);
     const context = new OfflineAudioContext(2, frameCount, sampleRate);
     const source = context.createBufferSource();
@@ -30,7 +33,8 @@
     const midEqDb = clamp(Number(tuneSettings.midEq) || 0, -12, 12);
     const airEqDb = clamp(Number(tuneSettings.airEq) || 0, -12, 12);
     const limiterCeiling = clamp(Number(tuneSettings.limiterCeiling ?? -3), -8, 0);
-    const spaceAmount = preset.space / 100;
+    const delayAmount = delaySetting / 100;
+    const reverbAmount = reverbSetting / 100;
     const widthAmount = preset.width / 100;
     const gatedBuffer = createNoiseGateBuffer(context, sourceBuffer, gateAmount);
     const tunedBuffer = createTunedBuffer(context, gatedBuffer, pitchPlan, retuneAmount, humanizeAmount);
@@ -117,8 +121,9 @@
       .connect(compressor)
       .connect(saturation);
     saturation.connect(dryGain).connect(limiter);
-    connectDelayTap(context, saturation, limiter, 0.085, -0.42 - widthAmount * 0.38, spaceAmount * 0.16);
-    connectDelayTap(context, saturation, limiter, 0.128, 0.42 + widthAmount * 0.38, spaceAmount * 0.14);
+    connectDelayTap(context, saturation, limiter, 0.085, -0.42 - widthAmount * 0.38, delayAmount * 0.18);
+    connectDelayTap(context, saturation, limiter, 0.128, 0.42 + widthAmount * 0.38, delayAmount * 0.15);
+    connectReverbCluster(context, saturation, limiter, reverbAmount, widthAmount);
     limiter.connect(context.destination);
 
     source.start(0);
@@ -364,6 +369,22 @@
     } else {
       gain.connect(destination);
     }
+  }
+
+  function connectReverbCluster(context, source, destination, amount, width) {
+    if (amount <= 0.001) {
+      return;
+    }
+
+    [
+      [0.027, -0.18, 0.05],
+      [0.043, 0.22, 0.044],
+      [0.071, -0.34, 0.034],
+      [0.109, 0.36, 0.026],
+      [0.157, -0.42, 0.018],
+    ].forEach(([time, pan, gain]) => {
+      connectDelayTap(context, source, destination, time, pan * (0.55 + width * 0.45), amount * gain);
+    });
   }
 
   function makeSaturationCurve(amount) {

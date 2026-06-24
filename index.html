@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PunchLab</title>
     <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="./styles.css?v=20260624-33" />
+    <link rel="stylesheet" href="./styles.css?v=20260624-34" />
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
-    <script src="./src/dsp.js?v=20260624-33" defer></script>
-    <script src="./src/audio.js?v=20260624-33" defer></script>
-    <script src="./src/mix.js?v=20260624-33" defer></script>
-    <script src="./src/project.js?v=20260624-33" defer></script>
-    <script src="./src/storage.js?v=20260624-33" defer></script>
-    <script src="./app.js?v=20260624-33" defer></script>
+    <script src="./src/dsp.js?v=20260624-34" defer></script>
+    <script src="./src/audio.js?v=20260624-34" defer></script>
+    <script src="./src/mix.js?v=20260624-34" defer></script>
+    <script src="./src/project.js?v=20260624-34" defer></script>
+    <script src="./src/storage.js?v=20260624-34" defer></script>
+    <script src="./app.js?v=20260624-34" defer></script>
   </head>
   <body>
     <main class="studio-shell">
@@ -522,6 +522,20 @@
                   </label>
                   <label class="tune-control">
                     <span class="label-row">
+                      <span>Delay</span>
+                      <strong id="delayText">18</strong>
+                    </span>
+                    <input id="delaySlider" type="range" min="0" max="100" step="1" value="18" />
+                  </label>
+                  <label class="tune-control">
+                    <span class="label-row">
+                      <span>Reverb</span>
+                      <strong id="reverbText">12</strong>
+                    </span>
+                    <input id="reverbSlider" type="range" min="0" max="100" step="1" value="12" />
+                  </label>
+                  <label class="tune-control">
+                    <span class="label-row">
                       <span>Width</span>
                       <strong id="widthText">42</strong>
                     </span>
@@ -566,6 +580,7 @@
                   <span>Comp</span>
                   <span>Sat</span>
                   <span>Delay</span>
+                  <span>Reverb</span>
                   <span>Limiter</span>
                 </div>
               </div>
