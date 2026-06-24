@@ -69,6 +69,7 @@ node .\scripts\check.mjs
 - Desktop readiness exposes wrapper handoff-stage progress for browser, desktop, native engine, and plugin host
 - Plugin host manifest separates VST3/AU scan, chain role, and automation contract planning
 - Native engine adapter exposes plugin-host scanning through `scanPluginHosts`
+- Desktop readiness reports plugin-host scan method availability separately from plugin-host capability
 - Desktop readiness checks required audio engine capabilities before native handoff
 - Desktop readiness reports native latency statistics and buffer-size control availability
 - Native bridge exposes optional latency statistics and buffer-size control through the engine adapter

@@ -81,6 +81,8 @@
     const missingCapabilities = window.PunchLabEngineContract?.getMissingCapabilities?.(capabilities, requiredCapabilities) || [];
     const missingLatencyMethods = getMissingOptionalMethods(bridgeStatus, ["getLatencyStats", "setBufferSize"]);
     const hasLatencyControl = missingLatencyMethods.length === 0;
+    const missingPluginMethods = getMissingOptionalMethods(bridgeStatus, ["scanPluginHosts"]);
+    const hasPluginScan = missingPluginMethods.length === 0;
     const handoffStages = getWrapperHandoffStages(bridgeStatus, capabilities);
     const serviceWorker = platform.serviceWorker || {};
     const checks = [
@@ -126,6 +128,14 @@
           ? "Native host can report latency and change buffer size."
           : "Browser fallback active; native host needs getLatencyStats and setBufferSize for low-latency tuning.",
       ),
+      makeCheck(
+        "plugin-host-scan",
+        "Plugin host scan",
+        hasPluginScan ? "ready" : "fallback",
+        hasPluginScan
+          ? "Native host can scan installed VST3/AU plugin locations."
+          : "Plugin scan waits for native scanPluginHosts support.",
+      ),
     ];
     const readyCount = checks.filter((check) => check.status === "ready").length;
 
@@ -136,6 +146,12 @@
       latencyControl: {
         available: hasLatencyControl,
         missingMethods: missingLatencyMethods,
+      },
+      pluginHost: {
+        scanAvailable: hasPluginScan,
+        missingMethods: missingPluginMethods,
+        capabilityReady: capabilities.pluginHost === true,
+        manifestPath: getManifest().pluginHostManifestPath,
       },
       wrapper: {
         manifestPath: getManifest().wrapperManifestPath,

@@ -9,7 +9,12 @@
   ];
   const OPTIONAL_METHODS = window.PunchLabEngineContract?.getOptionalNativeMethods?.() || [
     "getLatencyStats",
+    "setOutputDevice",
     "setBufferSize",
+    "openProjectFile",
+    "saveProjectFile",
+    "exportCompressedAudio",
+    "scanPluginHosts",
   ];
 
   function getNativeHost() {
