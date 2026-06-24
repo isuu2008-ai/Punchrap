@@ -30,6 +30,9 @@ const state = {
   monitorEnabled: false,
   isExportingMix: false,
   isExportingAssets: false,
+  isExportQueueRunning: false,
+  exportQueue: [],
+  exportJobSeq: 1,
   isRenderingVocal: false,
   autosaveTimer: 0,
   isAutosaving: false,
@@ -2380,8 +2383,9 @@ function renderExportPanel() {
     { label: "Dry vocals", count: getAllTakes().filter((take) => !take.processed).length },
     { label: "Tuned vocals", count: getAllTakes().filter((take) => take.processed).length },
   ];
+  const jobs = state.exportQueue.slice(-8).reverse();
 
-  els.exportList.innerHTML = rows
+  const sourceRows = rows
     .map(
       (row) => `
         <div class="export-row">
@@ -2391,6 +2395,28 @@ function renderExportPanel() {
       `,
     )
     .join("");
+  const queueRows = jobs.length
+    ? jobs
+      .map(
+        (job) => `
+          <div class="export-row export-job-row ${job.status}">
+            <div>
+              <strong>${escapeHtml(job.label)}</strong>
+              <small>${escapeHtml(job.detail || getExportJobStatusLabel(job.status))}</small>
+            </div>
+            <span>${getExportJobStatusLabel(job.status)}</span>
+          </div>
+        `,
+      )
+      .join("")
+    : `<span class="empty-takes">No export jobs yet</span>`;
+
+  els.exportList.innerHTML = `
+    <div class="export-section-heading">Sources</div>
+    ${sourceRows}
+    <div class="export-section-heading">Queue</div>
+    ${queueRows}
+  `;
 }
 
 function renderTimeline() {
@@ -2770,64 +2796,51 @@ function downloadLatestTake() {
   link.remove();
 }
 
-async function exportFullMix() {
-  if (state.isExportingMix) {
-    return;
-  }
-
+function exportFullMix() {
   const audibleTakes = getAudibleTakes();
   if (!state.beatArrayBuffer && !audibleTakes.length) {
     els.sessionState.textContent = "No audible mix";
     return;
   }
 
-  state.isExportingMix = true;
-  updateExportButtons();
-  stopTakeQueue(false);
-  stopSessionPlayback(false);
-  stopCurrentTake(false);
-  els.sessionState.textContent = "Rendering mix";
+  enqueueExportJob({
+    type: "mix",
+    label: "Full mix",
+    filename: makeMixFilename(),
+  });
+}
 
-  try {
-    const sampleRate = state.audioContext?.sampleRate || 48000;
-    const decodeContext = new OfflineAudioContext(2, 1, sampleRate);
-    const beatBuffer = state.beatArrayBuffer
-      ? await decodeContext.decodeAudioData(state.beatArrayBuffer.slice(0))
-      : null;
-    const takeBuffers = await Promise.all(
-      audibleTakes.map(async (take) => ({
-        take,
-        track: findTrack(take.trackId),
-        buffer: await decodeContext.decodeAudioData(await take.blob.arrayBuffer()),
-      })),
-    );
-    const endPosition = Math.max(
-      beatBuffer?.duration || 0,
-      ...takeBuffers.map(({ take, buffer }) => (take.startTime || 0) + buffer.duration),
-      0.1,
-    );
-    const frameCount = Math.ceil(endPosition * sampleRate);
-    const renderContext = new OfflineAudioContext(2, frameCount, sampleRate);
+async function renderFullMixBlob() {
+  const audibleTakes = getAudibleTakes();
+  const sampleRate = state.audioContext?.sampleRate || 48000;
+  const decodeContext = new OfflineAudioContext(2, 1, sampleRate);
+  const beatBuffer = state.beatArrayBuffer
+    ? await decodeContext.decodeAudioData(state.beatArrayBuffer.slice(0))
+    : null;
+  const takeBuffers = await Promise.all(
+    audibleTakes.map(async (take) => ({
+      take,
+      track: findTrack(take.trackId),
+      buffer: await decodeContext.decodeAudioData(await take.blob.arrayBuffer()),
+    })),
+  );
+  const endPosition = Math.max(
+    beatBuffer?.duration || 0,
+    ...takeBuffers.map(({ take, buffer }) => (take.startTime || 0) + buffer.duration),
+    0.1,
+  );
+  const frameCount = Math.ceil(endPosition * sampleRate);
+  const renderContext = new OfflineAudioContext(2, frameCount, sampleRate);
 
-    if (beatBuffer) {
-      scheduleBuffer(renderContext, beatBuffer, 0, 1, 0);
-    }
-
-    takeBuffers.forEach(({ take, track, buffer }) => {
-      scheduleBuffer(renderContext, buffer, take.startTime || 0, getTrackOutputVolume(track), track.pan, take);
-    });
-
-    const rendered = await renderContext.startRendering();
-    const wavBlob = encodeWav(rendered);
-    downloadBlob(wavBlob, makeMixFilename());
-    els.sessionState.textContent = "Mix exported";
-  } catch (error) {
-    els.sessionState.textContent = "Export failed";
-    console.error(error);
-  } finally {
-    state.isExportingMix = false;
-    updateExportButtons();
+  if (beatBuffer) {
+    scheduleBuffer(renderContext, beatBuffer, 0, 1, 0);
   }
+
+  takeBuffers.forEach(({ take, track, buffer }) => {
+    scheduleBuffer(renderContext, buffer, take.startTime || 0, getTrackOutputVolume(track), track.pan, take);
+  });
+
+  return encodeWav(await renderContext.startRendering());
 }
 
 async function exportTrackStems() {
@@ -2871,31 +2884,118 @@ async function exportRenderGroups(groups, label) {
     return;
   }
 
-  state.isExportingAssets = true;
+  enqueueExportJob({
+    type: "groups",
+    label,
+    groups: activeGroups.map((group) => ({
+      ...group,
+      takes: [...group.takes],
+    })),
+  });
+}
+
+function enqueueExportJob(job) {
+  const queuedJob = {
+    id: `export-${state.exportJobSeq}`,
+    status: "queued",
+    detail: "",
+    createdAt: new Date(),
+    ...job,
+  };
+  state.exportJobSeq += 1;
+  state.exportQueue.push(queuedJob);
+  trimExportQueue();
+  els.sessionState.textContent = `${queuedJob.label} queued`;
+  els.exportStatusText.textContent = "Queued";
   updateExportButtons();
+  runExportQueue();
+}
+
+async function runExportQueue() {
+  if (state.isExportQueueRunning) {
+    renderExportPanel();
+    return;
+  }
+
+  state.isExportQueueRunning = true;
   stopTakeQueue(false);
   stopSessionPlayback(false);
   stopCurrentTake(false);
-  els.sessionState.textContent = `Rendering ${label}`;
-  els.exportStatusText.textContent = "Rendering";
 
-  try {
-    for (let index = 0; index < activeGroups.length; index += 1) {
-      const group = activeGroups[index];
-      els.exportStatusText.textContent = `${index + 1}/${activeGroups.length} ${group.name}`;
-      const wavBlob = await renderTakeMixBlob(group.takes, group.includeBeat);
-      downloadBlob(wavBlob, group.filename);
-    }
-    els.sessionState.textContent = `${label} exported`;
-    els.exportStatusText.textContent = "Done";
-  } catch (error) {
-    els.sessionState.textContent = "Export failed";
-    els.exportStatusText.textContent = "Failed";
-    console.error(error);
-  } finally {
-    state.isExportingAssets = false;
+  while (state.exportQueue.some((job) => job.status === "queued")) {
+    const job = state.exportQueue.find((item) => item.status === "queued");
+    job.status = "running";
+    job.detail = "Rendering";
+    state.isExportingMix = job.type === "mix";
+    state.isExportingAssets = job.type === "groups";
+    els.sessionState.textContent = `Rendering ${job.label}`;
+    els.exportStatusText.textContent = job.label;
     updateExportButtons();
+
+    try {
+      await executeExportJob(job);
+      job.status = "done";
+      job.detail = "Downloaded";
+      els.sessionState.textContent = `${job.label} exported`;
+      els.exportStatusText.textContent = "Done";
+    } catch (error) {
+      job.status = "failed";
+      job.detail = "Render failed";
+      els.sessionState.textContent = "Export failed";
+      els.exportStatusText.textContent = "Failed";
+      console.error(error);
+    } finally {
+      state.isExportingMix = false;
+      state.isExportingAssets = false;
+      updateExportButtons();
+    }
   }
+
+  state.isExportQueueRunning = false;
+  trimExportQueue();
+  updateExportButtons();
+}
+
+async function executeExportJob(job) {
+  if (job.type === "mix") {
+    const wavBlob = await renderFullMixBlob();
+    downloadBlob(wavBlob, job.filename);
+    return;
+  }
+
+  for (let index = 0; index < job.groups.length; index += 1) {
+    const group = job.groups[index];
+    job.detail = `${index + 1}/${job.groups.length} ${group.name}`;
+    els.exportStatusText.textContent = job.detail;
+    renderExportPanel();
+    const wavBlob = await renderTakeMixBlob(group.takes, group.includeBeat);
+    downloadBlob(wavBlob, group.filename);
+  }
+}
+
+function trimExportQueue() {
+  const keep = 12;
+  const overflow = state.exportQueue.length - keep;
+  if (overflow <= 0) {
+    return;
+  }
+
+  const removable = state.exportQueue
+    .map((job, index) => ({ job, index }))
+    .filter(({ job }) => job.status === "done" || job.status === "failed")
+    .slice(0, overflow)
+    .map(({ index }) => index);
+
+  state.exportQueue = state.exportQueue.filter((_, index) => !removable.includes(index));
+}
+
+function getExportJobStatusLabel(status) {
+  return {
+    queued: "Queued",
+    running: "Running",
+    done: "Done",
+    failed: "Failed",
+  }[status] || "Idle";
 }
 
 async function renderTakeMixBlob(takes, includeBeat = false) {
@@ -3269,19 +3369,18 @@ function updateExportButtons() {
 
   const hasAudibleSources = Boolean(state.beatArrayBuffer) || getAudibleTakes().length > 0;
   const label = els.exportMixButton.querySelector(".button-label");
-  els.exportMixButton.disabled = state.isExportingMix || !hasAudibleSources;
+  els.exportMixButton.disabled = !hasAudibleSources;
   els.exportMixButton.classList.toggle("rendering", state.isExportingMix);
   if (label) {
     label.textContent = state.isExportingMix ? "Rendering" : "Full mix";
   }
 
-  const isBusy = state.isExportingMix || state.isExportingAssets;
   const hasStems = getStemExportGroups().length > 0;
   const hasDry = getAllTakes().some((take) => !take.processed && getTrackOutputVolume(findTrack(take.trackId)) > 0);
   const hasTuned = getAllTakes().some((take) => take.processed && getTrackOutputVolume(findTrack(take.trackId)) > 0);
-  els.exportStemsButton.disabled = isBusy || !hasStems;
-  els.exportDryVocalsButton.disabled = isBusy || !hasDry;
-  els.exportTunedVocalsButton.disabled = isBusy || !hasTuned;
+  els.exportStemsButton.disabled = !hasStems;
+  els.exportDryVocalsButton.disabled = !hasDry;
+  els.exportTunedVocalsButton.disabled = !hasTuned;
   els.exportStemsButton.classList.toggle("rendering", state.isExportingAssets);
   els.exportDryVocalsButton.classList.toggle("rendering", state.isExportingAssets);
   els.exportTunedVocalsButton.classList.toggle("rendering", state.isExportingAssets);

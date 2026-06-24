@@ -32,6 +32,7 @@ Then open `http://localhost:4173`.
 - Region rename, clip gain, and fade in/out controls persisted in project files
 - Timeline undo/redo for marker and region edits
 - Export tab for track stems, dry vocals, and tuned vocals
+- Export queue with sequential job status for mix, stems, dry vocals, and tuned vocals
 - IndexedDB autosave with project recovery
 - BPM-based metronome toggle for recording and session playback
 - Global shortcuts for transport, metronome, stop, and tab switching outside text inputs
@@ -51,4 +52,4 @@ See [COMMERCIAL_STUDIO_ROADMAP.md](./COMMERCIAL_STUDIO_ROADMAP.md) for the comme
 - Custom scale editing
 - Formant-aware pitch shifting
 - Better EQ, compressor, delay, reverb, and limiter controls
-- Render/export queue
+- Custom scale editor
