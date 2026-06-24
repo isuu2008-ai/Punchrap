@@ -25,6 +25,14 @@
     { id: "plugin-host", label: "VST3/AU plugin host", status: "planned" },
   ];
 
+  const NATIVE_AUDIO_ENGINE_CONTRACT = {
+    sampleRates: [44100, 48000],
+    bufferSizes: [64, 128, 256, 512, 1024],
+    preferredBufferSize: 128,
+    maxRoundTripLatencyMs: 10,
+    requiresExclusiveAudioThread: true,
+  };
+
   function getManifest() {
     const requiredNativeMethods = window.PunchLabEngineContract?.getRequiredNativeMethods?.() || FALLBACK_REQUIRED_NATIVE_METHODS;
     return {
@@ -60,6 +68,7 @@
       optionalNativeMethods: [...OPTIONAL_NATIVE_METHODS],
       requiredEngineCapabilities: window.PunchLabEngineContract?.getRequiredEngineCapabilities?.() || [],
       optionalEngineCapabilities: window.PunchLabEngineContract?.getOptionalEngineCapabilities?.() || [],
+      nativeAudioEngine: { ...NATIVE_AUDIO_ENGINE_CONTRACT },
       contracts: {
         chainParams: "src/chain-params.js",
         engine: "src/engine-contract.js",
@@ -89,6 +98,7 @@
     const hasCompressedExportMethod = missingCompressedExportMethods.length === 0;
     const missingPluginMethods = getMissingOptionalMethods(bridgeStatus, ["scanPluginHosts"]);
     const hasPluginScan = missingPluginMethods.length === 0;
+    const nativeAudioContract = getNativeAudioContractStatus(capabilities);
     const handoffStages = getWrapperHandoffStages(bridgeStatus, capabilities);
     const serviceWorker = platform.serviceWorker || {};
     const checks = [
@@ -153,6 +163,12 @@
           : "Browser fallback active; native host needs getLatencyStats and setBufferSize for low-latency tuning.",
       ),
       makeCheck(
+        "native-audio-performance",
+        "Native audio performance",
+        nativeAudioContract.ready ? "ready" : "fallback",
+        nativeAudioContract.detail,
+      ),
+      makeCheck(
         "compressed-export-handoff",
         "Compressed export handoff",
         hasCompressedExportMethod ? "ready" : "fallback",
@@ -179,6 +195,7 @@
         available: hasLatencyControl,
         missingMethods: missingLatencyMethods,
       },
+      nativeAudioEngine: nativeAudioContract,
       outputRouting: {
         nativeAvailable: hasNativeOutputRouting,
         missingMethods: missingOutputMethods,
@@ -250,6 +267,46 @@
 
   function canUseBrowserOutputRouting() {
     return Boolean(window.PunchLabDevices?.canSetMediaOutput?.() || window.PunchLabDevices?.canSetAudioContextOutput?.());
+  }
+
+  function getNativeAudioContractStatus(capabilities = {}) {
+    const contract = NATIVE_AUDIO_ENGINE_CONTRACT;
+    const supportedSampleRates = capabilities.sampleRates || capabilities.supportedSampleRates || [];
+    const supportedBufferSizes = capabilities.bufferSizes || capabilities.supportedBufferSizes || [];
+    const roundTripLatencyMs = Number(capabilities.roundTripLatencyMs ?? capabilities.latencyMs);
+    const hasSampleRates = includesAll(supportedSampleRates, contract.sampleRates);
+    const hasLowLatencyBuffers = includesAll(supportedBufferSizes, [64, 128, 256]);
+    const hasPreferredBuffer = supportedBufferSizes.includes?.(contract.preferredBufferSize);
+    const latencyReady = Number.isFinite(roundTripLatencyMs) && roundTripLatencyMs <= contract.maxRoundTripLatencyMs;
+    const audioThreadReady = contract.requiresExclusiveAudioThread
+      ? capabilities.exclusiveAudioThread === true
+      : true;
+    const hasNativeMonitoring = capabilities.realtimeNativeMonitoring === true;
+    const ready = hasNativeMonitoring && hasSampleRates && hasLowLatencyBuffers && hasPreferredBuffer && latencyReady && audioThreadReady;
+
+    return {
+      ...contract,
+      ready,
+      supportedSampleRates,
+      supportedBufferSizes,
+      roundTripLatencyMs: Number.isFinite(roundTripLatencyMs) ? roundTripLatencyMs : null,
+      exclusiveAudioThread: capabilities.exclusiveAudioThread === true,
+      missing: {
+        realtimeNativeMonitoring: !hasNativeMonitoring,
+        sampleRates: hasSampleRates ? [] : contract.sampleRates.filter((rate) => !supportedSampleRates.includes(rate)),
+        bufferSizes: hasLowLatencyBuffers ? [] : [64, 128, 256].filter((size) => !supportedBufferSizes.includes(size)),
+        preferredBufferSize: hasPreferredBuffer ? null : contract.preferredBufferSize,
+        roundTripLatencyMs: latencyReady ? null : contract.maxRoundTripLatencyMs,
+        exclusiveAudioThread: audioThreadReady ? null : true,
+      },
+      detail: ready
+        ? `Native engine meets ${contract.maxRoundTripLatencyMs}ms round-trip target at ${contract.preferredBufferSize} samples.`
+        : `Native engine target: 44.1/48kHz, 64/128/256 buffers, <=${contract.maxRoundTripLatencyMs}ms round-trip latency.`,
+    };
+  }
+
+  function includesAll(values = [], requiredValues = []) {
+    return requiredValues.every((value) => values.includes?.(value));
   }
 
   function getWrapperHandoffStages(bridgeStatus, capabilities) {

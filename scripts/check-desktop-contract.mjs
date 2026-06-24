@@ -4,6 +4,7 @@ const wrapper = readJson("desktop-wrapper-manifest.json");
 const host = readJson("desktop-host-manifest.json");
 const plugin = readJson("plugin-host-manifest.json");
 const indexHtml = readFileSync("index.html", "utf8");
+const desktopSource = readFileSync("src/desktop.js", "utf8");
 let failed = false;
 
 function readJson(path) {
@@ -141,6 +142,9 @@ if (nativeAudioEngine.maxRoundTripLatencyMs > 10) {
 }
 if (nativeAudioEngine.requiresExclusiveAudioThread !== true) {
   fail("Native audio engine must require an exclusive audio thread.");
+}
+if (!desktopSource.includes("nativeAudioEngine") || !desktopSource.includes("getNativeAudioContractStatus")) {
+  fail("Desktop readiness must expose native audio engine performance contract status.");
 }
 
 if (failed) {

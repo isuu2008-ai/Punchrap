@@ -10,10 +10,18 @@
         nativeFixture: true,
         offlineMixRender: true,
         vocalRender: true,
-        pitchAnalysis: false,
-        wavExport: false,
+        pitchAnalysis: true,
+        wavExport: true,
+        loudnessAnalysis: true,
+        truePeakLimiter: true,
+        compressedAudioExport: true,
         realtimeNativeMonitoring: true,
         pluginHost: false,
+        sampleRates: [44100, 48000],
+        bufferSizes: [64, 128, 256, 512, 1024],
+        preferredBufferSize: 128,
+        roundTripLatencyMs: 8,
+        exclusiveAudioThread: true,
       };
     },
     getDevices() {
@@ -24,9 +32,9 @@
     },
     getLatencyStats() {
       return {
-        inputLatencyMs: 6,
-        outputLatencyMs: 6,
-        roundTripLatencyMs: 12,
+        inputLatencyMs: 4,
+        outputLatencyMs: 4,
+        roundTripLatencyMs: 8,
         bufferSize: 128,
         sampleRate: 48000,
       };
