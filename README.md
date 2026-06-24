@@ -34,6 +34,7 @@ node .\scripts\check.mjs
 - Vocal chain parameter manifest for automation/native/plugin mapping
 - Processed take chain snapshots include plugin-style automation parameter state
 - Project zip manifests include processed-take source, version, preset, tune, and automation summaries
+- Vocal screen render-version history for source take retunes
 - Pitch analysis against the selected minor key or chromatic mode
 - Adaptive pitch detection with low-level thresholding, lag refinement, and octave-jump smoothing
 - Frame-level pitch correction and offline vocal chain render to a new processed WAV take
@@ -50,7 +51,7 @@ node .\scripts\check.mjs
 - A/B comparison between raw and tuned takes
 - Batch render for the current track or all raw vocal takes
 - Batch render for comp lane raw takes and best raw takes
-- Processed take version labels and zip lineage metadata for repeated renders from the same source take
+- Processed take version labels, vocal version history, and zip lineage metadata for repeated renders from the same source take
 - Project save/open as a local `.punchlab.json` bundle
 - File System Access project save/open when available, with browser download/input fallback
 - Separated DSP, audio utility, offline mix render, vocal render engine, swappable audio engine interface, and project storage modules under `src/`

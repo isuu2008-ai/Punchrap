@@ -1750,6 +1750,73 @@ textarea:focus {
   border-color: var(--lime);
 }
 
+.version-card {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #0c0f0d;
+}
+
+.version-list {
+  display: grid;
+  gap: 8px;
+}
+
+.version-row {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 8px;
+  align-items: center;
+  padding: 9px 10px;
+  color: var(--text);
+  background: #0f1411;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  text-align: left;
+}
+
+.version-row strong,
+.version-row small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.version-row strong {
+  font-size: 12px;
+}
+
+.version-row span {
+  color: var(--muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.version-row small {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.version-row.selected {
+  border-color: rgba(65, 230, 208, 0.5);
+}
+
+.version-row.active {
+  color: #050706;
+  background: var(--lime);
+  border-color: var(--lime);
+}
+
+.version-row.active span,
+.version-row.active small {
+  color: rgba(5, 7, 6, 0.72);
+}
+
 .compare-letter {
   width: 22px;
   height: 22px;

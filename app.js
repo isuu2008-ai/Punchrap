@@ -240,6 +240,8 @@ const els = {
   compareProcessedButton: document.querySelector("#compareProcessedButton"),
   compareStatus: document.querySelector("#compareStatus"),
   compareMeta: document.querySelector("#compareMeta"),
+  versionStatus: document.querySelector("#versionStatus"),
+  versionList: document.querySelector("#versionList"),
   pitchKeyText: document.querySelector("#pitchKeyText"),
   pitchDetectedText: document.querySelector("#pitchDetectedText"),
   pitchTargetText: document.querySelector("#pitchTargetText"),
@@ -3331,6 +3333,7 @@ function renderVocalPanel() {
     els.vocalStatus.textContent = "No take";
     els.selectedTakeMeta.innerHTML = `<span class="eyebrow">Record a take first</span>`;
     renderComparePanel(null);
+    renderVersionPanel(null);
     return;
   }
 
@@ -3342,6 +3345,7 @@ function renderVocalPanel() {
     <small>${selectedTake.processed ? `${selectedTake.presetName} v${selectedTake.version || 1} / ${getTuneSignature(selectedTake.tuneSettings)}` : "Raw take"}</small>
   `;
   renderComparePanel(comparisonPair);
+  renderVersionPanel(selectedTake);
 }
 
 function updateTuneControls() {
@@ -3450,6 +3454,45 @@ function renderComparePanel(pair) {
 
   els.compareStatus.textContent = "Ready";
   els.compareMeta.textContent = `${getTakeShortName(pair.source)} -> ${getTakeShortName(pair.processed)}`;
+}
+
+function renderVersionPanel(take) {
+  if (!els.versionStatus || !els.versionList) {
+    return;
+  }
+
+  if (!take) {
+    els.versionStatus.textContent = "No renders";
+    els.versionList.innerHTML = `<span class="empty-takes">Render a vocal take to create versions.</span>`;
+    return;
+  }
+
+  const sourceTake = take.processed && take.sourceTakeId ? findTake(take.sourceTakeId) : take;
+  const versions = getProcessedVersionsForSource(sourceTake?.id);
+  els.versionStatus.textContent = versions.length ? `${versions.length} version(s)` : "No renders";
+  els.versionList.innerHTML = versions.length
+    ? versions
+      .map((versionTake) => {
+        const isSelected = versionTake.id === state.selectedVocalTakeId;
+        const isPlaying = versionTake.id === state.currentTakeId || state.sessionPlayingTakeIds.has(versionTake.id);
+        return `
+          <button class="version-row ${isSelected ? "selected" : ""} ${isPlaying ? "active" : ""}" type="button" data-select-version="${versionTake.id}">
+            <strong>${escapeHtml(versionTake.renderLabel || `${versionTake.presetName || "Processed"} v${versionTake.version || 1}`)}</strong>
+            <span>${escapeHtml(formatDuration(versionTake.duration))}</span>
+            <small>${escapeHtml(getTuneSignature(versionTake.tuneSettings))}</small>
+          </button>
+        `;
+      })
+      .join("")
+    : `<span class="empty-takes">${escapeHtml(getTakeShortName(sourceTake))} has no tuned versions yet.</span>`;
+
+  els.versionList.querySelectorAll("[data-select-version]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.selectedVocalTakeId = button.dataset.selectVersion;
+      playTake(button.dataset.selectVersion);
+      renderVocalPanel();
+    });
+  });
 }
 
 function renderBatchPanel(targets) {
@@ -5932,13 +5975,39 @@ function getComparisonPair(take) {
 }
 
 function getLatestProcessedTakeForSource(sourceTakeId) {
+  if (!sourceTakeId) {
+    return null;
+  }
+
   return getAllTakes()
     .filter((take) => take.processed && take.sourceTakeId === sourceTakeId)
-    .sort((a, b) => {
-      const versionDelta = (a.version || 1) - (b.version || 1);
-      return versionDelta || a.createdAt.getTime() - b.createdAt.getTime();
-    })
+    .sort(compareProcessedTimeline)
     .at(-1);
+}
+
+function getProcessedVersionsForSource(sourceTakeId) {
+  if (!sourceTakeId) {
+    return [];
+  }
+
+  return getAllTakes()
+    .filter((take) => take.processed && take.sourceTakeId === sourceTakeId)
+    .sort(compareProcessedVersions);
+}
+
+function compareProcessedVersions(a, b) {
+  const presetDelta = String(a.presetName || "").localeCompare(String(b.presetName || ""));
+  if (presetDelta) {
+    return presetDelta;
+  }
+
+  const versionDelta = (a.version || 1) - (b.version || 1);
+  return versionDelta || a.createdAt.getTime() - b.createdAt.getTime();
+}
+
+function compareProcessedTimeline(a, b) {
+  const versionDelta = (a.version || 1) - (b.version || 1);
+  return versionDelta || a.createdAt.getTime() - b.createdAt.getTime();
 }
 
 function getNextProcessedVersion(sourceTakeId, presetId) {

@@ -38,6 +38,8 @@
 - `.punchlab.json` 로컬 프로젝트 저장/복원
 - processed take `v1`, `v2` 버전 관리
 - processed take 버전/체인 정보 저장 포맷 포함
+- Vocal render version history 1차
+- Vocal 화면에서 같은 source take의 tuned version 목록을 선택/재생
 - Timeline 탭 추가
 - marker 추가/삭제
 - take region start time 이동/nudge
