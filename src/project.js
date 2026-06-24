@@ -44,6 +44,7 @@
       sourceDuration: take.sourceDuration || take.duration || 0,
       waveform: sanitizeWaveform(take.waveform),
       clipGain: take.clipGain ?? 1,
+      regionColor: sanitizeColor(take.regionColor),
       fadeIn: take.fadeIn || 0,
       fadeOut: take.fadeOut || 0,
       compSelected: Boolean(take.compSelected),
@@ -122,6 +123,7 @@
       sourceDuration: Number(take.sourceDuration || Number(take.sourceOffset || 0) + Number(take.duration || 0)),
       waveform: sanitizeWaveform(take.waveform),
       clipGain: Number(take.clipGain ?? 1),
+      regionColor: sanitizeColor(take.regionColor),
       fadeIn: Number(take.fadeIn || 0),
       fadeOut: Number(take.fadeOut || 0),
       compSelected: Boolean(take.compSelected),
@@ -195,6 +197,19 @@
       .filter((value) => Number.isFinite(value))
       .map((value) => Math.max(0, Math.min(1, value)))
       .slice(0, 240);
+  }
+
+  function sanitizeColor(value) {
+    const color = String(value || "").trim();
+    if (/^#[0-9a-f]{6}$/i.test(color)) {
+      return color.toLowerCase();
+    }
+
+    if (/^#[0-9a-f]{3}$/i.test(color)) {
+      return `#${color[1]}${color[1]}${color[2]}${color[2]}${color[3]}${color[3]}`.toLowerCase();
+    }
+
+    return null;
   }
 
   function makeProjectFilename(beatFileName) {

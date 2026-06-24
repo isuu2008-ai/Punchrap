@@ -52,7 +52,7 @@ node .\scripts\check.mjs
 - PWA manifest, local icon, platform bootstrap, and service worker shell cache for desktop-install preparation
 - Timeline view with marker management and take region start/nudge controls
 - BPM-based timeline grid with optional beat/bar snap for markers and region starts
-- Region rename, clip gain, and fade in/out controls persisted in project files
+- Region rename, color, clip gain, and fade in/out controls persisted in project files
 - Timeline undo/redo for marker and region edits
 - Export tab for track stems, vocal stem, dry vocals, and tuned vocals
 - Export queue with sequential job status for mix, stems, vocal stem, dry vocals, and tuned vocals
