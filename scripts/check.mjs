@@ -242,6 +242,14 @@ if (!projectZipSource.includes("buildProjectZipReadme") || !appSource.includes("
   console.error("Project zip README policy must live in src/project-zip.js and be used by app.js.");
   failed = true;
 }
+if (!projectZipSource.includes("buildProjectZipPreviewPlaybackData") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewPlaybackData")) {
+  console.error("Project zip preview playback data policy must live in src/project-zip.js and be used by app.js.");
+  failed = true;
+}
+if (!projectZipSource.includes("getProjectZipPreviewStyles") || !projectZipSource.includes("getProjectZipPreviewPlayerScript") || !appSource.includes("window.PunchLabProjectZip.getProjectZipPreviewStyles") || !appSource.includes("window.PunchLabProjectZip.getProjectZipPreviewPlayerScript")) {
+  console.error("Project zip preview style and player boilerplate must live in src/project-zip.js and be used by app.js.");
+  failed = true;
+}
 if (!appSource.includes("Automation Schema") || !appSource.includes("buildPreviewAutomationSchemaRows")) {
   console.error("Project zip preview must display the vocal chain automation parameter schema.");
   failed = true;

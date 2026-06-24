@@ -1255,25 +1255,9 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
   const desktopReadiness = manifest.desktopReadiness || {};
   const presetManifest = Array.isArray(manifest.presets) ? manifest.presets : [];
   const notesManifest = manifest.notes || {};
-  const takes = [...manifest.takes].sort(
-    (left, right) => (left.startTime || 0) - (right.startTime || 0) || String(left.trackName).localeCompare(String(right.trackName)),
-  );
-  const compTakes = takes
-    .filter((take) => take.compSelected)
-    .sort((left, right) => (left.compOrder || 0) - (right.compOrder || 0));
-  const playbackData = JSON.stringify({
-    beat: manifest.beat ? { path: manifest.beat.path } : null,
-    takes: takes
-      .filter((take) => Number(take.volume) > 0)
-      .map((take) => ({
-        path: take.path,
-        startTime: take.startTime || 0,
-        sourceOffset: take.sourceOffset || 0,
-        duration: take.duration || 0,
-        volume: Math.min(1, Math.max(0, Number(take.volume || 0) * Number(take.clipGain || 1))),
-        pan: Math.max(-1, Math.min(1, Number(take.pan || 0))),
-      })),
-  });
+  const takes = window.PunchLabProjectZip.sortProjectZipPreviewTakes(manifest);
+  const compTakes = window.PunchLabProjectZip.sortProjectZipPreviewCompTakes(takes);
+  const playbackData = JSON.stringify(window.PunchLabProjectZip.buildProjectZipPreviewPlaybackData(manifest, takes));
 
   const beatSection = manifest.beat
     ? `
@@ -1354,38 +1338,7 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>${escapeHtml(title)} - PunchLab Preview</title>
     <style>
-      :root { color-scheme: dark; --bg: #080a09; --panel: #101511; --line: #273129; --text: #f1f5ef; --muted: #8b978f; --lime: #c8ff4d; --cyan: #41e6d0; }
-      * { box-sizing: border-box; }
-      body { margin: 0; padding: 24px; color: var(--text); background: var(--bg); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-      main { max-width: 1120px; margin: 0 auto; display: grid; gap: 18px; }
-      header, section { border: 1px solid var(--line); background: var(--panel); border-radius: 8px; padding: 18px; }
-      h1, h2, p { margin: 0; }
-      h1 { font-size: 32px; line-height: 1; }
-      h2 { margin-bottom: 12px; font-size: 15px; text-transform: uppercase; color: var(--cyan); }
-      small, p { color: var(--muted); }
-      .meta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
-      .meta span, .asset-heading span { border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; color: var(--lime); font-size: 12px; font-weight: 800; }
-      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
-      .asset-card { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: #0b0f0d; }
-      .asset-heading { display: flex; align-items: start; justify-content: space-between; gap: 10px; }
-      .preview-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 16px; }
-      .preview-controls button { min-height: 38px; padding: 0 14px; color: #050706; background: var(--lime); border: 1px solid var(--lime); border-radius: 6px; font-weight: 900; cursor: pointer; }
-      .preview-controls button.secondary { color: var(--text); background: #0b0f0d; border-color: var(--line); }
-      #previewStatus { color: var(--cyan); font-size: 13px; font-weight: 800; }
-      audio { width: 100%; }
-      dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(78px, 1fr)); gap: 8px; margin: 0; }
-      dt { color: var(--muted); font-size: 10px; text-transform: uppercase; }
-      dd { margin: 3px 0 0; font-size: 13px; font-weight: 800; }
-      .region-chip { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
-      .region-chip i { width: 10px; height: 10px; border: 1px solid rgba(255,255,255,.28); border-radius: 999px; flex: 0 0 auto; }
-      .note-text { max-height: 260px; overflow: auto; margin: 0; white-space: pre-wrap; color: var(--text); font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-      table { width: 100%; border-collapse: collapse; }
-      th, td { padding: 8px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
-      th { color: var(--muted); font-size: 11px; text-transform: uppercase; }
-      ol { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
-      li { display: flex; gap: 8px; align-items: center; }
-      li span { width: 28px; height: 28px; display: grid; place-items: center; color: #050706; background: var(--lime); border-radius: 6px; font-weight: 900; }
-      code { color: var(--cyan); }
+${window.PunchLabProjectZip.getProjectZipPreviewStyles()}
     </style>
   </head>
   <body>
@@ -1458,86 +1411,9 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
         <div class="grid">${takeRows}</div>
       </section>
     </main>
-    <script type="application/json" id="previewData">${escapeScriptJson(playbackData)}</script>
+    <script type="application/json" id="previewData">${window.PunchLabProjectZip.escapeScriptJson(playbackData)}</script>
     <script>
-      (() => {
-        const data = JSON.parse(document.querySelector("#previewData").textContent);
-        const status = document.querySelector("#previewStatus");
-        let audioContext = null;
-        let players = [];
-        let timers = [];
-
-        function stopPreview(message = "Stopped") {
-          timers.forEach((timer) => clearTimeout(timer));
-          timers = [];
-          players.forEach((player) => {
-            try {
-              player.pause?.();
-              player.currentTime = 0;
-              player.stop?.();
-              player.disconnect?.();
-            } catch {}
-          });
-          players = [];
-          status.textContent = message;
-        }
-
-        async function playPreview() {
-          stopPreview("Preparing");
-          audioContext ||= new AudioContext();
-          if (audioContext.state === "suspended") {
-            await audioContext.resume();
-          }
-          const startedAt = performance.now();
-          if (data.beat?.path) {
-            const beat = new Audio(data.beat.path);
-            beat.volume = 1;
-            players.push(beat);
-            beat.play().catch(() => {
-              status.textContent = "Playback blocked";
-            });
-          }
-          data.takes.forEach((take) => {
-            const delayMs = Math.max(0, Number(take.startTime || 0) * 1000);
-            const timer = setTimeout(() => {
-              const audio = new Audio(take.path);
-              audio.currentTime = Math.max(0, Number(take.sourceOffset || 0));
-              const source = audioContext.createMediaElementSource(audio);
-              const gain = audioContext.createGain();
-              gain.gain.value = Math.max(0, Math.min(1, Number(take.volume || 0)));
-              const panner = audioContext.createStereoPanner ? audioContext.createStereoPanner() : null;
-              source.connect(gain);
-              if (panner) {
-                panner.pan.value = Math.max(-1, Math.min(1, Number(take.pan || 0)));
-                gain.connect(panner).connect(audioContext.destination);
-              } else {
-                gain.connect(audioContext.destination);
-              }
-              players.push(audio, source, gain, panner);
-              const stopMs = Math.max(50, Number(take.duration || 0) * 1000);
-              const stopTimer = setTimeout(() => {
-                audio.pause();
-                audio.currentTime = 0;
-              }, stopMs);
-              timers.push(stopTimer);
-              audio.play().catch(() => {
-                status.textContent = "Playback blocked";
-              });
-            }, delayMs);
-            timers.push(timer);
-          });
-          status.textContent = "Playing timeline";
-          const endAt = Math.max(0, ...data.takes.map((take) => Number(take.startTime || 0) + Number(take.duration || 0))) * 1000 + 300;
-          const doneTimer = setTimeout(() => {
-            const elapsed = Math.round((performance.now() - startedAt) / 1000);
-            stopPreview("Done " + elapsed + "s");
-          }, endAt);
-          timers.push(doneTimer);
-        }
-
-        document.querySelector("#playPreviewButton").addEventListener("click", playPreview);
-        document.querySelector("#stopPreviewButton").addEventListener("click", () => stopPreview());
-      })();
+${window.PunchLabProjectZip.getProjectZipPreviewPlayerScript()}
     </script>
   </body>
 </html>`;
@@ -2102,15 +1978,6 @@ function formatAutomationParameterValue(parameter, schema = null) {
   const value = Number(parameter.value);
   const displayValue = Number.isFinite(value) ? value : 0;
   return `${label} ${displayValue}${unit}`;
-}
-
-function escapeScriptJson(value) {
-  return String(value ?? "")
-    .replace(/</g, "\\u003c")
-    .replace(/>/g, "\\u003e")
-    .replace(/&/g, "\\u0026")
-    .replace(/\u2028/g, "\\u2028")
-    .replace(/\u2029/g, "\\u2029");
 }
 
 function reserveZipPath(usedPaths, requestedPath) {

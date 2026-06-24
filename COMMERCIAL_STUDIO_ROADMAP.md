@@ -146,6 +146,8 @@
 - project zip `manifest.json`과 `preview.html`에 tempo, key, tuning mode, punch, loop, snap 설정 표시
 - Project zip policy module 1차
 - project zip manifest skeleton과 archive README 정책을 `src/project-zip.js`로 분리
+- Project zip preview policy module 1차
+- project zip preview의 take 정렬, playback data, style, player script 정책을 `src/project-zip.js`로 분리
 - Recording quick take handoff 1차
 - 녹음 화면 최근 take 리스트에서 바로 듣기와 Vocal 탭 전송 제공
 - Desktop package manifest 1차
