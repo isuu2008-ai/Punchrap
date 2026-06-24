@@ -77,6 +77,9 @@
 - take pool에서 comp lane으로 add/remove
 - comp lane 순서 up/down 편집
 - comp order 프로젝트 저장/복원
+- Best take marking 1차
+- 마음에 드는 take를 Best로 표시하고 Comp 탭에서 best take만 한 번에 comp lane에 추가
+- Best 상태를 project bundle과 zip manifest에 저장
 - Export metadata 기본형
 - Artist/Title 입력 프로젝트 저장/복원
 - WAV RIFF INFO chunk에 title, artist, BPM, key, software 기록

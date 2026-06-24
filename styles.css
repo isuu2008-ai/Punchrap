@@ -723,6 +723,17 @@ h1 {
   gap: 5px;
 }
 
+.take-badge {
+  width: fit-content;
+  padding: 2px 7px;
+  color: #050706;
+  background: var(--lime);
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
 .comp-row-main strong,
 .comp-pool-row strong {
   overflow: hidden;

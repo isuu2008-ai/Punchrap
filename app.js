@@ -252,6 +252,7 @@ const els = {
   compPoolMeta: document.querySelector("#compPoolMeta"),
   compPlayButton: document.querySelector("#compPlayButton"),
   compClearButton: document.querySelector("#compClearButton"),
+  compBestButton: document.querySelector("#compBestButton"),
   exportMixButton: document.querySelector("#exportMixButton"),
   downloadLatestButton: document.querySelector("#downloadLatestButton"),
   timelineLength: document.querySelector("#timelineLength"),
@@ -355,6 +356,7 @@ function bindEvents() {
   els.playCompButton.addEventListener("click", () => toggleTakeQueue("comp"));
   els.compPlayButton.addEventListener("click", () => toggleTakeQueue("comp"));
   els.compClearButton.addEventListener("click", clearCompLane);
+  els.compBestButton.addEventListener("click", addBestTakesToComp);
   els.exportMixButton.addEventListener("click", exportFullMix);
   els.downloadLatestButton.addEventListener("click", downloadLatestTake);
   els.retuneSpeedSlider.addEventListener("input", () => {
@@ -812,6 +814,7 @@ async function buildProjectZipFiles(bundle, projectFilename) {
       sourceTakeId: take.sourceTakeId || null,
       compSelected: Boolean(take.compSelected),
       compOrder: Number.isFinite(Number(take.compOrder)) ? Number(take.compOrder) : null,
+      bestTake: Boolean(take.bestTake),
       regionColor: getTakeRegionColor(take),
       regionGroup: getTakeRegionGroup(take),
       startTime: take.startTime || 0,
@@ -1931,6 +1934,7 @@ function saveTake() {
     sourceOffset: 0,
     sourceDuration: duration,
     regionGroup: getDefaultRegionGroupForTrack(track.id),
+    bestTake: false,
     recordLatencyMs: state.recordLatencyMs,
     waveform: downsampleWaveform(state.recordWaveform, 240),
   };
@@ -3000,6 +3004,7 @@ async function renderProcessedTake(sourceTake, preset, tuneSettings) {
     regionGroup: getTakeRegionGroup(sourceTake),
     fadeIn: sourceTake.fadeIn || 0,
     fadeOut: sourceTake.fadeOut || 0,
+    bestTake: false,
     processed: true,
     sourceTakeId: sourceTake.id,
     presetId: preset.id,
@@ -3372,6 +3377,9 @@ function renderTakes() {
             <button class="mini-button ${take.compSelected ? "active" : ""}" type="button" data-comp-take="${take.id}">
               Comp
             </button>
+            <button class="mini-button ${take.bestTake ? "active" : ""}" type="button" data-best-take="${take.id}">
+              Best
+            </button>
             <a href="${take.url}" download="${makeTakeFilename(take)}">Save</a>
             <button class="mini-button danger" type="button" data-delete-take="${take.id}">Del</button>
           </div>
@@ -3398,6 +3406,11 @@ function renderTakes() {
       toggleCompTake(button.dataset.compTake);
     });
   });
+  els.takesList.querySelectorAll("[data-best-take]").forEach((button) => {
+    button.addEventListener("click", () => {
+      toggleBestTake(button.dataset.bestTake);
+    });
+  });
 
   updateQueueButton();
   updateExportButtons();
@@ -3414,10 +3427,12 @@ function renderCompView() {
 
   const compTakes = getCompTakes();
   const poolTakes = getAllTakes().filter((take) => !take.compSelected);
+  const bestPoolCount = poolTakes.filter((take) => take.bestTake).length;
   els.compLaneMeta.textContent = `${compTakes.length} take${compTakes.length === 1 ? "" : "s"}`;
   els.compPoolMeta.textContent = `${poolTakes.length} available`;
   els.compPlayButton.disabled = !state.isQueuePlaying && compTakes.length === 0;
   els.compClearButton.disabled = compTakes.length === 0;
+  els.compBestButton.disabled = bestPoolCount === 0;
   els.compPlayButton.classList.toggle("queue-active", state.isQueuePlaying && state.queueMode === "comp");
   els.compPlayButton.querySelector(".button-label").textContent =
     state.isQueuePlaying && state.queueMode === "comp" ? "Stop comp" : "Play comp";
@@ -3450,6 +3465,7 @@ function renderCompLaneRow(take, index, total) {
       <div class="comp-order">${index + 1}</div>
       <div class="comp-row-main">
         <strong>${escapeHtml(getTakeTitle(take, index))}</strong>
+        ${take.bestTake ? `<span class="take-badge">Best</span>` : ""}
         <small>${escapeHtml(getTakeSubtitle(take))}</small>
         ${renderTakeWaveform(take)}
       </div>
@@ -3467,6 +3483,7 @@ function renderCompPoolRow(take, index) {
     <div class="comp-pool-row">
       <div>
         <strong>${escapeHtml(getTakeTitle(take, index))}</strong>
+        ${take.bestTake ? `<span class="take-badge">Best</span>` : ""}
         <small>${escapeHtml(getTakeSubtitle(take))}</small>
       </div>
       <button class="mini-button" type="button" data-comp-add="${take.id}">Add</button>
@@ -4217,6 +4234,7 @@ function duplicateTimelineRegion(takeId) {
     name: `${title} copy`,
     compSelected: false,
     compOrder: null,
+    bestTake: false,
     waveform: sourceTake.waveform ? [...sourceTake.waveform] : sourceTake.waveform,
     pitchAnalysis: clonePlainObject(sourceTake.pitchAnalysis),
     pitchPlan: clonePlainObject(sourceTake.pitchPlan),
@@ -4911,6 +4929,39 @@ function removeCompTake(takeId) {
   scheduleAutosave();
 }
 
+function toggleBestTake(takeId) {
+  const take = findTake(takeId);
+  if (!take) {
+    return;
+  }
+
+  take.bestTake = !take.bestTake;
+  els.sessionState.textContent = take.bestTake ? "Marked best take" : "Unmarked best take";
+  renderTakes();
+  scheduleAutosave();
+}
+
+function addBestTakesToComp() {
+  const bestPoolTakes = getAllTakes()
+    .filter((take) => take.bestTake && !take.compSelected)
+    .sort((a, b) => (a.startTime || 0) - (b.startTime || 0) || a.createdAt.getTime() - b.createdAt.getTime());
+
+  if (!bestPoolTakes.length) {
+    els.sessionState.textContent = "No best takes to add";
+    renderCompView();
+    return;
+  }
+
+  bestPoolTakes.forEach((take) => {
+    take.compSelected = true;
+    take.compOrder = getNextCompOrder();
+  });
+  normalizeCompOrder();
+  els.sessionState.textContent = `${bestPoolTakes.length} best take${bestPoolTakes.length === 1 ? "" : "s"} added`;
+  renderTakes();
+  scheduleAutosave();
+}
+
 function moveCompTake(takeId, delta) {
   const compTakes = getCompTakes();
   const index = compTakes.findIndex((take) => take.id === takeId);
@@ -5474,6 +5525,10 @@ function updateQueueButton() {
   if (els.compClearButton) {
     els.compClearButton.disabled = compTakes.length === 0;
   }
+
+  if (els.compBestButton) {
+    els.compBestButton.disabled = getAllTakes().every((take) => !take.bestTake || take.compSelected);
+  }
 }
 
 function updateExportButtons() {
@@ -5566,11 +5621,12 @@ function getTakeTitle(take, index) {
 
 function getTakeSubtitle(take) {
   const compTag = take.compSelected ? "comp / " : "";
+  const bestTag = take.bestTake ? "best / " : "";
   if (take.processed) {
-    return `${compTag}processed v${take.version || 1} / ${getTuneSignature(take.tuneSettings)} / ${formatDuration(take.duration)} @ ${formatDuration(take.startTime || 0)}`;
+    return `${bestTag}${compTag}processed v${take.version || 1} / ${getTuneSignature(take.tuneSettings)} / ${formatDuration(take.duration)} @ ${formatDuration(take.startTime || 0)}`;
   }
 
-  return `${compTag}raw / ${formatDuration(take.duration)} @ ${formatDuration(take.startTime || 0)}`;
+  return `${bestTag}${compTag}raw / ${formatDuration(take.duration)} @ ${formatDuration(take.startTime || 0)}`;
 }
 
 function getTakeShortName(take) {

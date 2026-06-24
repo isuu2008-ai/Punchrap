@@ -82,6 +82,7 @@ node .\scripts\check.mjs
 - Custom scale editor with 12 pitch-class toggles
 - Take comp selection with a dedicated comp playlist review button
 - Dedicated Comp view for comp lane ordering, take-pool add/remove, and persisted comp order
+- Best take marking with one-click add of best takes into the comp lane
 - Project templates for trap, drill, rage hook, and clean hook sessions
 - Marker-linked lyric sections with project-persisted scratch lyrics and session notes
 - Timeline region duplicate/delete actions
