@@ -477,6 +477,10 @@ if (!readFileSync("src/desktop.js", "utf8").includes("const compressedExportRead
   console.error("Desktop readiness must separate compressed export method availability from compressedAudioExport capability.");
   failed = true;
 }
+if (!appSource.includes("compressedExport: readiness.compressedExport") || !projectZipSource.includes("Compressed export ready") || !projectZipSource.includes("Compressed handoff pending")) {
+  console.error("Project and zip desktop readiness snapshots must preserve compressed export handoff readiness.");
+  failed = true;
+}
 if (!readFileSync("src/desktop.js", "utf8").includes("const pluginHostReady = hasPluginScan && capabilities.pluginHost === true") || !readFileSync("src/desktop.js", "utf8").includes("methodAvailable: hasPluginScan") || !readFileSync("src/desktop.js", "utf8").includes("ready: pluginHostReady")) {
   console.error("Desktop readiness must separate plugin scan method availability from pluginHost capability readiness.");
   failed = true;

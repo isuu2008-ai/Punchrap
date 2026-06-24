@@ -910,10 +910,12 @@ ${getProjectZipPreviewPlayerScript()}
 
     const nativeAudio = desktopReadiness.nativeAudioEngine || {};
     const inputMonitoring = desktopReadiness.inputMonitoring || {};
+    const compressedExport = desktopReadiness.compressedExport || {};
     const pluginHost = desktopReadiness.pluginHost || {};
     const parts = [desktopReadiness.desktopReady ? "Desktop ready" : "Desktop pending"];
     parts.push(nativeAudio.ready ? "Native audio ready" : "Native audio pending");
     parts.push(inputMonitoring.ready ? "Native monitor ready" : inputMonitoring.methodAvailable ? "Monitor handoff pending" : "Web monitor fallback");
+    parts.push(compressedExport.ready ? "Compressed export ready" : compressedExport.methodAvailable ? "Compressed handoff pending" : "WAV only");
     parts.push(pluginHost.ready ? "Plugin host ready" : pluginHost.scanAvailable ? "Plugin scan ready" : "Plugin scan pending");
     return parts.join(" / ");
   }

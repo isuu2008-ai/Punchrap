@@ -60,6 +60,8 @@
 - project zip preview header에 native audio sample rate를 함께 표시
 - Desktop readiness zip preview summary 1차
 - project zip preview header에 desktop/native/plugin readiness snapshot 요약을 표시
+- Compressed export readiness snapshot 1차
+- project bundle과 zip preview의 desktop readiness snapshot에 compressed export handoff readiness를 보존
 - Desktop handoff zip preview stage list 1차
 - project zip preview에 browser, wrapper, native audio, plugin host handoff stage 상태 목록을 표시
 - Native audio project bundle summary 1차

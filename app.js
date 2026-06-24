@@ -1564,6 +1564,13 @@ function summarizeDesktopReadinessEnvironment() {
         summary: readiness.inputMonitoring.summary || null,
       }
       : null,
+    compressedExport: readiness.compressedExport
+      ? {
+        methodAvailable: Boolean(readiness.compressedExport.methodAvailable),
+        ready: Boolean(readiness.compressedExport.ready),
+        capabilityReady: Boolean(readiness.compressedExport.capabilityReady),
+      }
+      : null,
     pluginHost: readiness.pluginHost
       ? {
         scanAvailable: Boolean(readiness.pluginHost.scanAvailable),
