@@ -2,7 +2,7 @@
 
 이 문서는 PunchLab을 단순한 브라우저 녹음 장난감이 아니라, 실제로 쓸 수 있는 랩 녹음 스튜디오로 키우기 위한 체크리스트입니다.
 
-현재 PunchLab은 브라우저 기반 프로토타입입니다. 이미 녹음, 여러 트랙, take 관리, pitch 분석, frame-level 튠 렌더, 보컬 체인, 전체 믹스 export, A/B 비교, batch render, minor/chromatic/custom 튠 모드, manual pitch lane, timeline undo/redo, render/export queue, take comping 기본형, comp lane editing, WAV export metadata, export preview, project zip export asset 포함형, waveform recording view, export peak normalize, LUFS loudness analysis 기본형까지 들어가 있습니다. 지금 단계에서는 브라우저로 계속 빠르게 기능을 검증하는 것이 맞습니다.
+현재 PunchLab은 브라우저 기반 프로토타입입니다. 이미 녹음, 여러 트랙, take 관리, pitch 분석, frame-level 튠 렌더, formant-aware pitch shifting 기본형, 보컬 체인, 전체 믹스 export, A/B 비교, batch render, minor/chromatic/custom 튠 모드, manual pitch lane, timeline undo/redo, render/export queue, take comping 기본형, comp lane editing, WAV export metadata, export preview, project zip export asset 포함형, waveform recording view, export peak normalize, LUFS loudness analysis 기본형까지 들어가 있습니다. 지금 단계에서는 브라우저로 계속 빠르게 기능을 검증하는 것이 맞습니다.
 
 현재 추가 완료:
 
@@ -78,6 +78,8 @@
 - WAV export 직전 sample peak를 -1 dBFS 목표로 보정
 - LUFS loudness analysis 기본형
 - Export 탭에서 full mix LUFS 근사치, peak, clipping count, -14 LUFS target gain 표시
+- Formant-aware pitch shifting 기본형
+- Pitch correction 방향/크기에 따라 body/focus formant filter를 보정
 
 ## 결론부터
 
@@ -427,11 +429,11 @@ VST3/AU 플러그인은 마지막에 가는 것이 맞습니다.
 5. stem export
 6. latency compensation
 7. pitch engine 개선
-8. formant-aware pitch shifting
-9. true peak and K-weighted loudness refinement
-10. Audio Engine Layer 추가 분리
+8. true peak and K-weighted loudness refinement
+9. Audio Engine Layer 추가 분리
+10. EQ/compressor/delay/reverb/limiter 세부 컨트롤
 11. desktop wrapper
 12. native audio engine
 13. VST3/AU plugin
 
-현재는 1-8번의 기본선과 timeline undo/redo, render/export queue, custom scale editor, take comping, comp lane editing, export metadata, export preview, project zip export asset 포함형, waveform recording view, export peak normalize, LUFS loudness analysis 기본형, offline mix render 모듈 분리가 들어온 상태입니다. 다음으로는 formant-aware pitch shifting, true peak/K-weighted loudness refinement, Audio Engine Layer 추가 분리가 중요합니다.
+현재는 1-8번의 기본선과 timeline undo/redo, render/export queue, custom scale editor, take comping, comp lane editing, export metadata, export preview, project zip export asset 포함형, waveform recording view, export peak normalize, LUFS loudness analysis 기본형, offline mix render 모듈 분리, formant-aware pitch shifting 기본형이 들어온 상태입니다. 다음으로는 true peak/K-weighted loudness refinement, Audio Engine Layer 추가 분리, EQ/compressor/delay/reverb/limiter 세부 컨트롤이 중요합니다.

@@ -27,6 +27,16 @@
     const widthAmount = preset.width / 100;
     const gatedBuffer = createNoiseGateBuffer(context, sourceBuffer, gateAmount);
     const tunedBuffer = createTunedBuffer(context, gatedBuffer, pitchPlan, retuneAmount, humanizeAmount);
+    const correctionStats = getCorrectionStats(pitchPlan, retuneAmount, humanizeAmount);
+    const formantPreserve = clamp(
+      retuneAmount * (0.35 + correctionStats.averageAbsSemitones / 4) * (1 - humanizeAmount * 0.45),
+      0,
+      1,
+    );
+    const correctionTilt = clamp(correctionStats.averageSemitones, -4, 4) * formantPreserve;
+    const correctionFrequencyShift = Math.pow(2, (-correctionTilt * 0.35) / 12);
+    const manualBodyShift = Math.pow(2, (-formantAmount * 0.9) / 12);
+    const manualFocusShift = Math.pow(2, (formantAmount * 0.9) / 12);
 
     source.buffer = tunedBuffer;
     highPass.type = "highpass";
@@ -39,24 +49,24 @@
     deEsser.gain.value = -deEssAmount * 9;
 
     presence.type = "peaking";
-    presence.frequency.value = 2600;
+    presence.frequency.value = clamp(2600 * correctionFrequencyShift, 1800, 3400);
     presence.Q.value = 0.9;
     presence.gain.value = 1.5 + retuneAmount * 3;
 
     air.type = "highshelf";
     air.frequency.value = 7800;
-    air.gain.value = 1 + widthAmount * 4 + Math.max(0, formantAmount) * 2;
+    air.gain.value = 1 + widthAmount * 4 + Math.max(0, formantAmount) * 2 - Math.max(0, correctionTilt) * 0.7;
 
     const formantBody = context.createBiquadFilter();
     const formantFocus = context.createBiquadFilter();
     formantBody.type = "peaking";
-    formantBody.frequency.value = 460;
+    formantBody.frequency.value = clamp(460 * correctionFrequencyShift * manualBodyShift, 280, 760);
     formantBody.Q.value = 0.85;
-    formantBody.gain.value = -formantAmount * 3.2;
+    formantBody.gain.value = -formantAmount * 3.2 + correctionTilt * 1.25;
     formantFocus.type = "peaking";
-    formantFocus.frequency.value = 2200;
+    formantFocus.frequency.value = clamp(2200 * correctionFrequencyShift * manualFocusShift, 1500, 3600);
     formantFocus.Q.value = 1.05;
-    formantFocus.gain.value = formantAmount * 4.2;
+    formantFocus.gain.value = formantAmount * 4.2 - correctionTilt * 0.95;
 
     compressor.threshold.value = -18 - compAmount * 18;
     compressor.knee.value = 14 - compAmount * 8;
@@ -144,6 +154,40 @@
     }
 
     return output;
+  }
+
+  function getCorrectionStats(pitchPlan, amount, humanize) {
+    const frames = pitchPlan?.frames || [];
+    let weightedCorrection = 0;
+    let weightedAbsCorrection = 0;
+    let totalWeight = 0;
+
+    frames.forEach((frame) => {
+      if (!Number.isFinite(frame.correctionSemitones) || Math.abs(frame.correctionSemitones) < 0.04) {
+        return;
+      }
+
+      const deadband = humanize * 0.18;
+      const frameCorrection = Math.abs(frame.correctionSemitones) < deadband ? 0 : frame.correctionSemitones;
+      const confidenceScale = clamp(0.52 + frame.confidence * 0.48 - humanize * 0.18, 0.35, 1);
+      const correction = clamp(frameCorrection, -4, 4) * amount * (1 - humanize * 0.58) * confidenceScale;
+      const weight = Math.max(0.001, (frame.rms || 0.05) * confidenceScale);
+      weightedCorrection += correction * weight;
+      weightedAbsCorrection += Math.abs(correction) * weight;
+      totalWeight += weight;
+    });
+
+    if (!totalWeight) {
+      return {
+        averageSemitones: 0,
+        averageAbsSemitones: 0,
+      };
+    }
+
+    return {
+      averageSemitones: weightedCorrection / totalWeight,
+      averageAbsSemitones: weightedAbsCorrection / totalWeight,
+    };
   }
 
   function createNoiseGateBuffer(context, sourceBuffer, amount) {

@@ -23,6 +23,7 @@ Then open `http://localhost:4173`.
 - Pitch analysis against the selected minor key or chromatic mode
 - Frame-level pitch correction and offline vocal chain render to a new processed WAV take
 - Retune speed, humanize, and formant controls for rendered vocal takes
+- Correction-aware formant compensation for pitch-shifted vocal renders
 - A/B comparison between raw and tuned takes
 - Batch render for the current track or all raw vocal takes
 - Processed take version labels for repeated renders from the same source take
@@ -58,6 +59,5 @@ See [COMMERCIAL_STUDIO_ROADMAP.md](./COMMERCIAL_STUDIO_ROADMAP.md) for the comme
 
 ## Next DSP Steps
 
-- Formant-aware pitch shifting
 - Better EQ, compressor, delay, reverb, and limiter controls
 - True peak and K-weighted loudness refinement
