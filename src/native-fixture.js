@@ -46,6 +46,17 @@
         fixture: true,
       };
     },
+    openProjectFile() {
+      return { canceled: true, fixture: true };
+    },
+    saveProjectFile(payload = {}) {
+      return {
+        canceled: false,
+        fixture: true,
+        fileName: payload.suggestedName || "project.punchlab.json",
+        bytes: String(payload.data || payload.dataUrl || "").length,
+      };
+    },
     startInputMonitor() {
       return { active: true, fixture: true };
     },

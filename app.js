@@ -1537,7 +1537,7 @@ async function openProject() {
 
   try {
     els.openProjectButton.disabled = true;
-    const result = await window.PunchLabFiles.openProjectFile(els.projectInput);
+    const result = await window.PunchLabPlatform?.openProjectFile?.() || await window.PunchLabFiles.openProjectFile(els.projectInput);
     if (result.canceled) {
       els.sessionState.textContent = "Open canceled";
       return;
@@ -5858,6 +5858,11 @@ function downloadBlob(blob, filename) {
 }
 
 async function saveBlobWithPlatform(blob, filename, pickerOptions = {}) {
+  const nativeResult = await window.PunchLabPlatform?.saveProjectFile?.(blob, filename);
+  if (nativeResult) {
+    return nativeResult;
+  }
+
   if (!window.PunchLabFiles?.saveBlob) {
     downloadBlob(blob, filename);
     return { canceled: false, method: "download" };
