@@ -11,7 +11,10 @@
     "webEntry": "index.html",
     "devServer": "http://localhost:4173",
     "productionDir": ".",
-    "tauriConfig": "src-tauri/tauri.conf.json"
+    "tauriConfig": "src-tauri/tauri.conf.json",
+    "cargoManifest": "src-tauri/Cargo.toml",
+    "rustEntry": "src-tauri/src/main.rs",
+    "rustLibrary": "src-tauri/src/lib.rs"
   },
   "fileAssociations": [
     {
@@ -50,6 +53,10 @@
     "desktop-wrapper-manifest.json",
     "plugin-host-manifest.json",
     "src-tauri/tauri.conf.json",
+    "src-tauri/Cargo.toml",
+    "src-tauri/build.rs",
+    "src-tauri/src/main.rs",
+    "src-tauri/src/lib.rs",
     "src-tauri/capabilities/main.json",
     "src/engine-contract.js",
     "src/native-bridge.js",

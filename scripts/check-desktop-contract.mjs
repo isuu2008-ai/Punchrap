@@ -8,6 +8,10 @@ const tauriConfig = readJson("src-tauri/tauri.conf.json");
 const mainCapability = readJson("src-tauri/capabilities/main.json");
 const indexHtml = readFileSync("index.html", "utf8");
 const desktopSource = readFileSync("src/desktop.js", "utf8");
+const tauriCargo = readFileSync("src-tauri/Cargo.toml", "utf8");
+const tauriBuildScript = readFileSync("src-tauri/build.rs", "utf8");
+const tauriMainSource = readFileSync("src-tauri/src/main.rs", "utf8");
+const tauriLibSource = readFileSync("src-tauri/src/lib.rs", "utf8");
 let failed = false;
 
 function readJson(path) {
@@ -42,6 +46,9 @@ requireString(wrapper.appName, "wrapper.appName");
 requireString(wrapper.shell?.entry, "wrapper.shell.entry");
 requireString(wrapper.shell?.windowTitle, "wrapper.shell.windowTitle");
 requireString(wrapper.shell?.tauriConfig, "wrapper.shell.tauriConfig");
+requireString(wrapper.shell?.cargoManifest, "wrapper.shell.cargoManifest");
+requireString(wrapper.shell?.rustEntry, "wrapper.shell.rustEntry");
+requireString(wrapper.shell?.rustLibrary, "wrapper.shell.rustLibrary");
 
 const requiredMeta = {
   "punchlab-desktop-manifest": "./desktop-host-manifest.json",
@@ -122,6 +129,15 @@ if (packageManifest.entry?.devServer !== wrapper.shell?.devServer) {
 if (packageManifest.entry?.tauriConfig !== wrapper.shell?.tauriConfig) {
   fail("Desktop package Tauri config path must match wrapper shell tauriConfig.");
 }
+if (packageManifest.entry?.cargoManifest !== wrapper.shell?.cargoManifest) {
+  fail("Desktop package Cargo manifest path must match wrapper shell cargoManifest.");
+}
+if (packageManifest.entry?.rustEntry !== wrapper.shell?.rustEntry) {
+  fail("Desktop package Rust entry path must match wrapper shell rustEntry.");
+}
+if (packageManifest.entry?.rustLibrary !== wrapper.shell?.rustLibrary) {
+  fail("Desktop package Rust library path must match wrapper shell rustLibrary.");
+}
 if (packageManifest.preferredWrapper?.framework !== "Tauri") {
   fail("Desktop package manifest must keep Tauri as the preferred wrapper.");
 }
@@ -139,6 +155,11 @@ for (const artifact of ["desktop-package-manifest.json", "desktop-host-manifest.
 }
 if (!packageArtifacts.includes(wrapper.shell?.tauriConfig)) {
   fail("Desktop package manifest must list the Tauri shell config artifact.");
+}
+for (const artifact of [wrapper.shell?.cargoManifest, wrapper.shell?.rustEntry, wrapper.shell?.rustLibrary, "src-tauri/build.rs"]) {
+  if (!packageArtifacts.includes(artifact)) {
+    fail(`Desktop package manifest must list the Tauri Rust artifact: ${artifact}`);
+  }
 }
 if (!packageArtifacts.includes("src-tauri/capabilities/main.json")) {
   fail("Desktop package manifest must list the Tauri main capability artifact.");
@@ -227,6 +248,9 @@ if (!desktopSource.includes("packageManifestPath")) {
 if (!desktopSource.includes("tauriConfig")) {
   fail("Desktop runtime manifest must expose the Tauri config path.");
 }
+if (!desktopSource.includes("cargoManifest") || !desktopSource.includes("rustEntry") || !desktopSource.includes("rustLibrary")) {
+  fail("Desktop runtime manifest must expose Tauri Rust scaffold paths.");
+}
 if (!desktopSource.includes("FILE_ASSOCIATIONS") || !desktopSource.includes(".punchlab.json") || !desktopSource.includes(".punchlab.zip")) {
   fail("Desktop runtime manifest must expose PunchLab file associations.");
 }
@@ -248,6 +272,43 @@ if (tauriConfig.build?.devUrl !== wrapper.shell?.devServer) {
 }
 if (tauriConfig.build?.frontendDist !== "../") {
   fail("Tauri config frontendDist must point to the static PunchLab shell.");
+}
+if (wrapper.shell?.cargoManifest !== "src-tauri/Cargo.toml") {
+  fail("Desktop wrapper shell must point to src-tauri/Cargo.toml.");
+}
+if (wrapper.shell?.rustEntry !== "src-tauri/src/main.rs" || wrapper.shell?.rustLibrary !== "src-tauri/src/lib.rs") {
+  fail("Desktop wrapper shell must point to Tauri Rust main/lib entry files.");
+}
+if (!tauriCargo.includes('name = "punchlab"') || !tauriCargo.includes('name = "punchlab_lib"')) {
+  fail("Tauri Cargo manifest must define punchlab package and punchlab_lib library.");
+}
+for (const requiredSnippet of [
+  'crate-type = ["staticlib", "cdylib", "rlib"]',
+  'tauri-build = { version = "2"',
+  'tauri = { version = "2"',
+  'tauri-plugin-dialog = "2"',
+  'tauri-plugin-fs = "2"',
+]) {
+  if (!tauriCargo.includes(requiredSnippet)) {
+    fail(`Tauri Cargo manifest missing ${requiredSnippet}.`);
+  }
+}
+if (!tauriBuildScript.includes("tauri_build::build()")) {
+  fail("Tauri build.rs must invoke tauri_build::build().");
+}
+if (!tauriMainSource.includes("windows_subsystem = \"windows\"") || !tauriMainSource.includes("punchlab_lib::run()")) {
+  fail("Tauri main.rs must hide the Windows console in release and call punchlab_lib::run().");
+}
+for (const requiredSnippet of [
+  "tauri::Builder::default()",
+  "tauri_plugin_dialog::init()",
+  "tauri_plugin_fs::init()",
+  "tauri::generate_context!()",
+  "pub fn run()",
+]) {
+  if (!tauriLibSource.includes(requiredSnippet)) {
+    fail(`Tauri lib.rs missing ${requiredSnippet}.`);
+  }
 }
 const selectedCapabilities = tauriConfig.app?.security?.capabilities || [];
 if (!Array.isArray(selectedCapabilities) || !selectedCapabilities.includes("main")) {

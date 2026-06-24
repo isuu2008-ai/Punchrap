@@ -72,6 +72,9 @@
         shell: {
           entry: "index.html",
           tauriConfig: "src-tauri/tauri.conf.json",
+          cargoManifest: "src-tauri/Cargo.toml",
+          rustEntry: "src-tauri/src/main.rs",
+          rustLibrary: "src-tauri/src/lib.rs",
           minWidth: 1180,
           minHeight: 760,
         },
