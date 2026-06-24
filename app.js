@@ -1921,6 +1921,7 @@ function applyLoadedProject(project) {
   }
 
   applyProjectSettings(project.settings);
+  void applyCurrentPlaybackOutput();
   state.markers = normalizeMarkers(project.markers);
   clearTimelineHistory();
   state.latestTake = getAllTakes().at(-1) || null;

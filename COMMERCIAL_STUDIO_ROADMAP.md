@@ -261,6 +261,8 @@
 - setOutputDevice optional native method를 Platform API와 playback output 변경 경로에 연결
 - Output routing readiness 1차
 - setOutputDevice native 지원 여부와 browser sink routing 지원 여부를 desktop readiness에서 분리 표시
+- Output routing restore 1차
+- project load 이후 저장된 playback output routing을 즉시 재적용
 - BPM 기반 metronome toggle
 - recording/session playback 중 metronome tick
 - Count-in 고도화 1차

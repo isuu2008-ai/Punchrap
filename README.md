@@ -27,6 +27,7 @@ node .\scripts\check.mjs
 - Audio input device selector with project persistence
 - Playback output device selector when the browser supports sink routing
 - Native output device handoff through optional `setOutputDevice`
+- Project load reapplies saved playback output routing after settings restore
 - Desktop readiness reports native and browser output routing support
 - Count-in
 - Main, Double, Adlib L, Adlib R, and Hook tracks
