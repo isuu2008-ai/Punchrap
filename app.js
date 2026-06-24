@@ -1155,6 +1155,7 @@ async function buildProjectZipFiles(bundle, projectFilename) {
     exportedAt: new Date().toISOString(),
     project: projectFilename,
     preview: "preview.html",
+    session: summarizeSessionManifest(bundle),
     exportSettings: summarizeExportSettings(),
     pluginHost: summarizePluginHostScan(),
     automationManifest: summarizeAutomationParameterManifest(),
@@ -1247,6 +1248,7 @@ async function buildProjectZipFiles(bundle, projectFilename) {
     `${projectFilename} is the full PunchLab project bundle used by the current web app.`,
     "preview.html is a read-only browser preview for quick review after extracting the zip.",
     "manifest.json lists extracted audio assets for backup, transfer, and manual inspection.",
+    "manifest.json includes session settings for tempo, key, tuning mode, punch, loop, and snap review.",
     "manifest.json includes exportSettings for WAV depth, normalize, loudness target, and recent analysis context.",
     "manifest.json includes automationManifest for plugin-style vocal chain parameter interpretation.",
     "manifest.json includes nativeAudio for driver, buffer, and latency environment context.",
@@ -1267,6 +1269,7 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
   const artist = metadata.artist || "PunchLab";
   const bpm = settings.bpm || Number(els.bpmInput.value) || 140;
   const key = settings.key || els.keySelect.value || "C minor";
+  const sessionManifest = manifest.session || {};
   const exportSettings = manifest.exportSettings || {};
   const pluginHost = manifest.pluginHost || {};
   const automationManifest = manifest.automationManifest || {};
@@ -1361,6 +1364,7 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
       .join("")
     : `<li>No desktop handoff snapshot.</li>`;
   const pluginHostRows = buildPreviewPluginHostRows(pluginHost);
+  const sessionRows = buildPreviewSessionRows(sessionManifest);
   const automationSchemaRows = buildPreviewAutomationSchemaRows(automationManifest);
   const presetRows = buildPreviewPresetManifestRows(presetManifest);
   const notesRows = buildPreviewNotesRows(notesManifest, manifest.markers);
@@ -1431,6 +1435,12 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
           <span id="previewStatus">Ready</span>
         </div>
       </header>
+      <section>
+        <h2>Session</h2>
+        <article class="asset-card">
+          <dl>${sessionRows}</dl>
+        </article>
+      </section>
       <section>
         <h2>Desktop Handoff</h2>
         <ol>${handoffStageRows}</ol>
@@ -1593,6 +1603,30 @@ function summarizePresetManifest(presetList = [], selectedPresetId = "") {
     });
 }
 
+function summarizeSessionManifest(bundle = {}) {
+  const settings = bundle.settings || {};
+  const track = (bundle.tracks || []).find((item) => item.id === settings.armedTrackId);
+  const targetMidi = Number.isFinite(Number(settings.targetMidi)) ? Number(settings.targetMidi) : null;
+  return {
+    bpm: Number(settings.bpm) || 140,
+    key: settings.key || "C minor",
+    scaleMode: settings.scaleMode || "minor",
+    targetMidi,
+    targetNote: targetMidi === null ? "Scale nearest" : formatPitchNote(targetMidi),
+    countInBars: Number(settings.countIn) || 0,
+    timelineSnap: normalizeTimelineSnapMode(settings.timelineSnap || "off"),
+    armedTrackId: settings.armedTrackId || "main",
+    armedTrackName: track?.name || settings.armedTrackId || "Main",
+    punchEnabled: Boolean(settings.punchEnabled),
+    loopEnabled: Boolean(settings.loopEnabled),
+    metronomeEnabled: Boolean(settings.metronomeEnabled),
+    punchIn: Number(settings.punchIn) || 0,
+    punchOut: Number(settings.punchOut) || 0,
+    recordLatencyMs: Number(settings.recordLatencyMs) || 0,
+    nativeBufferSize: Number(settings.nativeBufferSize) || null,
+  };
+}
+
 function getTuneSettingsForPreset(preset) {
   return {
     retuneSpeed: preset.retune,
@@ -1740,6 +1774,39 @@ function buildPreviewAutomationSchemaRows(automationManifest = {}) {
         </dl>
       </article>`)
     .join("");
+}
+
+function buildPreviewSessionRows(sessionManifest = {}) {
+  const countIn = Number(sessionManifest.countInBars || 0);
+  const recordLatency = Number(sessionManifest.recordLatencyMs || 0);
+  const bufferSize = Number(sessionManifest.nativeBufferSize || 0);
+  const rows = [
+    ["BPM", String(sessionManifest.bpm || 140)],
+    ["Key", sessionManifest.key || "C minor"],
+    ["Scale", formatPreviewScaleMode(sessionManifest.scaleMode)],
+    ["Target", sessionManifest.targetNote || "Scale nearest"],
+    ["Count-in", countIn > 0 ? `${countIn} bar${countIn === 1 ? "" : "s"}` : "Off"],
+    ["Snap", formatPreviewSnapMode(sessionManifest.timelineSnap)],
+    ["Armed", sessionManifest.armedTrackName || sessionManifest.armedTrackId || "Main"],
+    ["Punch", sessionManifest.punchEnabled ? `${formatDuration(sessionManifest.punchIn)} - ${formatDuration(sessionManifest.punchOut)}` : "Off"],
+    ["Loop", sessionManifest.loopEnabled ? "On" : "Off"],
+    ["Metronome", sessionManifest.metronomeEnabled ? "On" : "Off"],
+    ["Record Latency", recordLatency > 0 ? `${Math.round(recordLatency)} ms` : "None"],
+    ["Native Buffer", bufferSize > 0 ? `${bufferSize} samples` : "Default"],
+  ];
+  return rows
+    .map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`)
+    .join("");
+}
+
+function formatPreviewScaleMode(scaleMode) {
+  const value = String(scaleMode || "minor");
+  return value === "custom" ? "Custom" : value === "chromatic" ? "Chromatic" : "Minor";
+}
+
+function formatPreviewSnapMode(snapMode) {
+  const value = normalizeTimelineSnapMode(snapMode || "off");
+  return value === "bar" ? "Bar" : value === "beat" ? "Beat" : "Off";
 }
 
 function buildPreviewPresetManifestRows(presetManifest = []) {

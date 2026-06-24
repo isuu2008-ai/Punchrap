@@ -226,6 +226,10 @@ if (!appSource.includes("notes: summarizeProjectNotes") || !appSource.includes("
   console.error("Project zip manifest and preview must expose scratch lyrics, marker lyrics, and session notes.");
   failed = true;
 }
+if (!appSource.includes("session: summarizeSessionManifest") || !appSource.includes("buildPreviewSessionRows") || !appSource.includes("manifest.json includes session settings")) {
+  console.error("Project zip manifest and preview must expose session settings.");
+  failed = true;
+}
 if (!appSource.includes("Automation Schema") || !appSource.includes("buildPreviewAutomationSchemaRows")) {
   console.error("Project zip preview must display the vocal chain automation parameter schema.");
   failed = true;

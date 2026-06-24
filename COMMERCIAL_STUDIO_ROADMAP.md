@@ -142,6 +142,8 @@
 - project zip `manifest.json`과 `preview.html`에 vocal chain preset summary 표시
 - Zip lyrics/notes preview 1차
 - project zip `manifest.json`과 `preview.html`에 scratch lyrics, marker lyrics, session notes 표시
+- Zip session settings preview 1차
+- project zip `manifest.json`과 `preview.html`에 tempo, key, tuning mode, punch, loop, snap 설정 표시
 - Recording quick take handoff 1차
 - 녹음 화면 최근 take 리스트에서 바로 듣기와 Vocal 탭 전송 제공
 - Desktop package manifest 1차
