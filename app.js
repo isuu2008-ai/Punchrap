@@ -306,6 +306,7 @@ const els = {
   exportStemsButton: document.querySelector("#exportStemsButton"),
   exportBeatStemButton: document.querySelector("#exportBeatStemButton"),
   exportVocalStemButton: document.querySelector("#exportVocalStemButton"),
+  exportCompVocalButton: document.querySelector("#exportCompVocalButton"),
   exportDryVocalsButton: document.querySelector("#exportDryVocalsButton"),
   exportTunedVocalsButton: document.querySelector("#exportTunedVocalsButton"),
   analyzeLoudnessButton: document.querySelector("#analyzeLoudnessButton"),
@@ -694,6 +695,7 @@ function bindEvents() {
   els.exportStemsButton.addEventListener("click", exportTrackStems);
   els.exportBeatStemButton.addEventListener("click", exportBeatStem);
   els.exportVocalStemButton.addEventListener("click", exportVocalStem);
+  els.exportCompVocalButton.addEventListener("click", exportCompVocal);
   els.exportDryVocalsButton.addEventListener("click", exportDryVocals);
   els.exportTunedVocalsButton.addEventListener("click", exportTunedVocals);
   els.analyzeLoudnessButton.addEventListener("click", analyzeLoudness);
@@ -4695,6 +4697,7 @@ function renderExportPanel() {
     { label: "Track stems", count: getStemExportGroups().length, unit: "source" },
     { label: "Beat stem", count: state.beatArrayBuffer ? 1 : 0, unit: "source" },
     { label: "Vocal stem", count: getAudibleTakes().length, unit: "source" },
+    { label: "Comp vocal", count: getCompTakes().length, unit: "source" },
     { label: "Dry vocals", count: getAllTakes().filter((take) => !take.processed).length, unit: "source" },
     { label: "Tuned vocals", count: getAllTakes().filter((take) => take.processed).length, unit: "source" },
     { label: "Metadata", count: [metadata.artist, metadata.title, metadata.bpm, metadata.key].filter(Boolean).length, unit: "field" },
@@ -5818,6 +5821,20 @@ async function exportVocalStem() {
       },
     ],
     "Vocal stem",
+  );
+}
+
+async function exportCompVocal() {
+  await exportRenderGroups(
+    [
+      {
+        name: "Comp vocal",
+        filename: `${makeExportBaseSlug()}-comp-vocal.wav`,
+        takes: getCompTakes(),
+        includeBeat: false,
+      },
+    ],
+    "Comp vocal",
   );
 }
 
@@ -7019,11 +7036,13 @@ function updateExportButtons() {
   const hasStems = getStemExportGroups().length > 0;
   const hasBeatStem = Boolean(state.beatArrayBuffer);
   const hasVocals = getAudibleTakes().length > 0;
+  const hasCompVocal = getCompTakes().length > 0;
   const hasDry = getAllTakes().some((take) => !take.processed && getTrackOutputVolume(findTrack(take.trackId)) > 0);
   const hasTuned = getAllTakes().some((take) => take.processed && getTrackOutputVolume(findTrack(take.trackId)) > 0);
   els.exportStemsButton.disabled = !hasStems;
   els.exportBeatStemButton.disabled = !hasBeatStem;
   els.exportVocalStemButton.disabled = !hasVocals;
+  els.exportCompVocalButton.disabled = !hasCompVocal;
   els.exportDryVocalsButton.disabled = !hasDry;
   els.exportTunedVocalsButton.disabled = !hasTuned;
   if (els.analyzeLoudnessButton) {
@@ -7037,6 +7056,7 @@ function updateExportButtons() {
   els.exportStemsButton.classList.toggle("rendering", state.isExportingAssets);
   els.exportBeatStemButton.classList.toggle("rendering", state.isExportingAssets);
   els.exportVocalStemButton.classList.toggle("rendering", state.isExportingAssets);
+  els.exportCompVocalButton.classList.toggle("rendering", state.isExportingAssets);
   els.exportDryVocalsButton.classList.toggle("rendering", state.isExportingAssets);
   els.exportTunedVocalsButton.classList.toggle("rendering", state.isExportingAssets);
   renderExportPanel();

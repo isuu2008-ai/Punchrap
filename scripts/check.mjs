@@ -272,6 +272,10 @@ if (!appSource.includes("data-compress-export") || !appSource.includes("exportCo
   console.error("Completed export jobs must expose native compressed MP3/M4A handoff when supported.");
   failed = true;
 }
+if (!indexHtml.includes("exportCompVocalButton") || !appSource.includes("exportCompVocal") || !appSource.includes("-comp-vocal.wav") || !appSource.includes("getCompTakes()")) {
+  console.error("Export view must support rendering the selected comp lane as a dedicated vocal WAV.");
+  failed = true;
+}
 const exportPlanSource = readFileSync("src/export-plan.js", "utf8");
 if (!exportPlanSource.includes("window.PunchLabExportPlan") || !exportPlanSource.includes("buildStemExportGroups") || !appSource.includes("PunchLabExportPlan.buildStemExportGroups")) {
   console.error("Export filename, stem group, and compressed format planning must be separated from the app controller.");
