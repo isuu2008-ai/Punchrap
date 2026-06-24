@@ -173,6 +173,7 @@ node .\scripts\check.mjs
 - Track folder membership, default names, solo/mute audibility, and output-volume policy live in `src/tracks.js`
 - Pitch scale normalization, manual target overlays, lane sampling, note labels, and correction summaries live in `src/pitch.js`
 - Device enumeration, recording MIME selection, mic constraints, and output routing live in `src/devices.js`
+- Global shortcut input guards and tab-index mapping live in `src/shortcuts.js`
 - Autosave, rolling backup, recovery listing, and backup-history labels live in `src/storage.js`
 - Shared display formatting for durations, dB values, pan, percentages, LUFS, native latency/sample-rate timestamps, and HTML escaping lives in `src/format.js`
 - Project zip preview beat, marker, and comp rows are formatted in `src/project-zip.js`

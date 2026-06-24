@@ -744,9 +744,9 @@ function handleGlobalShortcut(event) {
     return;
   }
 
-  if (/^Digit[1-8]$/.test(event.code)) {
-    const index = Number(event.code.replace("Digit", "")) - 1;
-    const tab = Array.from(els.viewTabs)[index];
+  const tabIndex = getShortcutTabIndex(event.code, els.viewTabs.length);
+  if (tabIndex >= 0) {
+    const tab = Array.from(els.viewTabs)[tabIndex];
     if (tab) {
       event.preventDefault();
       setActiveView(tab.dataset.view);
@@ -755,8 +755,11 @@ function handleGlobalShortcut(event) {
 }
 
 function isTypingTarget(target) {
-  const tag = target?.tagName?.toLowerCase();
-  return tag === "input" || tag === "select" || tag === "textarea" || target?.isContentEditable;
+  return window.PunchLabShortcuts.isTypingTarget(target);
+}
+
+function getShortcutTabIndex(code, maxTabs) {
+  return window.PunchLabShortcuts.getShortcutTabIndex(code, maxTabs);
 }
 
 function setActiveView(view) {

@@ -19,6 +19,7 @@ const syntaxFiles = [
   "src/files.js",
   "src/templates.js",
   "src/devices.js",
+  "src/shortcuts.js",
   "src/mix.js",
   "src/vocal.js",
   "src/engine-contract.js",
@@ -50,6 +51,7 @@ const requiredScripts = [
   "src/files.js",
   "src/templates.js",
   "src/devices.js",
+  "src/shortcuts.js",
   "src/mix.js",
   "src/vocal.js",
   "src/engine-contract.js",
@@ -347,6 +349,11 @@ if (!devicesSource.includes("window.PunchLabDevices") || !devicesSource.includes
 const storageSource = readFileSync("src/storage.js", "utf8");
 if (!storageSource.includes("window.PunchLabStorage") || !storageSource.includes("formatBackupHistoryLabel") || !storageSource.includes("saveBackup") || !storageSource.includes("listBackups") || !storageSource.includes("loadBackup") || !appSource.includes("PunchLabStorage.formatBackupHistoryLabel")) {
   console.error("Autosave, rolling backup, recovery list, and backup-history display policy must live in src/storage.js and be used by app.js.");
+  failed = true;
+}
+const shortcutsSource = readFileSync("src/shortcuts.js", "utf8");
+if (!shortcutsSource.includes("window.PunchLabShortcuts") || !shortcutsSource.includes("isTypingTarget") || !shortcutsSource.includes("getShortcutTabIndex") || !appSource.includes("PunchLabShortcuts.isTypingTarget") || !appSource.includes("PunchLabShortcuts.getShortcutTabIndex")) {
+  console.error("Global shortcut input guards and tab-index mapping must live in src/shortcuts.js and be used by app.js.");
   failed = true;
 }
 if (!indexHtml.includes("quickTakeList") || !appSource.includes("data-quick-play-take") || !appSource.includes("data-quick-vocal-take") || !appSource.includes("sendTakeToVocal")) {
