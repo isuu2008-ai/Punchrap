@@ -178,6 +178,10 @@ if (!indexHtml.includes("batchSkipRenderedInput") || !appSource.includes("should
   console.error("Vocal batch render must support skipping raw takes already rendered with the same chain.");
   failed = true;
 }
+if (!appSource.includes("deleteCustomPreset") || !appSource.includes("data-delete-preset") || !appSource.includes("preset-delete-button")) {
+  console.error("Custom vocal presets must be removable without exposing delete controls for built-in presets.");
+  failed = true;
+}
 if (!appSource.includes("summarizeNativeAudioEnvironment") || !appSource.includes("nativeAudio: summarizeNativeAudioEnvironment()")) {
   console.error("Project zip manifest must include native audio environment summary.");
   failed = true;

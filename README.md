@@ -152,6 +152,7 @@ node .\scripts\check.mjs
 - Punch + Loop recording mode that keeps stacking takes until stopped
 - Input monitoring toggle through the Web Audio mic chain
 - Custom vocal preset saving and project restore
+- Custom vocal preset deletion while built-in presets stay protected
 - Vocal gate and de-ess controls in the offline render chain
 - Chromatic pitch-correction mode for rap-style hard tune without key locking
 - Fixed MIDI target-note mode for robotic hard-tune effects

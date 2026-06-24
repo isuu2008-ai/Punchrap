@@ -216,6 +216,8 @@
 - Vocal batch render 실행 전 대상 raw take 리스트 표시
 - Batch duplicate guard 1차
 - 같은 preset/tune chain으로 이미 렌더된 raw take는 batch 대상에서 제외하는 옵션 제공
+- Custom preset delete 1차
+- 저장한 custom vocal preset 삭제와 built-in preset 보호
 - Custom scale editor
 - 12 pitch-class toggle로 target scale 편집
 - Custom scale 프로젝트 저장/복원

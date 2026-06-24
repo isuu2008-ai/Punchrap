@@ -3748,15 +3748,21 @@ function renderPresets() {
   els.presetGrid.innerHTML = presets
     .map(
       (preset) => `
-        <button class="preset-button" type="button" data-preset="${preset.id}">
-          ${escapeHtml(preset.name)}
-        </button>
+        <div class="preset-item ${preset.custom ? "custom" : ""}">
+          <button class="preset-button" type="button" data-preset="${preset.id}">
+            ${escapeHtml(preset.name)}
+          </button>
+          ${preset.custom ? `<button class="preset-delete-button" type="button" data-delete-preset="${preset.id}" title="Delete custom preset">Del</button>` : ""}
+        </div>
       `,
     )
     .join("");
 
   els.presetGrid.querySelectorAll("[data-preset]").forEach((button) => {
     button.addEventListener("click", () => applyPreset(button.dataset.preset));
+  });
+  els.presetGrid.querySelectorAll("[data-delete-preset]").forEach((button) => {
+    button.addEventListener("click", () => deleteCustomPreset(button.dataset.deletePreset));
   });
 }
 
@@ -3794,6 +3800,25 @@ function saveCustomPreset() {
   renderPresets();
   applyPreset(preset.id);
   els.sessionState.textContent = "Preset saved";
+  scheduleAutosave();
+}
+
+function deleteCustomPreset(presetId) {
+  const index = presets.findIndex((preset) => preset.id === presetId && preset.custom);
+  if (index < 0 || presets.length <= 1) {
+    els.sessionState.textContent = "Preset protected";
+    return;
+  }
+
+  const wasSelected = state.selectedPresetId === presetId;
+  presets.splice(index, 1);
+  renderPresets();
+  if (wasSelected) {
+    applyPreset(presets[0].id);
+  } else {
+    renderVocalPanel();
+  }
+  els.sessionState.textContent = "Preset deleted";
   scheduleAutosave();
 }
 

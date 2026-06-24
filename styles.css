@@ -1636,8 +1636,19 @@ textarea:focus {
   gap: 8px;
 }
 
+.preset-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+}
+
+.preset-item:not(.custom) .preset-button {
+  grid-column: 1 / -1;
+}
+
 .preset-button {
   min-height: 48px;
+  min-width: 0;
   padding: 0 10px;
   color: var(--text);
   background: var(--panel-2);
@@ -1651,6 +1662,18 @@ textarea:focus {
   color: #050706;
   background: var(--lime);
   border-color: var(--lime);
+}
+
+.preset-delete-button {
+  min-width: 42px;
+  min-height: 48px;
+  padding: 0 8px;
+  color: #ff9a9a;
+  background: #130c0d;
+  border: 1px solid rgba(255, 79, 100, 0.34);
+  border-radius: 7px;
+  font-size: 11px;
+  font-weight: 900;
 }
 
 .preset-save-row {
