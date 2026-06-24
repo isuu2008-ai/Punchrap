@@ -147,6 +147,9 @@
     const missingCapabilities = window.PunchLabEngineContract?.getMissingCapabilities?.(capabilities, requiredCapabilities) || [];
     const missingLatencyMethods = getMissingOptionalMethods(bridgeStatus, ["getLatencyStats", "setBufferSize"]);
     const hasLatencyMethods = missingLatencyMethods.length === 0;
+    const missingMonitorMethods = getMissingRequiredMethods(bridgeStatus, ["startInputMonitor", "stopInputMonitor"]);
+    const hasMonitorMethods = missingMonitorMethods.length === 0;
+    const nativeMonitorReady = hasMonitorMethods && capabilities.realtimeNativeMonitoring === true;
     const missingOutputMethods = getMissingOptionalMethods(bridgeStatus, ["setOutputDevice"]);
     const hasOutputRoutingMethod = missingOutputMethods.length === 0;
     const nativeOutputRoutingReady = hasOutputRoutingMethod && capabilities.audioOutputRouting === true;
@@ -219,6 +222,16 @@
           : `${engineDriver?.name || "Audio engine"} satisfies required render/export capabilities.`,
       ),
       makeCheck(
+        "native-input-monitor",
+        "Native input monitor",
+        nativeMonitorReady ? "ready" : hasMonitorMethods ? "pending" : "fallback",
+        nativeMonitorReady
+          ? "Active engine can route low-latency input monitoring through the native host."
+          : hasMonitorMethods
+            ? "Native host exposes monitor methods; realtime monitoring capability is pending."
+            : "Browser monitor fallback active; native host needs startInputMonitor and stopInputMonitor.",
+      ),
+      makeCheck(
         "latency-buffer-control",
         "Latency/buffer control",
         latencyControlReady ? "ready" : hasLatencyMethods ? "pending" : "fallback",
@@ -270,6 +283,18 @@
         preferredBufferSize: preferredNativeBufferSize,
         stats: latencyStats,
         statsUpdatedAt: platform.latencyStatsUpdatedAt || null,
+      },
+      inputMonitoring: {
+        methodAvailable: hasMonitorMethods,
+        ready: nativeMonitorReady,
+        capabilityReady: capabilities.realtimeNativeMonitoring === true,
+        missingMethods: missingMonitorMethods,
+        fallback: nativeMonitorReady ? "native" : "web-audio",
+        summary: nativeMonitorReady
+          ? "Native input monitoring ready."
+          : hasMonitorMethods
+            ? "Native monitor methods available; realtime monitoring pending."
+            : "Web Audio input monitor fallback active.",
       },
       nativeAudioEngine: {
         ...nativeAudioContract,
@@ -441,6 +466,14 @@
       return [...methods];
     }
     const missing = new Set(status.missingOptionalMethods || []);
+    return methods.filter((method) => missing.has(method));
+  }
+
+  function getMissingRequiredMethods(status, methods) {
+    if (!status?.nativeHostAvailable) {
+      return [...methods];
+    }
+    const missing = new Set(status.missingMethods || []);
     return methods.filter((method) => missing.has(method));
   }
 

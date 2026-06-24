@@ -483,6 +483,14 @@ if (!readFileSync("src/engine.js", "utf8").includes("startInputMonitor") || !app
   console.error("Input monitoring must hand off to native monitoring when the active engine supports it.");
   failed = true;
 }
+if (!readFileSync("src/desktop.js", "utf8").includes("const nativeMonitorReady = hasMonitorMethods && capabilities.realtimeNativeMonitoring === true") || !appSource.includes("inputMonitoring: readiness.inputMonitoring") || !projectZipSource.includes("Native monitor ready")) {
+  console.error("Desktop readiness must separate native monitor method availability from realtime monitoring capability.");
+  failed = true;
+}
+if (!appSource.includes("readiness.wrapper?.handoffStages || readiness.handoffStages || []")) {
+  console.error("Desktop readiness environment snapshots must preserve wrapper handoff stages.");
+  failed = true;
+}
 
 if (failed) {
   process.exit(1);

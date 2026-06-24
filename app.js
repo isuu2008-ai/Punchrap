@@ -1536,6 +1536,7 @@ function summarizeDesktopReadinessEnvironment() {
   if (!readiness) {
     return loadedDesktop;
   }
+  const handoffStages = readiness.wrapper?.handoffStages || readiness.handoffStages || [];
 
   return {
     summary: readiness.summary || null,
@@ -1554,6 +1555,15 @@ function summarizeDesktopReadinessEnvironment() {
         detail: readiness.nativeAudioEngine.detail || null,
       }
       : null,
+    inputMonitoring: readiness.inputMonitoring
+      ? {
+        methodAvailable: Boolean(readiness.inputMonitoring.methodAvailable),
+        ready: Boolean(readiness.inputMonitoring.ready),
+        capabilityReady: Boolean(readiness.inputMonitoring.capabilityReady),
+        fallback: readiness.inputMonitoring.fallback || null,
+        summary: readiness.inputMonitoring.summary || null,
+      }
+      : null,
     pluginHost: readiness.pluginHost
       ? {
         scanAvailable: Boolean(readiness.pluginHost.scanAvailable),
@@ -1563,8 +1573,8 @@ function summarizeDesktopReadinessEnvironment() {
         summary: readiness.pluginHost.summary || null,
       }
       : null,
-    handoffStages: Array.isArray(readiness.handoffStages)
-      ? readiness.handoffStages.map((stage) => ({
+    handoffStages: Array.isArray(handoffStages)
+      ? handoffStages.map((stage) => ({
         id: stage.id,
         status: stage.status,
       }))

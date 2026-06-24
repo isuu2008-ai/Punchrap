@@ -297,6 +297,12 @@ if (!desktopSource.includes("const pluginHostReady = hasPluginScan && capabiliti
 if (!engineSource.includes("startInputMonitor") || !appSource.includes("activateInputMonitorRoute") || !appSource.includes("state.monitorMode === \"native\"")) {
   fail("Input monitoring must expose native handoff through the shared engine API.");
 }
+if (!desktopSource.includes("const nativeMonitorReady = hasMonitorMethods && capabilities.realtimeNativeMonitoring === true") || !desktopSource.includes("inputMonitoring:") || !appSource.includes("inputMonitoring: readiness.inputMonitoring")) {
+  fail("Desktop readiness must separate native monitor method availability from realtime monitoring capability.");
+}
+if (!appSource.includes("readiness.wrapper?.handoffStages || readiness.handoffStages || []")) {
+  fail("Desktop readiness environment snapshots must preserve wrapper handoff stages.");
+}
 if (!desktopSource.includes("packageManifestPath")) {
   fail("Desktop runtime manifest must expose the desktop package manifest path.");
 }

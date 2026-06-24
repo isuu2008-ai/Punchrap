@@ -191,6 +191,7 @@ node .\scripts\check.mjs
 - Punch + Loop recording mode that keeps stacking takes until stopped
 - Input monitoring toggle through the Web Audio mic chain
 - Input monitoring can hand off to native `startInputMonitor`/`stopInputMonitor` when the active engine supports realtime native monitoring
+- Desktop readiness separates native input-monitor method availability from realtimeNativeMonitoring capability readiness
 - Custom vocal preset saving and project restore
 - Selected custom vocal presets can be updated from the current chain settings
 - Custom vocal preset deletion while built-in presets stay protected
