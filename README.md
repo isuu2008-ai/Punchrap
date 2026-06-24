@@ -82,7 +82,7 @@ node .\scripts\check.mjs
 - Optional export loudness normalization to -14 LUFS
 - True-peak ceiling protection on vocal renders and WAV exports
 - 16-bit or 24-bit WAV export depth selection
-- Export loudness analysis with K-weighted LUFS estimate, true peak estimate, clipping count, and -14 LUFS target gain
+- Export loudness analysis with K-weighted LUFS estimate, true peak estimate, clipping count, clip-risk status, and -14 LUFS target gain
 - IndexedDB autosave with rolling project backups and recovery fallback
 - Version history selector for restoring a specific rolling project backup
 - BPM-based metronome toggle for recording and session playback

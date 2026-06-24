@@ -160,6 +160,8 @@
 - WAV export 직전 sample peak를 -1 dBFS 목표로 보정
 - LUFS loudness analysis 기본형
 - Export 탭에서 full mix LUFS 근사치, peak, clipping count, -14 LUFS target gain 표시
+- Clipping warning 1차
+- Export 탭에서 stale 분석, clipped samples, true peak ceiling 근접 상태를 Clip risk로 표시
 - True peak/K-weighted loudness refinement 기본형
 - K-weighting 근사 필터와 4x linear true peak estimate 적용
 - True-peak ceiling limiter 기본형

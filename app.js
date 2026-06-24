@@ -4308,6 +4308,7 @@ function renderLoudnessReport() {
 
   const stale = report.sourceSignature !== getMixSourceSignature();
   const clippingClass = report.clippingSamples > 0 ? " warning" : "";
+  const clipRisk = getClippingRisk(report, stale);
   return `
     <div class="loudness-grid">
       <div class="export-row${stale ? " warning" : ""}">
@@ -4326,8 +4327,34 @@ function renderLoudnessReport() {
         <strong>Clipping</strong>
         <small>${report.clippingSamples} samples</small>
       </div>
+      <div class="export-row${clipRisk.warning ? " warning" : ""}">
+        <strong>Clip risk</strong>
+        <small>${escapeHtml(clipRisk.label)}</small>
+      </div>
     </div>
   `;
+}
+
+function getClippingRisk(report, stale = false) {
+  if (stale) {
+    return { warning: true, label: "Re-analyze mix" };
+  }
+
+  const truePeakDb = Number(report?.truePeakDbfs ?? report?.peakDbfs ?? -Infinity);
+  const clippingSamples = Number(report?.clippingSamples || 0);
+  if (clippingSamples > 0) {
+    return { warning: true, label: `${clippingSamples} clipped samples` };
+  }
+
+  if (truePeakDb >= -0.1) {
+    return { warning: true, label: `${formatDb(truePeakDb)} dBTP near ceiling` };
+  }
+
+  if (truePeakDb >= -1) {
+    return { warning: false, label: `${formatDb(truePeakDb)} dBTP close` };
+  }
+
+  return { warning: false, label: "Safe headroom" };
 }
 
 function formatExportRowCount(row) {
