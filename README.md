@@ -87,6 +87,7 @@ node .\scripts\check.mjs
 - Desktop readiness includes the selected native buffer-size preference for runtime diagnostics
 - Platform can refresh native latency stats and expose runtime round-trip latency in desktop readiness
 - Engine status tooltip shows the selected native buffer size alongside desktop readiness
+- Engine status tooltip shows runtime native round-trip latency when available
 - Desktop contract check enforces native audio engine sample-rate, buffer-size, and latency targets
 - Desktop readiness exposes native audio engine performance contract status at runtime
 - Engine status tooltip includes native audio engine readiness detail without adding another visible panel
