@@ -1106,8 +1106,8 @@ async function saveProject() {
 }
 
 async function saveProjectZip() {
-  if (!window.PunchLabProject) {
-    els.sessionState.textContent = "Project module missing";
+  if (!window.PunchLabProject || !window.PunchLabProjectZip) {
+    els.sessionState.textContent = "Project zip module missing";
     return;
   }
 
@@ -1150,11 +1150,8 @@ async function buildProjectZipFiles(bundle, projectFilename) {
     [projectFilename]: JSON.stringify(bundle, null, 2),
   };
   const usedPaths = new Set(Object.keys(files));
-  const manifest = {
-    app: "PunchLab",
-    exportedAt: new Date().toISOString(),
-    project: projectFilename,
-    preview: "preview.html",
+  const manifest = window.PunchLabProjectZip.createProjectZipManifest({
+    projectFilename,
     session: summarizeSessionManifest(bundle),
     exportSettings: summarizeExportSettings(),
     pluginHost: summarizePluginHostScan(),
@@ -1163,10 +1160,7 @@ async function buildProjectZipFiles(bundle, projectFilename) {
     desktopReadiness: summarizeDesktopReadinessEnvironment(),
     presets: summarizePresetManifest(bundle.presets || presets, bundle.settings?.selectedPresetId),
     notes: summarizeProjectNotes(bundle),
-    beat: null,
-    markers: [],
-    takes: [],
-  };
+  });
 
   if (state.beatArrayBuffer) {
     const beatExtension = getFileExtension(state.beatFileName, "bin");
@@ -1242,23 +1236,7 @@ async function buildProjectZipFiles(bundle, projectFilename) {
   }));
   files["preview.html"] = buildProjectZipPreviewHtml(manifest, bundle, projectFilename);
   files["manifest.json"] = JSON.stringify(manifest, null, 2);
-  files["README.txt"] = [
-    "PunchLab project archive",
-    "",
-    `${projectFilename} is the full PunchLab project bundle used by the current web app.`,
-    "preview.html is a read-only browser preview for quick review after extracting the zip.",
-    "manifest.json lists extracted audio assets for backup, transfer, and manual inspection.",
-    "manifest.json includes session settings for tempo, key, tuning mode, punch, loop, and snap review.",
-    "manifest.json includes exportSettings for WAV depth, normalize, loudness target, and recent analysis context.",
-    "manifest.json includes automationManifest for plugin-style vocal chain parameter interpretation.",
-    "manifest.json includes nativeAudio for driver, buffer, and latency environment context.",
-    "manifest.json includes desktopReadiness for wrapper, native audio, and plugin host handoff context.",
-    "manifest.json includes presets for vocal chain backup and transfer review.",
-    "manifest.json includes notes and marker lyrics for read-only archive review.",
-    "Processed takes include automationState when a chain snapshot is available.",
-    "assets/beat contains the loaded beat when available.",
-    "assets/takes contains recorded and processed take audio files.",
-  ].join("\n");
+  files["README.txt"] = window.PunchLabProjectZip.buildProjectZipReadme(projectFilename);
   return files;
 }
 

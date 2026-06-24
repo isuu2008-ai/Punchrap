@@ -128,6 +128,7 @@ node .\scripts\check.mjs
 - Native engine adapter exposes compressed audio export handoff through `exportCompressedAudio`
 - Desktop readiness separates compressed export method availability from compressed-audio capability
 - Desktop package manifest defines the Tauri-first wrapper, native migration gate, and no-rewrite core boundary
+- Project zip manifest and README policy live in `src/project-zip.js` instead of the app UI controller
 - Export queue with sequential job status for mix, stems, beat stem, vocal stem, dry vocals, and tuned vocals
 - Export queue retry, remove, and clear-finished controls
 - WAV export metadata for artist, title, BPM, key, and software

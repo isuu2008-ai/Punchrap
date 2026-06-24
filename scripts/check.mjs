@@ -19,6 +19,7 @@ const syntaxFiles = [
   "src/native-adapter.js",
   "src/engine.js",
   "src/project.js",
+  "src/project-zip.js",
   "src/storage.js",
   "src/platform.js",
   "src/desktop.js",
@@ -40,6 +41,7 @@ const requiredScripts = [
   "src/native-adapter.js",
   "src/engine.js",
   "src/project.js",
+  "src/project-zip.js",
   "src/storage.js",
   "src/platform.js",
   "src/desktop.js",
@@ -76,6 +78,8 @@ if (desktopContractResult.status !== 0) {
 
 const indexHtml = readFileSync("index.html", "utf8");
 const appSource = readFileSync("app.js", "utf8");
+const projectZipSource = readFileSync("src/project-zip.js", "utf8");
+const zipSource = `${appSource}\n${projectZipSource}`;
 for (const script of requiredScripts) {
   if (!indexHtml.includes(script)) {
     console.error(`Missing script reference: ${script}`);
@@ -194,7 +198,7 @@ if (!appSource.includes("summarizeDesktopReadinessEnvironment") || !appSource.in
   console.error("Project environment must include desktop readiness snapshots.");
   failed = true;
 }
-if (!appSource.includes("manifest.json includes desktopReadiness") || !readFileSync("src/project.js", "utf8").includes("desktopReadiness: environment.desktopReadiness")) {
+if (!zipSource.includes("manifest.json includes desktopReadiness") || !readFileSync("src/project.js", "utf8").includes("desktopReadiness: environment.desktopReadiness")) {
   console.error("Project zip and bundle must preserve desktop readiness context.");
   failed = true;
 }
@@ -210,24 +214,32 @@ if (!appSource.includes("loadedProjectEnvironment?.nativeAudio?.preferredBufferS
   console.error("Project load must restore native buffer size from saved environment fallback.");
   failed = true;
 }
-if (!appSource.includes("manifest.json includes nativeAudio")) {
+if (!zipSource.includes("manifest.json includes nativeAudio")) {
   console.error("Project zip README must describe the native audio manifest summary.");
   failed = true;
 }
-if (!appSource.includes("automationManifest: summarizeAutomationParameterManifest()") || !appSource.includes("manifest.json includes automationManifest")) {
+if (!appSource.includes("automationManifest: summarizeAutomationParameterManifest()") || !zipSource.includes("manifest.json includes automationManifest")) {
   console.error("Project zip manifest must include the vocal chain automation parameter schema.");
   failed = true;
 }
-if (!appSource.includes("presets: summarizePresetManifest") || !appSource.includes("buildPreviewPresetManifestRows") || !appSource.includes("manifest.json includes presets")) {
+if (!appSource.includes("presets: summarizePresetManifest") || !appSource.includes("buildPreviewPresetManifestRows") || !zipSource.includes("manifest.json includes presets")) {
   console.error("Project zip manifest and preview must expose vocal chain preset summaries.");
   failed = true;
 }
-if (!appSource.includes("notes: summarizeProjectNotes") || !appSource.includes("Lyrics & Notes") || !appSource.includes("buildPreviewNotesRows") || !appSource.includes("manifest.json includes notes")) {
+if (!appSource.includes("notes: summarizeProjectNotes") || !appSource.includes("Lyrics & Notes") || !appSource.includes("buildPreviewNotesRows") || !zipSource.includes("manifest.json includes notes")) {
   console.error("Project zip manifest and preview must expose scratch lyrics, marker lyrics, and session notes.");
   failed = true;
 }
-if (!appSource.includes("session: summarizeSessionManifest") || !appSource.includes("buildPreviewSessionRows") || !appSource.includes("manifest.json includes session settings")) {
+if (!appSource.includes("session: summarizeSessionManifest") || !appSource.includes("buildPreviewSessionRows") || !zipSource.includes("manifest.json includes session settings")) {
   console.error("Project zip manifest and preview must expose session settings.");
+  failed = true;
+}
+if (!projectZipSource.includes("createProjectZipManifest") || !appSource.includes("window.PunchLabProjectZip.createProjectZipManifest")) {
+  console.error("Project zip manifest policy must live in src/project-zip.js and be used by app.js.");
+  failed = true;
+}
+if (!projectZipSource.includes("buildProjectZipReadme") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipReadme")) {
+  console.error("Project zip README policy must live in src/project-zip.js and be used by app.js.");
   failed = true;
 }
 if (!appSource.includes("Automation Schema") || !appSource.includes("buildPreviewAutomationSchemaRows")) {
