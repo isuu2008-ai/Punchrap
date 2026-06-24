@@ -71,6 +71,13 @@
     };
   }
 
+  function finalizeProjectZipArchiveFiles(files, { manifest = {}, previewHtml = "", readmeText = "" } = {}) {
+    files["preview.html"] = previewHtml;
+    files["manifest.json"] = JSON.stringify(manifest, null, 2);
+    files["README.txt"] = readmeText;
+    return files;
+  }
+
   function reserveProjectZipPath(usedPaths, requestedPath) {
     if (!usedPaths.has(requestedPath)) {
       usedPaths.add(requestedPath);
@@ -912,6 +919,7 @@ ${getProjectZipPreviewPlayerScript()}
     createProjectZipManifest,
     buildProjectZipReadme,
     createProjectZipArchiveFiles,
+    finalizeProjectZipArchiveFiles,
     reserveProjectZipPath,
     createProjectZipBeatAssetPath,
     createProjectZipTakeAssetPath,

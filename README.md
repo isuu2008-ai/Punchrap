@@ -138,6 +138,7 @@ node .\scripts\check.mjs
 - Project zip preview HTML shell is rendered by `src/project-zip.js`; `app.js` only passes archive context
 - Project zip archive file map, asset path reservation, and beat/take manifest entries are built by `src/project-zip.js`
 - Project zip marker manifest entries and lyric line counts are built by `src/project-zip.js`
+- Project zip metadata files (`preview.html`, `manifest.json`, `README.txt`) are finalized by `src/project-zip.js`
 - Export queue with sequential job status for mix, stems, beat stem, vocal stem, dry vocals, and tuned vocals
 - Export queue retry, remove, and clear-finished controls
 - WAV export metadata for artist, title, BPM, key, and software

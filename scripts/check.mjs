@@ -246,6 +246,10 @@ if (!projectZipSource.includes("createProjectZipArchiveFiles") || !projectZipSou
   console.error("Project zip archive file map and path reservation policy must live in src/project-zip.js.");
   failed = true;
 }
+if (!projectZipSource.includes("finalizeProjectZipArchiveFiles") || !appSource.includes("window.PunchLabProjectZip.finalizeProjectZipArchiveFiles") || appSource.includes('files["preview.html"] =') || appSource.includes('files["manifest.json"] =') || appSource.includes('files["README.txt"] =')) {
+  console.error("Project zip metadata file writing policy must live in src/project-zip.js.");
+  failed = true;
+}
 if (!projectZipSource.includes("createProjectZipBeatAssetPath") || !projectZipSource.includes("createProjectZipTakeAssetPath") || !appSource.includes("window.PunchLabProjectZip.createProjectZipBeatAssetPath") || !appSource.includes("window.PunchLabProjectZip.createProjectZipTakeAssetPath")) {
   console.error("Project zip beat and take asset path policy must live in src/project-zip.js.");
   failed = true;

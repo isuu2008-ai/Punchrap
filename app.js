@@ -1210,10 +1210,11 @@ async function buildProjectZipFiles(bundle, projectFilename) {
   }
 
   manifest.markers = window.PunchLabProjectZip.createProjectZipMarkerManifestEntries(bundle.markers);
-  files["preview.html"] = buildProjectZipPreviewHtml(manifest, bundle, projectFilename);
-  files["manifest.json"] = JSON.stringify(manifest, null, 2);
-  files["README.txt"] = window.PunchLabProjectZip.buildProjectZipReadme(projectFilename);
-  return files;
+  return window.PunchLabProjectZip.finalizeProjectZipArchiveFiles(files, {
+    manifest,
+    previewHtml: buildProjectZipPreviewHtml(manifest, bundle, projectFilename),
+    readmeText: window.PunchLabProjectZip.buildProjectZipReadme(projectFilename),
+  });
 }
 
 function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
