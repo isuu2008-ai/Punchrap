@@ -219,6 +219,10 @@ if (!nativeBridgeSource.includes("nativeHostAvailable: true") || !nativeBridgeSo
   console.error("Native bridge status must distinguish partial native host availability from full engine readiness.");
   failed = true;
 }
+if (!nativeBridgeSource.includes("const nativeBridgeReady = host.nativeBridgeReady !== false") || !nativeBridgeSource.includes("available: nativeBridgeReady && missingMethods.length === 0") || !tauriBridgeSource.includes("nativeBridgeReady: status.nativeBridgeReady")) {
+  console.error("Native bridge must hard-gate full engine readiness on nativeBridgeReady while allowing partial native hosts.");
+  failed = true;
+}
 if (!platformSource.includes("status?.nativeHostAvailable") || platformSource.includes("!status?.available || status.missingOptionalMethods?.includes(\"openProjectFile\")")) {
   console.error("Platform native project file handoff must allow partial native hosts.");
   failed = true;

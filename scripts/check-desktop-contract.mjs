@@ -304,6 +304,12 @@ if (!tauriBridgeSource.includes("payload === null ? invoke(command) : invoke(com
 if (!tauriBridgeSource.includes("!status.implementedMethods.length") || tauriBridgeSource.includes("!status.nativeBridgeReady || window.__PUNCHLAB_NATIVE__")) {
   fail("Tauri bridge adapter must install partial native hosts without enabling the native engine.");
 }
+if (!tauriBridgeSource.includes("nativeBridgeReady: status.nativeBridgeReady")) {
+  fail("Tauri partial native host must expose nativeBridgeReady to the shared native bridge.");
+}
+if (!readFileSync("src/native-bridge.js", "utf8").includes("available: nativeBridgeReady && missingMethods.length === 0")) {
+  fail("Shared native bridge must keep full engine unavailable until nativeBridgeReady is true.");
+}
 
 if (tauriConfig.$schema !== "https://schema.tauri.app/config/2") {
   fail("Tauri config must use the Tauri v2 schema.");

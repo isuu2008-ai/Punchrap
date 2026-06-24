@@ -29,6 +29,7 @@
         driverId: "web-audio",
         missingMethods: REQUIRED_METHODS,
         missingOptionalMethods: OPTIONAL_METHODS,
+        nativeBridgeReady: false,
         nativeHostAvailable: false,
         optionalMethods: OPTIONAL_METHODS,
       };
@@ -36,10 +37,12 @@
 
     const missingMethods = REQUIRED_METHODS.filter((method) => typeof host[method] !== "function");
     const missingOptionalMethods = OPTIONAL_METHODS.filter((method) => typeof host[method] !== "function");
+    const nativeBridgeReady = host.nativeBridgeReady !== false;
     return {
-      available: missingMethods.length === 0,
+      available: nativeBridgeReady && missingMethods.length === 0,
       driverId: host.driverId || "native",
       missingMethods,
+      nativeBridgeReady,
       nativeHostAvailable: true,
       optionalMethods: OPTIONAL_METHODS,
       missingOptionalMethods,

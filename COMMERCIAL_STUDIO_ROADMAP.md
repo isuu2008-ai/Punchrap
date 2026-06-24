@@ -85,7 +85,7 @@
 - Tauri Rust/Cargo scaffold 1차
 - `src-tauri/Cargo.toml`, `src-tauri/build.rs`, `src-tauri/src/main.rs`, `src-tauri/src/lib.rs`로 Tauri desktop shell entry를 추가
 - Tauri invoke bridge adapter 1차
-- `src/tauri-bridge.js`가 `window.__TAURI__.core.invoke`의 status command를 probe하고 `nativeBridgeReady`일 때만 `__PUNCHLAB_NATIVE__`를 설치
+- `src/tauri-bridge.js`가 `window.__TAURI__.core.invoke`의 status command를 probe하고 partial `__PUNCHLAB_NATIVE__` host를 설치하되 full native engine은 `nativeBridgeReady`로 gate
 - Tauri native introspection commands 1차
 - Rust Tauri shell에 `get_capabilities`, `get_devices` command를 추가하되 render/monitoring 미구현 상태에서는 `nativeBridgeReady=false`를 유지
 - Tauri project file handoff commands 1차
@@ -112,6 +112,8 @@
 - `getCapabilities/getDevices` 구현 목록과 native audio activation gate가 분리되어 있는지 검증
 - Partial native host contract check 1차
 - `nativeHostAvailable`과 full native engine `available`을 분리해 project file handoff가 native audio 완성 전에도 동작하도록 검증
+- Native bridge hard gate 1차
+- partial native host에 required method stub이 추가되어도 `nativeBridgeReady=false`면 full native engine이 활성화되지 않도록 shared bridge에서 hard gate
 - Tauri latency/buffer shell contract check 1차
 - shell-level buffer preference와 native audio latency readiness가 분리되어 있는지 검증
 - Latency readiness split 1차

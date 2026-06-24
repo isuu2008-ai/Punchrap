@@ -93,6 +93,7 @@ node .\scripts\check.mjs
 - Desktop contract check validates the Tauri global invoke bridge and `nativeBridgeReady` gate
 - Desktop contract check validates that native render/monitoring stays gated while only capabilities/devices commands exist
 - Desktop contract check validates partial native host file handoff separately from full native audio readiness
+- Native bridge keeps full engine activation hard-gated on `nativeBridgeReady` while partial native host commands remain callable
 - Desktop contract check validates Tauri shell buffer preference handoff while native audio latency remains gated
 - Desktop readiness separates latency method availability from measured native latency readiness
 - Desktop readiness separates native output-routing method availability from audioOutputRouting capability readiness

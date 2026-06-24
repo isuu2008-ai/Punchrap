@@ -105,6 +105,8 @@
 
     const host = {
       driverId: status.driverId || "tauri-native",
+      implementedMethods: [...status.implementedMethods],
+      nativeBridgeReady: status.nativeBridgeReady,
     };
     const implemented = new Set(status.implementedMethods);
     for (const method of [...getRequiredMethods(), ...getOptionalMethods()]) {
