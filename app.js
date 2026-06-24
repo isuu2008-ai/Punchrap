@@ -1257,6 +1257,7 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
   const key = settings.key || els.keySelect.value || "C minor";
   const exportSettings = manifest.exportSettings || {};
   const pluginHost = manifest.pluginHost || {};
+  const automationManifest = manifest.automationManifest || {};
   const nativeAudio = manifest.nativeAudio || {};
   const desktopReadiness = manifest.desktopReadiness || {};
   const takes = [...manifest.takes].sort(
@@ -1339,6 +1340,7 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
       .join("")
     : `<li>No desktop handoff snapshot.</li>`;
   const pluginHostRows = buildPreviewPluginHostRows(pluginHost);
+  const automationSchemaRows = buildPreviewAutomationSchemaRows(automationManifest);
 
   return `<!doctype html>
 <html lang="en">
@@ -1410,6 +1412,10 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
         <article class="asset-card">
           <dl>${pluginHostRows}</dl>
         </article>
+      </section>
+      <section>
+        <h2>Automation Schema</h2>
+        <div class="grid">${automationSchemaRows}</div>
       </section>
       ${beatSection}
       <section>
@@ -1583,6 +1589,27 @@ function buildPreviewPluginHostRows(pluginHost = {}) {
   ];
   return rows
     .map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`)
+    .join("");
+}
+
+function buildPreviewAutomationSchemaRows(automationManifest = {}) {
+  const parameters = Array.isArray(automationManifest.parameters) ? automationManifest.parameters : [];
+  if (!parameters.length) {
+    return `<article class="asset-card"><strong>No automation schema</strong><small>Processed take parameter values cannot be mapped to controls.</small></article>`;
+  }
+
+  return parameters
+    .map((parameter) => `
+      <article class="asset-card">
+        <strong>${escapeHtml(parameter.label || parameter.id)}</strong>
+        <small>${escapeHtml(parameter.automationId || parameter.id || "")}</small>
+        <dl>
+          <div><dt>Group</dt><dd>${escapeHtml(parameter.group || "")}</dd></div>
+          <div><dt>Range</dt><dd>${escapeHtml(`${parameter.min} to ${parameter.max}${parameter.unit ? ` ${parameter.unit}` : ""}`)}</dd></div>
+          <div><dt>Default</dt><dd>${escapeHtml(String(parameter.defaultValue ?? ""))}</dd></div>
+          <div><dt>Step</dt><dd>${escapeHtml(String(parameter.step ?? ""))}</dd></div>
+        </dl>
+      </article>`)
     .join("");
 }
 

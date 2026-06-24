@@ -183,6 +183,10 @@ if (!appSource.includes("automationManifest: summarizeAutomationParameterManifes
   console.error("Project zip manifest must include the vocal chain automation parameter schema.");
   failed = true;
 }
+if (!appSource.includes("Automation Schema") || !appSource.includes("buildPreviewAutomationSchemaRows")) {
+  console.error("Project zip preview must display the vocal chain automation parameter schema.");
+  failed = true;
+}
 if (!appSource.includes("formatPreviewNativeAudio")) {
   console.error("Project zip preview must display the native audio environment summary.");
   failed = true;

@@ -37,6 +37,7 @@ node .\scripts\check.mjs
 - Vocal chain parameter manifest for automation/native/plugin mapping
 - Processed take chain snapshots include plugin-style automation parameter state
 - Project zip manifests include the vocal chain automation parameter schema snapshot
+- Project zip preview includes a vocal chain automation schema section for archived parameter review
 - Project zip manifests include processed-take source, version, preset, tune, and automation summaries
 - Vocal screen render-version history for source take retunes
 - Pitch analysis against the selected minor key or chromatic mode
