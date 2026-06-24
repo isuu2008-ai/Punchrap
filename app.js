@@ -44,6 +44,7 @@ const state = {
   isRenderingVocal: false,
   autosaveTimer: 0,
   isAutosaving: false,
+  lastBackupAt: 0,
   hasAutosave: false,
   currentTakeAudio: null,
   currentTakeId: null,
@@ -896,18 +897,40 @@ async function recoverAutosave() {
 
   try {
     els.sessionState.textContent = "Recovering";
-    const bundle = await window.PunchLabStorage.loadAutosave();
-    if (!bundle) {
+    const autosaveBundle = await window.PunchLabStorage.loadAutosave();
+    const backup = await window.PunchLabStorage.loadLatestBackup?.();
+    const candidates = [
+      { label: "Autosave", bundle: autosaveBundle },
+      { label: "Backup", bundle: backup?.bundle },
+    ].filter((candidate) => candidate.bundle);
+
+    if (!candidates.length) {
       els.sessionState.textContent = "No recovery";
       state.hasAutosave = false;
       updateRecoveryButton();
       return;
     }
 
+    let recoveredProject = null;
+    let recoveredLabel = "";
+    let recoveryError = null;
+    for (const candidate of candidates) {
+      try {
+        recoveredProject = await window.PunchLabProject.hydrateProjectBundle(candidate.bundle);
+        recoveredLabel = candidate.label;
+        break;
+      } catch (error) {
+        recoveryError = error;
+      }
+    }
+
+    if (!recoveredProject) {
+      throw recoveryError || new Error("Recovery bundle failed.");
+    }
+
     stopAll();
-    const project = await window.PunchLabProject.hydrateProjectBundle(bundle);
-    applyLoadedProject(project);
-    els.sessionState.textContent = "Autosave recovered";
+    applyLoadedProject(recoveredProject);
+    els.sessionState.textContent = `${recoveredLabel} recovered`;
   } catch (error) {
     els.sessionState.textContent = "Recovery failed";
     console.error(error);
@@ -920,7 +943,9 @@ async function checkAutosave() {
   }
 
   try {
-    state.hasAutosave = await window.PunchLabStorage.hasAutosave();
+    state.hasAutosave = window.PunchLabStorage.hasRecovery
+      ? await window.PunchLabStorage.hasRecovery()
+      : await window.PunchLabStorage.hasAutosave();
     updateRecoveryButton();
   } catch (error) {
     console.error(error);
@@ -951,6 +976,11 @@ async function saveCurrentAutosave() {
       settings: getProjectSettings(),
     });
     await window.PunchLabStorage.saveAutosave(bundle);
+    const now = Date.now();
+    if (window.PunchLabStorage.saveBackup && now - state.lastBackupAt > 60000) {
+      await window.PunchLabStorage.saveBackup(bundle);
+      state.lastBackupAt = now;
+    }
     state.hasAutosave = true;
   } catch (error) {
     console.error(error);

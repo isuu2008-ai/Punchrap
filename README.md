@@ -65,7 +65,7 @@ node .\scripts\check.mjs
 - True-peak ceiling protection on vocal renders and WAV exports
 - 16-bit or 24-bit WAV export depth selection
 - Export loudness analysis with K-weighted LUFS estimate, true peak estimate, clipping count, and -14 LUFS target gain
-- IndexedDB autosave with project recovery
+- IndexedDB autosave with rolling project backups and recovery fallback
 - BPM-based metronome toggle for recording and session playback
 - Global shortcuts for transport, metronome, stop, and tab switching outside text inputs
 - Recording latency compensation in milliseconds, applied to new take placement

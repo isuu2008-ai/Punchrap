@@ -1,13 +1,27 @@
 (() => {
   const DB_NAME = "punchlab";
-  const DB_VERSION = 1;
+  const DB_VERSION = 2;
   const STORE_NAME = "autosave";
+  const BACKUP_STORE_NAME = "backups";
   const AUTOSAVE_KEY = "latest";
+  const MAX_BACKUPS = 5;
 
   async function saveAutosave(bundle) {
     const db = await openDb();
     await requestToPromise(db.transaction(STORE_NAME, "readwrite").objectStore(STORE_NAME).put(bundle, AUTOSAVE_KEY));
     db.close();
+  }
+
+  async function saveBackup(bundle) {
+    const db = await openDb();
+    try {
+      const savedAt = new Date().toISOString();
+      const id = `backup-${Date.now()}`;
+      await putBackupRecord(db, { id, savedAt, bundle });
+      await pruneBackups(db);
+    } finally {
+      db.close();
+    }
   }
 
   async function loadAutosave() {
@@ -17,8 +31,21 @@
     return bundle || null;
   }
 
+  async function loadLatestBackup() {
+    const db = await openDb();
+    const backups = await requestToPromise(db.transaction(BACKUP_STORE_NAME, "readonly").objectStore(BACKUP_STORE_NAME).getAll());
+    db.close();
+    return backups
+      .filter((backup) => backup?.bundle)
+      .sort((a, b) => String(b.savedAt || "").localeCompare(String(a.savedAt || "")))[0] || null;
+  }
+
   async function hasAutosave() {
     return Boolean(await loadAutosave());
+  }
+
+  async function hasRecovery() {
+    return Boolean((await loadAutosave()) || (await loadLatestBackup()));
   }
 
   async function clearAutosave() {
@@ -35,10 +62,39 @@
         if (!db.objectStoreNames.contains(STORE_NAME)) {
           db.createObjectStore(STORE_NAME);
         }
+        if (!db.objectStoreNames.contains(BACKUP_STORE_NAME)) {
+          db.createObjectStore(BACKUP_STORE_NAME);
+        }
       });
       request.addEventListener("success", () => resolve(request.result));
       request.addEventListener("error", () => reject(request.error));
     });
+  }
+
+  async function putBackupRecord(db, backup) {
+    const transaction = db.transaction(BACKUP_STORE_NAME, "readwrite");
+    const transactionDone = transactionToPromise(transaction);
+    transaction.objectStore(BACKUP_STORE_NAME).put(backup, backup.id);
+    await transactionDone;
+  }
+
+  async function pruneBackups(db) {
+    const keysTransaction = db.transaction(BACKUP_STORE_NAME, "readonly");
+    const keys = await requestToPromise(keysTransaction.objectStore(BACKUP_STORE_NAME).getAllKeys());
+    const staleKeys = keys
+      .map((key) => String(key))
+      .sort()
+      .slice(0, Math.max(0, keys.length - MAX_BACKUPS));
+
+    if (!staleKeys.length) {
+      return;
+    }
+
+    const transaction = db.transaction(BACKUP_STORE_NAME, "readwrite");
+    const transactionDone = transactionToPromise(transaction);
+    const store = transaction.objectStore(BACKUP_STORE_NAME);
+    staleKeys.forEach((key) => store.delete(key));
+    await transactionDone;
   }
 
   function requestToPromise(request) {
@@ -48,10 +104,21 @@
     });
   }
 
+  function transactionToPromise(transaction) {
+    return new Promise((resolve, reject) => {
+      transaction.addEventListener("complete", () => resolve());
+      transaction.addEventListener("abort", () => reject(transaction.error));
+      transaction.addEventListener("error", () => reject(transaction.error));
+    });
+  }
+
   window.PunchLabStorage = {
     clearAutosave,
     hasAutosave,
+    hasRecovery,
     loadAutosave,
+    loadLatestBackup,
+    saveBackup,
     saveAutosave,
   };
 })();
