@@ -38,6 +38,13 @@
         sampleRate: 48000,
       };
     },
+    setOutputDevice(payload = {}) {
+      return {
+        active: true,
+        deviceId: payload.deviceId || "",
+        fixture: true,
+      };
+    },
     scanPluginHosts() {
       return {
         formats: ["VST3", "AU"],

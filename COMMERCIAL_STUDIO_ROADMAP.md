@@ -95,6 +95,8 @@
 - Storage Layer `src/storage.js` 분리
 - Device Layer `src/devices.js` 분리
 - 브라우저 input/output 장치 목록, mic constraints, playback sink routing을 UI 밖 모듈로 분리
+- Native output routing handoff 1차
+- setOutputDevice optional native method를 Platform API와 playback output 변경 경로에 연결
 - BPM 기반 metronome toggle
 - recording/session playback 중 metronome tick
 - Count-in 고도화 1차

@@ -764,6 +764,17 @@ async function changeAudioOutputDevice() {
     : "Output routing unsupported";
 }
 
+async function applyNativePlaybackOutput() {
+  try {
+    const result = await window.PunchLabPlatform?.setOutputDevice?.(state.audioOutputDeviceId);
+    return Boolean(result?.supported);
+  } catch (error) {
+    els.sessionState.textContent = "Native output failed";
+    console.error(error);
+    return false;
+  }
+}
+
 async function applyPlaybackOutput(audio) {
   let supported = false;
 
@@ -792,6 +803,7 @@ async function applyAudioContextOutput() {
 }
 
 async function applyCurrentPlaybackOutput() {
+  const nativeResult = await applyNativePlaybackOutput();
   const targets = [
     els.beatAudio,
     state.currentTakeAudio,
@@ -800,7 +812,7 @@ async function applyCurrentPlaybackOutput() {
   ].filter(Boolean);
   const mediaResults = await Promise.all(targets.map((audio) => applyPlaybackOutput(audio)));
   const contextResult = await applyAudioContextOutput();
-  return contextResult || mediaResults.some(Boolean);
+  return nativeResult || contextResult || mediaResults.some(Boolean);
 }
 
 async function ensureAudioContext() {
@@ -813,6 +825,7 @@ async function ensureAudioContext() {
   }
 
   await applyAudioContextOutput();
+  await applyNativePlaybackOutput();
   return state.audioContext;
 }
 

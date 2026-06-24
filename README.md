@@ -26,6 +26,7 @@ node .\scripts\check.mjs
 - Microphone permission and live input meter
 - Audio input device selector with project persistence
 - Playback output device selector when the browser supports sink routing
+- Native output device handoff through optional `setOutputDevice`
 - Count-in
 - Main, Double, Adlib L, Adlib R, and Hook tracks
 - Take recording and download

@@ -76,6 +76,17 @@
     };
   }
 
+  async function setOutputDevice(deviceId = "") {
+    const bridge = window.PunchLabNativeBridge;
+    const status = bridge?.getStatus?.();
+    if (!status?.available || status.missingOptionalMethods?.includes("setOutputDevice")) {
+      return null;
+    }
+
+    const result = await bridge.callOptionalNative("setOutputDevice", { deviceId });
+    return result ? { supported: !result.unsupported, method: "native", native: result } : null;
+  }
+
   function blobToDataUrl(blob) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -104,6 +115,7 @@
     platform,
     registerServiceWorker,
     saveProjectFile,
+    setOutputDevice,
   };
 
   registerServiceWorker();
