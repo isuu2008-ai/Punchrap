@@ -86,6 +86,8 @@
 - Timeline marker별 가사 섹션과 scratch pad를 project bundle에 저장/복원
 - Timeline region duplicate/delete 1차
 - Region row에서 take copy/delete를 직접 실행하고 timeline/take/export 상태를 즉시 갱신
+- Track rename 1차
+- Track 이름 변경 시 기존 take 라벨, arm strip, timeline/export 표시까지 같이 갱신
 - Waveform recording view
 - 녹음 중 waveform peak trail 표시
 - take별 waveform thumbnail 저장/복원

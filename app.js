@@ -2044,8 +2044,8 @@ function renderTracks() {
         <div class="track-row ${isArmed ? "armed" : ""} ${isAudible ? "" : "muted"}" style="--track-color: ${track.color}">
           <div class="track-name">
             <span class="track-color"></span>
-            <span>
-              ${track.name}
+            <span class="track-name-fields">
+              <input class="track-name-input" type="text" value="${escapeHtml(track.name)}" data-track-name="${track.id}" aria-label="${escapeHtml(track.name)} track name" />
               <small>${formatPercent(track.volume)} ${formatPan(track.pan)}</small>
             </span>
           </div>
@@ -2113,6 +2113,18 @@ function renderTracks() {
   els.trackList.querySelectorAll("[data-track-pan]").forEach((input) => {
     input.addEventListener("input", () => {
       setTrackPan(input.dataset.trackPan, input.value);
+    });
+  });
+
+  els.trackList.querySelectorAll("[data-track-name]").forEach((input) => {
+    input.addEventListener("blur", () => {
+      setTrackName(input.dataset.trackName, input.value);
+    });
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        input.blur();
+      }
     });
   });
 }
@@ -4450,6 +4462,47 @@ function isTrackAudible(track) {
 
 function getTrackOutputVolume(track) {
   return isTrackAudible(track) ? track.volume : 0;
+}
+
+function setTrackName(trackId, value) {
+  const track = findTrack(trackId);
+  if (!track) {
+    return;
+  }
+
+  const nextName = value.trim() || getDefaultTrackName(trackId);
+  if (track.name === nextName) {
+    renderTracks();
+    return;
+  }
+
+  track.name = nextName;
+  track.takes.forEach((take) => {
+    take.trackName = nextName;
+  });
+  if (state.armedTrackId === track.id) {
+    els.armedTrackName.textContent = nextName;
+  }
+
+  els.sessionState.textContent = "Track renamed";
+  renderTracks();
+  renderArmTracks();
+  renderTakes();
+  renderTimeline();
+  renderVocalPanel();
+  updateExportButtons();
+  scheduleAutosave();
+}
+
+function getDefaultTrackName(trackId) {
+  const fallbackNames = {
+    main: "Main",
+    double: "Double",
+    "adlib-l": "Adlib L",
+    "adlib-r": "Adlib R",
+    hook: "Hook",
+  };
+  return fallbackNames[trackId] || "Track";
 }
 
 function getTakeClipGain(take) {

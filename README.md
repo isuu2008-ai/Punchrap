@@ -70,6 +70,7 @@ node .\scripts\check.mjs
 - Project templates for trap, drill, rage hook, and clean hook sessions
 - Marker-linked lyric sections with project-persisted scratch lyrics
 - Timeline region duplicate/delete actions
+- Track rename with take label propagation
 
 ## Planning
 
