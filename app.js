@@ -38,6 +38,7 @@ const state = {
   exportJobSeq: 1,
   exportPreviewAudio: null,
   lastExportNormalizeGain: 1,
+  lastExportLoudnessGain: 1,
   isAnalyzingLoudness: false,
   loudnessReport: null,
   isRenderingVocal: false,
@@ -247,6 +248,7 @@ const els = {
   exportArtistInput: document.querySelector("#exportArtistInput"),
   exportTitleInput: document.querySelector("#exportTitleInput"),
   exportNormalizeInput: document.querySelector("#exportNormalizeInput"),
+  exportLoudnessNormalizeInput: document.querySelector("#exportLoudnessNormalizeInput"),
   lyricsInput: document.querySelector("#lyricsInput"),
   lyricSectionList: document.querySelector("#lyricSectionList"),
 };
@@ -424,6 +426,7 @@ function bindEvents() {
   els.exportArtistInput.addEventListener("input", updateExportMetadata);
   els.exportTitleInput.addEventListener("input", updateExportMetadata);
   els.exportNormalizeInput.addEventListener("change", updateExportMetadata);
+  els.exportLoudnessNormalizeInput.addEventListener("change", updateExportMetadata);
   els.lyricsInput.addEventListener("input", updateProjectLyrics);
   els.saveCustomPresetButton.addEventListener("click", saveCustomPreset);
 }
@@ -1028,6 +1031,7 @@ function getProjectSettings() {
     tune: getTuneSettings(),
     exportMetadata: getExportMetadata(),
     exportNormalize: els.exportNormalizeInput.checked,
+    exportLoudnessNormalize: els.exportLoudnessNormalizeInput.checked,
     lyrics: els.lyricsInput.value,
     timelineSnap: getTimelineSnapMode(),
     punchEnabled: state.punchEnabled,
@@ -1048,6 +1052,7 @@ function applyProjectSettings(settings = {}) {
   els.exportArtistInput.value = settings.exportMetadata?.artist || "";
   els.exportTitleInput.value = settings.exportMetadata?.title || "";
   els.exportNormalizeInput.checked = settings.exportNormalize !== false;
+  els.exportLoudnessNormalizeInput.checked = Boolean(settings.exportLoudnessNormalize);
   els.lyricsInput.value = settings.lyrics || "";
   els.timelineSnapSelect.value = normalizeTimelineSnapMode(settings.timelineSnap || "off");
   els.inputGainSlider.value = settings.inputGain || 2;
@@ -3265,6 +3270,7 @@ function renderExportPanel() {
     { label: "Dry vocals", count: getAllTakes().filter((take) => !take.processed).length, unit: "source" },
     { label: "Tuned vocals", count: getAllTakes().filter((take) => take.processed).length, unit: "source" },
     { label: "Metadata", count: [metadata.artist, metadata.title, metadata.bpm, metadata.key].filter(Boolean).length, unit: "field" },
+    { label: "Loudness target", count: els.exportLoudnessNormalizeInput.checked ? `-14 LUFS ${formatGainDb(state.lastExportLoudnessGain)}` : "Off", unit: "" },
     { label: "Normalize", count: els.exportNormalizeInput.checked ? `On ${formatGainDb(state.lastExportNormalizeGain)}` : "Off", unit: "" },
   ];
   const jobs = state.exportQueue.slice(-8).reverse();
@@ -4445,23 +4451,43 @@ function applyExportNormalize(audioBuffer) {
   const targetPeak = Math.pow(10, -1 / 20);
   const gain = targetPeak / peak;
   state.lastExportNormalizeGain = gain;
-  for (let channel = 0; channel < audioBuffer.numberOfChannels; channel += 1) {
-    const data = audioBuffer.getChannelData(channel);
-    for (let index = 0; index < data.length; index += 1) {
-      data[index] = Math.max(-1, Math.min(1, data[index] * gain));
-    }
-  }
-  return audioBuffer;
+  return applyBufferGain(audioBuffer, gain);
 }
 
 function applyExportFinalize(audioBuffer) {
-  return applyTruePeakCeiling(applyExportNormalize(audioBuffer), -1);
+  const loudnessAdjusted = applyLoudnessNormalize(audioBuffer);
+  return applyTruePeakCeiling(applyExportNormalize(loudnessAdjusted), -1);
+}
+
+function applyLoudnessNormalize(audioBuffer) {
+  if (!els.exportLoudnessNormalizeInput.checked || !window.PunchLabEngine?.analyzeLoudness) {
+    state.lastExportLoudnessGain = 1;
+    return audioBuffer;
+  }
+
+  const report = window.PunchLabEngine.analyzeLoudness(audioBuffer);
+  const gainDb = Number.isFinite(report.recommendedGainDb)
+    ? Math.max(-18, Math.min(18, report.recommendedGainDb))
+    : 0;
+  const gain = Math.pow(10, gainDb / 20);
+  state.lastExportLoudnessGain = gain;
+  return applyBufferGain(audioBuffer, gain);
 }
 
 function applyTruePeakCeiling(audioBuffer, ceilingDb) {
   return window.PunchLabAudio?.applyTruePeakCeiling
     ? window.PunchLabAudio.applyTruePeakCeiling(audioBuffer, ceilingDb)
     : audioBuffer;
+}
+
+function applyBufferGain(audioBuffer, gain) {
+  for (let channel = 0; channel < audioBuffer.numberOfChannels; channel += 1) {
+    const data = audioBuffer.getChannelData(channel);
+    for (let index = 0; index < data.length; index += 1) {
+      data[index] *= gain;
+    }
+  }
+  return audioBuffer;
 }
 
 function getAudioBufferPeak(audioBuffer) {

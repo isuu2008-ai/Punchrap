@@ -58,6 +58,7 @@ node .\scripts\check.mjs
 - Project zip export containing the `.punchlab.json` bundle, manifest, README, beat asset, and take audio assets
 - Recording waveform capture with saved take waveform thumbnails
 - Export peak normalization to -1 dBFS
+- Optional export loudness normalization to -14 LUFS
 - True-peak ceiling protection on vocal renders and WAV exports
 - Export loudness analysis with K-weighted LUFS estimate, true peak estimate, clipping count, and -14 LUFS target gain
 - IndexedDB autosave with project recovery
