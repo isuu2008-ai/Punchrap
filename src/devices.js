@@ -4,6 +4,7 @@
     noiseSuppression: false,
     autoGainControl: false,
   };
+  const RECORDING_MIME_TYPES = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", ""];
 
   function canEnumerateDevices() {
     return Boolean(navigator.mediaDevices?.enumerateDevices);
@@ -30,6 +31,14 @@
       audio.deviceId = { exact: deviceId };
     }
     return { audio };
+  }
+
+  function getBestMimeType(types = RECORDING_MIME_TYPES, isTypeSupported = null) {
+    const supportsType = typeof isTypeSupported === "function"
+      ? isTypeSupported
+      : (type) => typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(type);
+    return (Array.isArray(types) ? types : RECORDING_MIME_TYPES)
+      .find((type) => !type || supportsType(type)) || "";
   }
 
   function canSetMediaOutput() {
@@ -62,6 +71,7 @@
     canEnumerateDevices,
     canSetAudioContextOutput,
     canSetMediaOutput,
+    getBestMimeType,
     getMicConstraints,
     listAudioDevices,
     setAudioContextOutput,

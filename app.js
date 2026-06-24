@@ -779,8 +779,7 @@ function setActiveView(view) {
 }
 
 function getBestMimeType() {
-  const types = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", ""];
-  return types.find((type) => !type || MediaRecorder.isTypeSupported(type)) || "";
+  return window.PunchLabDevices?.getBestMimeType?.() || "";
 }
 
 async function refreshAudioDevices() {

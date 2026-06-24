@@ -339,6 +339,11 @@ if (!pitchSource.includes("window.PunchLabPitch") || !pitchSource.includes("norm
   console.error("Pitch scale, manual target, lane sampling, note label, and correction summary policy must live in src/pitch.js and be used by app.js.");
   failed = true;
 }
+const devicesSource = readFileSync("src/devices.js", "utf8");
+if (!devicesSource.includes("window.PunchLabDevices") || !devicesSource.includes("getBestMimeType") || !devicesSource.includes("getMicConstraints") || !devicesSource.includes("listAudioDevices") || !devicesSource.includes("setMediaOutput") || !devicesSource.includes("setAudioContextOutput") || !appSource.includes("PunchLabDevices?.getBestMimeType") || !appSource.includes("PunchLabDevices.getMicConstraints") || !appSource.includes("PunchLabDevices.listAudioDevices")) {
+  console.error("Device enumeration, recording MIME, mic constraints, and output routing must live in src/devices.js and be used by app.js.");
+  failed = true;
+}
 if (!indexHtml.includes("quickTakeList") || !appSource.includes("data-quick-play-take") || !appSource.includes("data-quick-vocal-take") || !appSource.includes("sendTakeToVocal")) {
   console.error("Record view must support immediate recent-take audition and Vocal handoff.");
   failed = true;
