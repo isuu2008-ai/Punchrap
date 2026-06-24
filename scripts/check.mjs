@@ -203,6 +203,10 @@ if (!indexHtml.includes("nativeBufferSizeSelect")) {
   console.error("index.html must include the native buffer-size selector.");
   failed = true;
 }
+if (!indexHtml.includes("nativeAudioSummary") || !appSource.includes("renderNativeAudioSummary")) {
+  console.error("Record setup must include a compact native audio runtime summary.");
+  failed = true;
+}
 
 if (failed) {
   process.exit(1);

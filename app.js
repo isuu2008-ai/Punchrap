@@ -152,6 +152,9 @@ const els = {
   audioInputSelect: document.querySelector("#audioInputSelect"),
   audioOutputSelect: document.querySelector("#audioOutputSelect"),
   nativeBufferSizeSelect: document.querySelector("#nativeBufferSizeSelect"),
+  nativeAudioSummary: document.querySelector("#nativeAudioSummary"),
+  nativeAudioDriverText: document.querySelector("#nativeAudioDriverText"),
+  nativeAudioDetailText: document.querySelector("#nativeAudioDetailText"),
   inputGainSlider: document.querySelector("#inputGainSlider"),
   inputGainText: document.querySelector("#inputGainText"),
   micButton: document.querySelector("#micButton"),
@@ -371,7 +374,26 @@ function renderEngineStatus() {
       desktopReadiness.nativeAudioEngine?.detail || "",
     ].filter(Boolean).join(" / ")
     : descriptor.title;
+  renderNativeAudioSummary(desktopReadiness);
   renderPluginScanStatus(desktopReadiness);
+}
+
+function renderNativeAudioSummary(desktopReadiness = window.PunchLabDesktop?.getReadiness?.()) {
+  if (!els.nativeAudioSummary || !els.nativeAudioDriverText || !els.nativeAudioDetailText) {
+    return;
+  }
+
+  const nativeAudio = desktopReadiness?.nativeAudioEngine || {};
+  const driver = nativeAudio.ready ? nativeAudio.driver || "Native ready" : "Web fallback";
+  const buffer = nativeAudio.preferredRuntimeBufferSize || state.nativeBufferSize;
+  const latencyText = formatRuntimeLatency(getDisplayRoundTripLatency(desktopReadiness)) || "Latency pending";
+  const sampleRateText = formatDisplaySampleRate(getDisplaySampleRate(desktopReadiness)) || "Rate pending";
+  const detail = [`${buffer} samples`, latencyText, sampleRateText].filter(Boolean).join(" / ");
+
+  els.nativeAudioSummary.dataset.ready = nativeAudio.ready ? "true" : "false";
+  els.nativeAudioDriverText.textContent = driver;
+  els.nativeAudioDetailText.textContent = detail;
+  els.nativeAudioSummary.title = nativeAudio.detail ? `${driver} / ${detail} / ${nativeAudio.detail}` : `${driver} / ${detail}`;
 }
 
 function formatRuntimeLatency(value) {
