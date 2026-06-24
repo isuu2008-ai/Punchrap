@@ -183,6 +183,10 @@ if (!appSource.includes("formatPreviewNativeAudio")) {
   console.error("Project zip preview must display the native audio environment summary.");
   failed = true;
 }
+if (!appSource.includes("formatPreviewDesktopReadiness") || !appSource.includes("manifest.desktopReadiness || {}")) {
+  console.error("Project zip preview must display the desktop readiness snapshot.");
+  failed = true;
+}
 if (!appSource.includes("formatDisplaySampleRate(nativeAudio.stats?.sampleRate)")) {
   console.error("Project zip preview must include native audio sample-rate context.");
   failed = true;

@@ -98,6 +98,7 @@ node .\scripts\check.mjs
 - Project zip README documents the native audio environment summary for extracted archives
 - Project zip preview shows native audio driver, buffer, and latency context in the header
 - Project zip preview includes native audio sample-rate context when available
+- Project zip preview shows desktop readiness snapshot context for native audio and plugin handoff review
 - Desktop contract check enforces native audio engine sample-rate, buffer-size, and latency targets
 - Desktop readiness exposes native audio engine performance contract status at runtime
 - Engine status tooltip includes native audio engine readiness detail without adding another visible panel

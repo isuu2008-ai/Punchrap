@@ -1192,6 +1192,7 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
   const key = settings.key || els.keySelect.value || "C minor";
   const exportSettings = manifest.exportSettings || {};
   const nativeAudio = manifest.nativeAudio || {};
+  const desktopReadiness = manifest.desktopReadiness || {};
   const takes = [...manifest.takes].sort(
     (left, right) => (left.startTime || 0) - (right.startTime || 0) || String(left.trackName).localeCompare(String(right.trackName)),
   );
@@ -1316,6 +1317,7 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
           <span>${escapeHtml(key)}</span>
           <span>${escapeHtml(formatPreviewExportSettings(exportSettings))}</span>
           <span>${escapeHtml(formatPreviewNativeAudio(nativeAudio))}</span>
+          <span>${escapeHtml(formatPreviewDesktopReadiness(desktopReadiness))}</span>
           <span>${takes.length} takes</span>
           <span>${manifest.markers.length} markers</span>
         </div>
@@ -1466,6 +1468,19 @@ function formatPreviewNativeAudio(nativeAudio = {}) {
   if (sampleRateText) {
     parts.push(sampleRateText);
   }
+  return parts.join(" / ");
+}
+
+function formatPreviewDesktopReadiness(desktopReadiness = {}) {
+  if (!desktopReadiness || !Object.keys(desktopReadiness).length) {
+    return "Desktop snapshot unavailable";
+  }
+
+  const nativeAudio = desktopReadiness.nativeAudioEngine || {};
+  const pluginHost = desktopReadiness.pluginHost || {};
+  const parts = [desktopReadiness.desktopReady ? "Desktop ready" : "Desktop pending"];
+  parts.push(nativeAudio.ready ? "Native audio ready" : "Native audio pending");
+  parts.push(pluginHost.scanAvailable ? "Plugin scan ready" : "Plugin scan pending");
   return parts.join(" / ");
 }
 
