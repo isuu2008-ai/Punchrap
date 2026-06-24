@@ -81,6 +81,8 @@
     const missingCapabilities = window.PunchLabEngineContract?.getMissingCapabilities?.(capabilities, requiredCapabilities) || [];
     const missingLatencyMethods = getMissingOptionalMethods(bridgeStatus, ["getLatencyStats", "setBufferSize"]);
     const hasLatencyControl = missingLatencyMethods.length === 0;
+    const missingOutputMethods = getMissingOptionalMethods(bridgeStatus, ["setOutputDevice"]);
+    const hasNativeOutputRouting = missingOutputMethods.length === 0;
     const missingProjectFileMethods = getMissingOptionalMethods(bridgeStatus, ["openProjectFile", "saveProjectFile"]);
     const hasProjectFileHandoff = missingProjectFileMethods.length === 0;
     const missingCompressedExportMethods = getMissingOptionalMethods(bridgeStatus, ["exportCompressedAudio"]);
@@ -109,6 +111,16 @@
         hasProjectFileHandoff
           ? "Native host can open and save project files."
           : "Project files use browser picker/download fallback until native openProjectFile and saveProjectFile are available.",
+      ),
+      makeCheck(
+        "output-routing",
+        "Output routing",
+        hasNativeOutputRouting || canUseBrowserOutputRouting() ? "ready" : "fallback",
+        hasNativeOutputRouting
+          ? "Native host can route playback to the selected output device."
+          : canUseBrowserOutputRouting()
+            ? "Browser output sink routing is available."
+            : "Output routing waits for native setOutputDevice or browser sink routing support.",
       ),
       makeCheck(
         "service-worker",
@@ -166,6 +178,12 @@
       latencyControl: {
         available: hasLatencyControl,
         missingMethods: missingLatencyMethods,
+      },
+      outputRouting: {
+        nativeAvailable: hasNativeOutputRouting,
+        missingMethods: missingOutputMethods,
+        browserMediaOutput: Boolean(window.PunchLabDevices?.canSetMediaOutput?.()),
+        browserAudioContextOutput: Boolean(window.PunchLabDevices?.canSetAudioContextOutput?.()),
       },
       projectFiles: {
         nativeAvailable: hasProjectFileHandoff,
@@ -228,6 +246,10 @@
 
   function makeCheck(id, label, status, detail) {
     return { id, label, status, detail };
+  }
+
+  function canUseBrowserOutputRouting() {
+    return Boolean(window.PunchLabDevices?.canSetMediaOutput?.() || window.PunchLabDevices?.canSetAudioContextOutput?.());
   }
 
   function getWrapperHandoffStages(bridgeStatus, capabilities) {

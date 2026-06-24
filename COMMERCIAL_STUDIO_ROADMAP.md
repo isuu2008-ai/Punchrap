@@ -97,6 +97,8 @@
 - 브라우저 input/output 장치 목록, mic constraints, playback sink routing을 UI 밖 모듈로 분리
 - Native output routing handoff 1차
 - setOutputDevice optional native method를 Platform API와 playback output 변경 경로에 연결
+- Output routing readiness 1차
+- setOutputDevice native 지원 여부와 browser sink routing 지원 여부를 desktop readiness에서 분리 표시
 - BPM 기반 metronome toggle
 - recording/session playback 중 metronome tick
 - Count-in 고도화 1차
