@@ -45,6 +45,7 @@
       waveform: sanitizeWaveform(take.waveform),
       clipGain: take.clipGain ?? 1,
       regionColor: sanitizeColor(take.regionColor),
+      regionGroup: sanitizeRegionGroup(take.regionGroup),
       fadeIn: take.fadeIn || 0,
       fadeOut: take.fadeOut || 0,
       compSelected: Boolean(take.compSelected),
@@ -124,6 +125,7 @@
       waveform: sanitizeWaveform(take.waveform),
       clipGain: Number(take.clipGain ?? 1),
       regionColor: sanitizeColor(take.regionColor),
+      regionGroup: sanitizeRegionGroup(take.regionGroup),
       fadeIn: Number(take.fadeIn || 0),
       fadeOut: Number(take.fadeOut || 0),
       compSelected: Boolean(take.compSelected),
@@ -210,6 +212,11 @@
     }
 
     return null;
+  }
+
+  function sanitizeRegionGroup(value) {
+    const group = String(value || "").trim().toLowerCase();
+    return ["verse", "hook", "adlib", "intro", "bridge", "outro"].includes(group) ? group : null;
   }
 
   function makeProjectFilename(beatFileName) {

@@ -104,6 +104,15 @@ const TRACK_FOLDERS = [
   { id: "hook", name: "Hook stack", trackIds: ["hook"], color: "#ff4f64" },
 ];
 
+const REGION_GROUPS = [
+  { id: "verse", label: "Verse" },
+  { id: "hook", label: "Hook" },
+  { id: "adlib", label: "Adlib" },
+  { id: "intro", label: "Intro" },
+  { id: "bridge", label: "Bridge" },
+  { id: "outro", label: "Outro" },
+];
+
 const presets = [
   { id: "trap-hard", name: "Trap Hard", retune: 88, humanize: 10, vibrato: 42, formant: 10, gate: 18, deEss: 28, comp: 72, saturation: 38, space: 18, width: 42 },
   { id: "drill-dark", name: "Drill Dark", retune: 72, humanize: 18, vibrato: 38, formant: -12, gate: 24, deEss: 34, comp: 82, saturation: 46, space: 12, width: 28 },
@@ -804,6 +813,7 @@ async function buildProjectZipFiles(bundle, projectFilename) {
       compSelected: Boolean(take.compSelected),
       compOrder: Number.isFinite(Number(take.compOrder)) ? Number(take.compOrder) : null,
       regionColor: getTakeRegionColor(take),
+      regionGroup: getTakeRegionGroup(take),
       startTime: take.startTime || 0,
       duration: getTakeVisibleDuration(take),
       sourceOffset: getTakeSourceOffset(take),
@@ -1920,6 +1930,7 @@ function saveTake() {
     duration,
     sourceOffset: 0,
     sourceDuration: duration,
+    regionGroup: getDefaultRegionGroupForTrack(track.id),
     recordLatencyMs: state.recordLatencyMs,
     waveform: downsampleWaveform(state.recordWaveform, 240),
   };
@@ -2986,6 +2997,7 @@ async function renderProcessedTake(sourceTake, preset, tuneSettings) {
     waveform: rendered.waveform,
     clipGain: sourceTake.clipGain ?? 1,
     regionColor: sourceTake.regionColor || null,
+    regionGroup: getTakeRegionGroup(sourceTake),
     fadeIn: sourceTake.fadeIn || 0,
     fadeOut: sourceTake.fadeOut || 0,
     processed: true,
@@ -3759,6 +3771,7 @@ function renderTimeline() {
       return `
         <div class="timeline-region take-region" style="left: ${left}%; width: ${width}%; --row-index: ${index}; --track-color: ${regionColor};">
           <strong>${escapeHtml(getTakeShortName(take))}</strong>
+          <small>${escapeHtml(getRegionGroupLabel(getTakeRegionGroup(take)))}</small>
         </div>
       `;
     })
@@ -3787,6 +3800,12 @@ function renderTimeline() {
                 <i style="--region-color: ${getTakeRegionColor(take)};"></i>
                 <input type="color" value="${getTakeRegionColor(take)}" data-region-color="${take.id}" />
               </span>
+            </label>
+            <label class="region-group-control">
+              Group
+              <select data-region-group="${take.id}">
+                ${renderRegionGroupOptions(getTakeRegionGroup(take))}
+              </select>
             </label>
             <div class="region-actions">
               <button class="mini-button" type="button" data-nudge-region="${take.id}" data-delta="-0.1">-0.1</button>
@@ -3834,6 +3853,9 @@ function renderTimeline() {
   });
   els.regionList.querySelectorAll("[data-region-color]").forEach((input) => {
     input.addEventListener("change", () => setRegionColor(input.dataset.regionColor, input.value));
+  });
+  els.regionList.querySelectorAll("[data-region-group]").forEach((select) => {
+    select.addEventListener("change", () => setRegionGroup(select.dataset.regionGroup, select.value));
   });
   els.regionList.querySelectorAll("[data-region-source-offset]").forEach((input) => {
     input.addEventListener("change", () => setRegionSourceOffset(input.dataset.regionSourceOffset, input.value));
@@ -3943,6 +3965,7 @@ function createTimelineSnapshot() {
       sourceDuration: getTakeSourceDuration(take),
       clipGain: take.clipGain ?? 1,
       regionColor: take.regionColor || null,
+      regionGroup: getTakeRegionGroup(take),
       fadeIn: take.fadeIn || 0,
       fadeOut: take.fadeOut || 0,
     })),
@@ -3966,6 +3989,7 @@ function restoreTimelineSnapshot(snapshot) {
     normalizeTakeTrim(take);
     take.clipGain = Math.max(0, Number(saved.clipGain ?? 1));
     take.regionColor = normalizeRegionColor(saved.regionColor) || null;
+    take.regionGroup = normalizeRegionGroup(saved.regionGroup, take.trackId);
     take.fadeIn = Math.max(0, Number(saved.fadeIn) || 0);
     take.fadeOut = Math.max(0, Number(saved.fadeOut) || 0);
   });
@@ -4082,6 +4106,23 @@ function setRegionColor(takeId, value) {
   recordTimelineHistory();
   take.regionColor = nextColor;
   els.sessionState.textContent = "Region color updated";
+  refreshTimelineEdit();
+}
+
+function setRegionGroup(takeId, value) {
+  const take = findTake(takeId);
+  if (!take) {
+    return;
+  }
+
+  const nextGroup = normalizeRegionGroup(value, take.trackId);
+  if (getTakeRegionGroup(take) === nextGroup) {
+    return;
+  }
+
+  recordTimelineHistory();
+  take.regionGroup = nextGroup;
+  els.sessionState.textContent = "Region grouped";
   refreshTimelineEdit();
 }
 
@@ -5210,6 +5251,37 @@ function getTakeClipGain(take) {
 
 function getTakeRegionColor(take) {
   return normalizeRegionColor(take?.regionColor) || normalizeRegionColor(findTrack(take?.trackId)?.color) || "#c8ff4d";
+}
+
+function getTakeRegionGroup(take) {
+  return normalizeRegionGroup(take?.regionGroup, take?.trackId);
+}
+
+function normalizeRegionGroup(value, trackId = "") {
+  const groupId = String(value || "").trim().toLowerCase();
+  return REGION_GROUPS.some((group) => group.id === groupId) ? groupId : getDefaultRegionGroupForTrack(trackId);
+}
+
+function getDefaultRegionGroupForTrack(trackId) {
+  if (trackId === "hook") {
+    return "hook";
+  }
+
+  if (String(trackId || "").startsWith("adlib")) {
+    return "adlib";
+  }
+
+  return "verse";
+}
+
+function getRegionGroupLabel(groupId) {
+  return REGION_GROUPS.find((group) => group.id === groupId)?.label || "Verse";
+}
+
+function renderRegionGroupOptions(selectedGroup) {
+  return REGION_GROUPS.map(
+    (group) => `<option value="${group.id}" ${group.id === selectedGroup ? "selected" : ""}>${group.label}</option>`,
+  ).join("");
 }
 
 function normalizeRegionColor(value) {
