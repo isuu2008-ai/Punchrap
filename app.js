@@ -59,6 +59,7 @@ const state = {
   currentTakeId: null,
   currentTakeResolve: null,
   pluginScanResult: null,
+  loadedProjectEnvironment: null,
   isPluginScanning: false,
   isQueuePlaying: false,
   queueMode: "all",
@@ -1473,11 +1474,13 @@ function summarizeNativeAudioEnvironment() {
   const readiness = window.PunchLabDesktop?.getReadiness?.();
   const latencyStats = readiness?.latencyControl?.stats || null;
   const nativeAudio = readiness?.nativeAudioEngine || {};
+  const loadedNativeAudio = state.loadedProjectEnvironment?.nativeAudio || null;
   return {
     driver: readiness?.engineDriver?.id || "web-audio",
     nativeAvailable: Boolean(readiness?.nativeAvailable),
     preferredBufferSize: nativeAudio.preferredRuntimeBufferSize || state.nativeBufferSize,
-    roundTripLatencyMs: nativeAudio.runtimeRoundTripLatencyMs ?? null,
+    roundTripLatencyMs: nativeAudio.runtimeRoundTripLatencyMs ?? loadedNativeAudio?.roundTripLatencyMs ?? null,
+    loadedRoundTripLatencyMs: loadedNativeAudio?.roundTripLatencyMs ?? null,
     stats: latencyStats
       ? {
         inputLatencyMs: latencyStats.inputLatencyMs,
@@ -1486,7 +1489,7 @@ function summarizeNativeAudioEnvironment() {
         bufferSize: latencyStats.bufferSize,
         sampleRate: latencyStats.sampleRate,
       }
-      : null,
+      : loadedNativeAudio?.stats || null,
   };
 }
 
@@ -1739,6 +1742,7 @@ async function saveCurrentAutosave() {
       tracks,
       presets,
       settings: getProjectSettings(),
+      environment: getProjectEnvironment(),
     });
     await window.PunchLabStorage.saveAutosave(bundle);
     const now = Date.now();
@@ -1798,6 +1802,7 @@ function formatBackupHistoryLabel(backup, index) {
 
 function applyLoadedProject(project) {
   revokeCurrentProjectAssets();
+  state.loadedProjectEnvironment = project.environment || null;
 
   if (project.beat) {
     state.beatArrayBuffer = project.beat.arrayBuffer;

@@ -108,6 +108,7 @@
     );
 
     return {
+      environment: sanitizeEnvironment(bundle.environment || {}),
       settings: bundle.settings || {},
       markers: bundle.markers || [],
       presets: bundle.presets || [],
