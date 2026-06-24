@@ -569,17 +569,107 @@ async function saveProjectZip() {
       settings: getProjectSettings(),
     });
     const projectFilename = window.PunchLabProject.makeProjectFilename(state.beatFileName);
-    const zipBlob = window.PunchLabProject.buildProjectZip({
-      [projectFilename]: JSON.stringify(bundle, null, 2),
-    });
+    const files = await buildProjectZipFiles(bundle, projectFilename);
+    const zipBlob = window.PunchLabProject.buildProjectZip(files);
     downloadBlob(zipBlob, window.PunchLabProject.makeProjectZipFilename(state.beatFileName));
-    els.sessionState.textContent = "Zip saved";
+    els.sessionState.textContent = "Zip saved with assets";
   } catch (error) {
     els.sessionState.textContent = "Zip failed";
     console.error(error);
   } finally {
     els.saveProjectZipButton.disabled = false;
   }
+}
+
+async function buildProjectZipFiles(bundle, projectFilename) {
+  const files = {
+    [projectFilename]: JSON.stringify(bundle, null, 2),
+  };
+  const usedPaths = new Set(Object.keys(files));
+  const manifest = {
+    app: "PunchLab",
+    exportedAt: new Date().toISOString(),
+    project: projectFilename,
+    beat: null,
+    takes: [],
+  };
+
+  if (state.beatArrayBuffer) {
+    const beatExtension = getFileExtension(state.beatFileName, "bin");
+    const beatPath = reserveZipPath(
+      usedPaths,
+      `assets/beat/${slugify(state.beatFileName || "beat") || "beat"}.${beatExtension}`,
+    );
+    files[beatPath] = state.beatArrayBuffer;
+    manifest.beat = {
+      path: beatPath,
+      fileName: state.beatFileName || "beat",
+      bytes: state.beatArrayBuffer.byteLength,
+    };
+  }
+
+  const allTakes = getAllTakes();
+  for (let index = 0; index < allTakes.length; index += 1) {
+    const take = allTakes[index];
+    if (!take.blob) {
+      continue;
+    }
+
+    const extension = getFileExtension(`take.${take.extension || "wav"}`, "wav");
+    const baseName = slugify([String(index + 1).padStart(3, "0"), take.trackName, getTakeShortName(take)].join("-"));
+    const takePath = reserveZipPath(usedPaths, `assets/takes/${baseName}.${extension}`);
+    const data = await take.blob.arrayBuffer();
+    files[takePath] = data;
+    manifest.takes.push({
+      id: take.id,
+      path: takePath,
+      trackId: take.trackId,
+      trackName: take.trackName,
+      name: getTakeShortName(take),
+      processed: Boolean(take.processed),
+      sourceTakeId: take.sourceTakeId || null,
+      compSelected: Boolean(take.compSelected),
+      compOrder: Number.isFinite(Number(take.compOrder)) ? Number(take.compOrder) : null,
+      startTime: take.startTime || 0,
+      duration: take.duration || 0,
+      bytes: data.byteLength,
+    });
+  }
+
+  files["manifest.json"] = JSON.stringify(manifest, null, 2);
+  files["README.txt"] = [
+    "PunchLab project archive",
+    "",
+    `${projectFilename} is the full PunchLab project bundle used by the current web app.`,
+    "manifest.json lists extracted audio assets for backup, transfer, and manual inspection.",
+    "assets/beat contains the loaded beat when available.",
+    "assets/takes contains recorded and processed take audio files.",
+  ].join("\n");
+  return files;
+}
+
+function reserveZipPath(usedPaths, requestedPath) {
+  if (!usedPaths.has(requestedPath)) {
+    usedPaths.add(requestedPath);
+    return requestedPath;
+  }
+
+  const dotIndex = requestedPath.lastIndexOf(".");
+  const base = dotIndex >= 0 ? requestedPath.slice(0, dotIndex) : requestedPath;
+  const extension = dotIndex >= 0 ? requestedPath.slice(dotIndex) : "";
+  let suffix = 2;
+  let nextPath = `${base}-${suffix}${extension}`;
+  while (usedPaths.has(nextPath)) {
+    suffix += 1;
+    nextPath = `${base}-${suffix}${extension}`;
+  }
+  usedPaths.add(nextPath);
+  return nextPath;
+}
+
+function getFileExtension(fileName, fallback) {
+  const match = /\.([a-z0-9]{1,8})$/i.exec(fileName || "");
+  return (match?.[1] || fallback).toLowerCase();
 }
 
 async function loadProject(event) {
@@ -4059,7 +4149,11 @@ function getTakeTitle(take, index) {
     return take.name;
   }
 
-  return take.processed ? `${take.trackName} ${take.presetName} v${take.version || 1}` : `${take.trackName} take ${index + 1}`;
+  if (take.processed) {
+    return `${take.trackName} ${take.presetName || "Processed"} v${take.version || 1}`;
+  }
+
+  return `${take.trackName} take ${index + 1}`;
 }
 
 function getTakeSubtitle(take) {
@@ -4076,7 +4170,7 @@ function getTakeShortName(take) {
     return take.name;
   }
 
-  return take.processed ? `${take.trackName} ${take.presetName} v${take.version || 1}` : `${take.trackName} raw`;
+  return take.processed ? `${take.trackName} ${take.presetName || "Processed"} v${take.version || 1}` : `${take.trackName} raw`;
 }
 
 function getTuneSignature(settings = {}) {
