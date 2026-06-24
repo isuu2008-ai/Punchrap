@@ -160,6 +160,7 @@
       const outputData = output.getChannelData(channel);
       const tunedSum = new Float32Array(input.length);
       const weight = new Float32Array(input.length);
+      const transientMask = getTransientMask(input);
 
       outputData.set(input);
       correctionFrames.forEach((frame) => {
@@ -182,11 +183,25 @@
         }
 
         const tuned = tunedSum[index] / weight[index];
-        outputData[index] = input[index] * (1 - wet) + tuned * wet;
+        const transientPreserve = transientMask[index];
+        const tunedWet = wet * (1 - transientPreserve);
+        outputData[index] = input[index] * (1 - tunedWet) + tuned * tunedWet;
       }
     }
 
     return output;
+  }
+
+  function getTransientMask(input) {
+    const mask = new Float32Array(input.length);
+    let envelope = 0;
+    for (let index = 1; index < input.length; index += 1) {
+      const edge = Math.abs(input[index] - input[index - 1]);
+      const target = clamp((edge - 0.035) / 0.22, 0, 0.72);
+      envelope += (target - envelope) * (target > envelope ? 0.58 : 0.08);
+      mask[index] = envelope;
+    }
+    return mask;
   }
 
   function getCorrectionStats(pitchPlan, amount, humanize, vibrato = 0.55) {

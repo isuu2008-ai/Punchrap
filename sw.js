@@ -1,4 +1,4 @@
-const CACHE_NAME = "punchlab-shell-20260624-17";
+const CACHE_NAME = "punchlab-shell-20260624-18";
 const CORE_ASSETS = [
   "./",
   "./index.html",
