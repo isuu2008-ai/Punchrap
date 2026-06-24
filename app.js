@@ -4700,9 +4700,9 @@ function renderExportPanel() {
     { label: "Track stems", count: getStemExportGroups().length, unit: "source" },
     { label: "Beat stem", count: state.beatArrayBuffer ? 1 : 0, unit: "source" },
     { label: "Vocal stem", count: getAudibleTakes().length, unit: "source" },
-    { label: "Comp vocal", count: getCompTakes().length, unit: "source" },
-    { label: "Dry vocals", count: getAllTakes().filter((take) => !take.processed).length, unit: "source" },
-    { label: "Tuned vocals", count: getAllTakes().filter((take) => take.processed).length, unit: "source" },
+    { label: "Comp vocal", count: getAudibleCompTakes().length, unit: "source" },
+    { label: "Dry vocals", count: getAudibleTakes().filter((take) => !take.processed).length, unit: "source" },
+    { label: "Tuned vocals", count: getAudibleTakes().filter((take) => take.processed).length, unit: "source" },
     { label: "Metadata", count: [metadata.artist, metadata.title, metadata.bpm, metadata.key].filter(Boolean).length, unit: "field" },
     { label: "WAV depth", count: `${getExportBitDepth()}-bit`, unit: "" },
     { label: "Loudness target", count: els.exportLoudnessNormalizeInput.checked ? `-14 LUFS ${formatGainDb(state.lastExportLoudnessGain)}` : "Off", unit: "" },
@@ -5832,7 +5832,7 @@ async function exportCompVocal() {
       buildSingleExportGroup({
         name: "Comp vocal",
         suffix: "comp-vocal",
-        takes: getCompTakes(),
+        takes: getAudibleCompTakes(),
         includeBeat: false,
       }),
     ],
@@ -6684,7 +6684,15 @@ function getBatchScopeEmptyText(scope, skippedCount = 0) {
 }
 
 function getAudibleTakes() {
-  return getAllTakes().filter((take) => getTrackOutputVolume(findTrack(take.trackId)) > 0);
+  return getAllTakes().filter(isTakeAudible);
+}
+
+function getAudibleCompTakes() {
+  return getCompTakes().filter(isTakeAudible);
+}
+
+function isTakeAudible(take) {
+  return getTrackOutputVolume(findTrack(take.trackId)) > 0;
 }
 
 function getCurrentSessionPosition() {
@@ -7045,9 +7053,9 @@ function updateExportButtons() {
   const hasStems = getStemExportGroups().length > 0;
   const hasBeatStem = Boolean(state.beatArrayBuffer);
   const hasVocals = getAudibleTakes().length > 0;
-  const hasCompVocal = getCompTakes().length > 0;
-  const hasDry = getAllTakes().some((take) => !take.processed && getTrackOutputVolume(findTrack(take.trackId)) > 0);
-  const hasTuned = getAllTakes().some((take) => take.processed && getTrackOutputVolume(findTrack(take.trackId)) > 0);
+  const hasCompVocal = getAudibleCompTakes().length > 0;
+  const hasDry = getAudibleTakes().some((take) => !take.processed);
+  const hasTuned = getAudibleTakes().some((take) => take.processed);
   els.exportStemsButton.disabled = !hasStems;
   els.exportBeatStemButton.disabled = !hasBeatStem;
   els.exportVocalStemButton.disabled = !hasVocals;

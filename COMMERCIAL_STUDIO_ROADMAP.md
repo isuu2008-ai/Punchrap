@@ -214,6 +214,8 @@
 - export filename, stem group, compressed format, queue detail planning을 `src/export-plan.js`로 분리
 - Export single group plan split 1차
 - beat/vocal/comp/dry/tuned 단일 WAV export group 계획을 `src/export-plan.js`로 분리
+- Audible export source alignment 1차
+- comp/dry/tuned export count, button state, render 대상이 audible track routing을 따르도록 정렬
 - Project zip asset/timeline formatter split 1차
 - project zip preview의 beat section, marker rows, comp lane rows를 `src/project-zip.js`로 분리
 - Project zip take card formatter split 1차

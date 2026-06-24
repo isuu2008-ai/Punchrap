@@ -88,7 +88,7 @@ node .\scripts\check.mjs
 - Tauri native latency/buffer preference commands for `getLatencyStats` and `setBufferSize`
 - Tauri native output-device handoff command for `setOutputDevice`, kept unsupported until the native audio engine can route audio
 - Tauri compressed-export handoff command for `exportCompressedAudio`, kept unsupported until a native MP3/M4A encoder exists
-- Dedicated Comp vocal WAV export for the selected comp lane
+- Dedicated Comp vocal WAV export for the audible selected comp lane
 - Tauri plugin-scan handoff command for `scanPluginHosts`, returning an empty VST3/AU scan until a real plugin host exists
 - Tauri main-window capability scaffold at `src-tauri/capabilities/main.json`
 - Desktop wrapper contract check for shell, permission, bridge, plugin, and handoff-stage requirements

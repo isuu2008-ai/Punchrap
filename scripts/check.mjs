@@ -277,6 +277,10 @@ if (!indexHtml.includes("exportCompVocalButton") || !appSource.includes("exportC
   console.error("Export view must support rendering the selected comp lane as a dedicated vocal WAV.");
   failed = true;
 }
+if (!appSource.includes("getAudibleCompTakes") || !appSource.includes("const hasCompVocal = getAudibleCompTakes().length > 0") || !appSource.includes("count: getAudibleCompTakes().length")) {
+  console.error("Comp vocal export counts and button state must respect audible track routing.");
+  failed = true;
+}
 if (!exportPlanSource.includes("window.PunchLabExportPlan") || !exportPlanSource.includes("buildStemExportGroups") || !exportPlanSource.includes("buildSingleExportGroup") || !appSource.includes("PunchLabExportPlan.buildStemExportGroups") || !appSource.includes("PunchLabExportPlan.buildSingleExportGroup")) {
   console.error("Export filename, stem group, and compressed format planning must be separated from the app controller.");
   failed = true;
