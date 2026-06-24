@@ -90,6 +90,8 @@
 - Rust Tauri shell에 `get_capabilities`, `get_devices` command를 추가하되 render/monitoring 미구현 상태에서는 `nativeBridgeReady=false`를 유지
 - Tauri project file handoff commands 1차
 - Rust Tauri shell에 `open_project_file`, `save_project_file` command를 추가하고 `.punchlab.json`을 data URL 기반으로 JS project loader와 연결
+- Tauri latency/buffer shell commands 1차
+- Rust Tauri shell에 `get_latency_stats`, `set_buffer_size` command를 추가하고 native audio engine 미준비 상태에서는 latency 값을 null로 유지
 - Tauri main capability scaffold 1차
 - `src-tauri/capabilities/main.json`에 main window, core/dialog/fs 기본 permission 계약을 추가
 - Desktop wrapper contract check 1차
@@ -104,6 +106,8 @@
 - `getCapabilities/getDevices` 구현 목록과 native audio activation gate가 분리되어 있는지 검증
 - Partial native host contract check 1차
 - `nativeHostAvailable`과 full native engine `available`을 분리해 project file handoff가 native audio 완성 전에도 동작하도록 검증
+- Tauri latency/buffer shell contract check 1차
+- shell-level buffer preference와 native audio latency readiness가 분리되어 있는지 검증
 - Tauri capability contract check 1차
 - `tauri.conf.json` security.capabilities, capability permissions, package/wrapper manifest 정합성을 검증
 - Tauri file association scaffold 1차

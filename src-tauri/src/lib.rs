@@ -1,6 +1,7 @@
 use base64::{engine::general_purpose, Engine as _};
 use serde::{Deserialize, Serialize};
 use std::fs;
+use std::sync::Mutex;
 use tauri_plugin_dialog::DialogExt;
 
 const PLANNED_NATIVE_METHODS: [&str; 13] = [
@@ -19,12 +20,54 @@ const PLANNED_NATIVE_METHODS: [&str; 13] = [
     "scanPluginHosts",
 ];
 
-const IMPLEMENTED_NATIVE_METHODS: [&str; 4] = [
+const IMPLEMENTED_NATIVE_METHODS: [&str; 6] = [
     "getCapabilities",
     "getDevices",
+    "getLatencyStats",
+    "setBufferSize",
     "openProjectFile",
     "saveProjectFile",
 ];
+
+const SUPPORTED_BUFFER_SIZES: [u32; 5] = [64, 128, 256, 512, 1024];
+const DEFAULT_BUFFER_SIZE: u32 = 128;
+const DEFAULT_SAMPLE_RATE: u32 = 48000;
+
+struct NativeAudioState {
+    buffer_size: Mutex<u32>,
+    sample_rate: Mutex<u32>,
+}
+
+impl Default for NativeAudioState {
+    fn default() -> Self {
+        Self {
+            buffer_size: Mutex::new(DEFAULT_BUFFER_SIZE),
+            sample_rate: Mutex::new(DEFAULT_SAMPLE_RATE),
+        }
+    }
+}
+
+impl NativeAudioState {
+    fn buffer_size(&self) -> u32 {
+        self.buffer_size
+            .lock()
+            .map(|value| *value)
+            .unwrap_or(DEFAULT_BUFFER_SIZE)
+    }
+
+    fn sample_rate(&self) -> u32 {
+        self.sample_rate
+            .lock()
+            .map(|value| *value)
+            .unwrap_or(DEFAULT_SAMPLE_RATE)
+    }
+
+    fn set_buffer_size(&self, buffer_size: u32) {
+        if let Ok(mut value) = self.buffer_size.lock() {
+            *value = buffer_size;
+        }
+    }
+}
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -74,6 +117,25 @@ struct PunchLabDevices {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
+struct SetBufferSizePayload {
+    buffer_size: Option<u32>,
+    size: Option<u32>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct PunchLabLatencyStats {
+    input_latency_ms: Option<f32>,
+    output_latency_ms: Option<f32>,
+    round_trip_latency_ms: Option<f32>,
+    buffer_size: u32,
+    sample_rate: u32,
+    native_audio_engine_ready: bool,
+    source: &'static str,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct OpenProjectFilePayload {
     #[serde(rename = "type")]
     file_type: Option<String>,
@@ -104,7 +166,7 @@ struct ProjectFileResult {
 fn get_punchlab_bridge_status() -> PunchLabBridgeStatus {
     PunchLabBridgeStatus {
         driver_id: "tauri-shell",
-        detail: "Tauri shell can report capabilities and devices; native audio render and monitoring commands are not active yet.",
+        detail: "Tauri shell can report capabilities, devices, project files, and buffer preferences; native audio render and monitoring commands are not active yet.",
         implemented_methods: IMPLEMENTED_NATIVE_METHODS.to_vec(),
         native_bridge_ready: false,
         planned_methods: PLANNED_NATIVE_METHODS.to_vec(),
@@ -112,7 +174,7 @@ fn get_punchlab_bridge_status() -> PunchLabBridgeStatus {
 }
 
 #[tauri::command]
-fn get_capabilities() -> PunchLabCapabilities {
+fn get_capabilities(state: tauri::State<'_, NativeAudioState>) -> PunchLabCapabilities {
     PunchLabCapabilities {
         native_shell: true,
         native_audio_engine_ready: false,
@@ -126,8 +188,8 @@ fn get_capabilities() -> PunchLabCapabilities {
         realtime_native_monitoring: false,
         plugin_host: false,
         sample_rates: vec![44100, 48000],
-        buffer_sizes: vec![64, 128, 256, 512, 1024],
-        preferred_buffer_size: 128,
+        buffer_sizes: SUPPORTED_BUFFER_SIZES.to_vec(),
+        preferred_buffer_size: state.buffer_size(),
         round_trip_latency_ms: None,
         exclusive_audio_thread: false,
     }
@@ -139,6 +201,28 @@ fn get_devices() -> PunchLabDevices {
         audio_input: Vec::new(),
         audio_output: Vec::new(),
     }
+}
+
+#[tauri::command]
+fn get_latency_stats(state: tauri::State<'_, NativeAudioState>) -> PunchLabLatencyStats {
+    make_latency_stats(&state)
+}
+
+#[tauri::command]
+fn set_buffer_size(
+    state: tauri::State<'_, NativeAudioState>,
+    payload: Option<SetBufferSizePayload>,
+) -> PunchLabLatencyStats {
+    let requested = payload
+        .and_then(|value| value.buffer_size.or(value.size))
+        .unwrap_or(DEFAULT_BUFFER_SIZE);
+    let buffer_size = if SUPPORTED_BUFFER_SIZES.contains(&requested) {
+        requested
+    } else {
+        DEFAULT_BUFFER_SIZE
+    };
+    state.set_buffer_size(buffer_size);
+    make_latency_stats(&state)
 }
 
 #[tauri::command]
@@ -238,15 +322,30 @@ fn encode_data_url(file_type: &str, bytes: &[u8]) -> String {
     )
 }
 
+fn make_latency_stats(state: &NativeAudioState) -> PunchLabLatencyStats {
+    PunchLabLatencyStats {
+        input_latency_ms: None,
+        output_latency_ms: None,
+        round_trip_latency_ms: None,
+        buffer_size: state.buffer_size(),
+        sample_rate: state.sample_rate(),
+        native_audio_engine_ready: false,
+        source: "tauri-shell",
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .manage(NativeAudioState::default())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .invoke_handler(tauri::generate_handler![
             get_punchlab_bridge_status,
             get_capabilities,
             get_devices,
+            get_latency_stats,
+            set_buffer_size,
             open_project_file,
             save_project_file
         ])

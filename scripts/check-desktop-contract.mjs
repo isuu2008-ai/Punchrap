@@ -118,7 +118,7 @@ if (wrapper.tauriBridge?.activatesNativeBridgeWhen !== "nativeBridgeReady") {
 if (wrapper.tauriBridge?.nativeBridgeReady !== false || packageManifest.tauriBridge?.nativeBridgeReady !== false) {
   fail("Tauri bridge manifests must keep nativeBridgeReady false until render and monitoring commands exist.");
 }
-for (const method of ["getCapabilities", "getDevices", "openProjectFile", "saveProjectFile"]) {
+for (const method of ["getCapabilities", "getDevices", "getLatencyStats", "setBufferSize", "openProjectFile", "saveProjectFile"]) {
   if (!wrapper.tauriBridge?.implementedMethods?.includes(method) || !packageManifest.tauriBridge?.implementedMethods?.includes(method)) {
     fail(`Tauri bridge manifests must list implemented method ${method}.`);
   }
@@ -344,21 +344,33 @@ for (const requiredSnippet of [
   "get_punchlab_bridge_status",
   "get_capabilities",
   "get_devices",
+  "get_latency_stats",
+  "set_buffer_size",
   "open_project_file",
   "save_project_file",
   "PunchLabBridgeStatus",
   "PunchLabCapabilities",
   "PunchLabDevices",
+  "NativeAudioState",
+  "PunchLabLatencyStats",
+  "SetBufferSizePayload",
   "ProjectFileResult",
   "OpenProjectFilePayload",
   "SaveProjectFilePayload",
   "native_bridge_ready: false",
   "IMPLEMENTED_NATIVE_METHODS",
+  "getLatencyStats",
+  "setBufferSize",
   "openProjectFile",
   "saveProjectFile",
   "implemented_methods: IMPLEMENTED_NATIVE_METHODS.to_vec()",
   "native_audio_engine_ready: false",
   "realtime_native_monitoring: false",
+  "round_trip_latency_ms: None",
+  "source: \"tauri-shell\"",
+  "make_latency_stats",
+  "state.set_buffer_size(buffer_size)",
+  "SUPPORTED_BUFFER_SIZES",
   "audio_input: Vec::new()",
   "audio_output: Vec::new()",
   "blocking_pick_file()",
@@ -370,8 +382,11 @@ for (const requiredSnippet of [
   "PLANNED_NATIVE_METHODS",
   "get_capabilities,",
   "get_devices",
+  "get_latency_stats,",
+  "set_buffer_size,",
   "open_project_file,",
   "save_project_file",
+  ".manage(NativeAudioState::default())",
   "tauri::Builder::default()",
   "tauri_plugin_dialog::init()",
   "tauri_plugin_fs::init()",

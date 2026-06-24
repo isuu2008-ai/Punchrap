@@ -53,6 +53,8 @@
     "implementedMethods": [
       "getCapabilities",
       "getDevices",
+      "getLatencyStats",
+      "setBufferSize",
       "openProjectFile",
       "saveProjectFile"
     ],

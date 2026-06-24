@@ -82,6 +82,7 @@ node .\scripts\check.mjs
 - Tauri invoke bridge adapter at `src/tauri-bridge.js` for the future native host handoff
 - Tauri shell command scaffold for native `getCapabilities` and `getDevices`
 - Tauri native project open/save handoff commands for `.punchlab.json`
+- Tauri native latency/buffer preference commands for `getLatencyStats` and `setBufferSize`
 - Tauri main-window capability scaffold at `src-tauri/capabilities/main.json`
 - Desktop wrapper contract check for shell, permission, bridge, plugin, and handoff-stage requirements
 - Desktop contract check validates the Tauri app id, dev server, main window, and bundled manifest resources
@@ -89,6 +90,7 @@ node .\scripts\check.mjs
 - Desktop contract check validates the Tauri global invoke bridge and `nativeBridgeReady` gate
 - Desktop contract check validates that native render/monitoring stays gated while only capabilities/devices commands exist
 - Desktop contract check validates partial native host file handoff separately from full native audio readiness
+- Desktop contract check validates Tauri shell buffer preference handoff while native audio latency remains gated
 - Desktop contract check validates selected Tauri capabilities and local-only main-window permissions
 - Desktop contract check verifies HTML manifest meta tags and host contract file paths
 - Tauri file associations register `.punchlab.json` projects and `.punchlab.zip` archives as PunchLab-owned editor types

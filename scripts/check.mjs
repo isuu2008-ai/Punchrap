@@ -177,6 +177,14 @@ if (!tauriLibSource.includes("open_project_file") || !tauriLibSource.includes("s
   console.error("Tauri Rust shell must expose native project open/save handoff commands.");
   failed = true;
 }
+if (!tauriLibSource.includes("get_latency_stats") || !tauriLibSource.includes("set_buffer_size") || !tauriLibSource.includes("PunchLabLatencyStats")) {
+  console.error("Tauri Rust shell must expose native latency stats and buffer-size shell commands.");
+  failed = true;
+}
+if (!tauriLibSource.includes("round_trip_latency_ms: None") || !tauriLibSource.includes("source: \"tauri-shell\"")) {
+  console.error("Tauri latency scaffold must keep actual native audio latency unset until the audio engine exists.");
+  failed = true;
+}
 if (!tauriLibSource.includes("native_bridge_ready: false") || !tauriLibSource.includes("native_audio_engine_ready: false")) {
   console.error("Tauri Rust shell must keep native audio activation gated until render and monitoring commands exist.");
   failed = true;
