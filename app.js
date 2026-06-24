@@ -258,6 +258,7 @@ const els = {
   exportNormalizeInput: document.querySelector("#exportNormalizeInput"),
   exportLoudnessNormalizeInput: document.querySelector("#exportLoudnessNormalizeInput"),
   lyricsInput: document.querySelector("#lyricsInput"),
+  sessionNotesInput: document.querySelector("#sessionNotesInput"),
   lyricSectionList: document.querySelector("#lyricSectionList"),
 };
 
@@ -447,6 +448,7 @@ function bindEvents() {
   els.exportNormalizeInput.addEventListener("change", updateExportMetadata);
   els.exportLoudnessNormalizeInput.addEventListener("change", updateExportMetadata);
   els.lyricsInput.addEventListener("input", updateProjectLyrics);
+  els.sessionNotesInput.addEventListener("input", updateProjectNotes);
   els.saveCustomPresetButton.addEventListener("click", saveCustomPreset);
 }
 
@@ -1054,6 +1056,7 @@ function getProjectSettings() {
     exportNormalize: els.exportNormalizeInput.checked,
     exportLoudnessNormalize: els.exportLoudnessNormalizeInput.checked,
     lyrics: els.lyricsInput.value,
+    sessionNotes: els.sessionNotesInput.value,
     timelineSnap: getTimelineSnapMode(),
     punchEnabled: state.punchEnabled,
     loopEnabled: state.loopEnabled,
@@ -1077,6 +1080,7 @@ function applyProjectSettings(settings = {}) {
   els.exportNormalizeInput.checked = settings.exportNormalize !== false;
   els.exportLoudnessNormalizeInput.checked = Boolean(settings.exportLoudnessNormalize);
   els.lyricsInput.value = settings.lyrics || "";
+  els.sessionNotesInput.value = settings.sessionNotes || "";
   els.timelineSnapSelect.value = normalizeTimelineSnapMode(settings.timelineSnap || "off");
   els.inputGainSlider.value = settings.inputGain || 2;
   state.armedTrackId = tracks.some((track) => track.id === settings.armedTrackId)
@@ -3463,6 +3467,10 @@ function updateExportMetadata() {
 }
 
 function updateProjectLyrics() {
+  scheduleAutosave();
+}
+
+function updateProjectNotes() {
   scheduleAutosave();
 }
 

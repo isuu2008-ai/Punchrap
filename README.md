@@ -80,7 +80,7 @@ node .\scripts\check.mjs
 - Take comp selection with a dedicated comp playlist review button
 - Dedicated Comp view for comp lane ordering, take-pool add/remove, and persisted comp order
 - Project templates for trap, drill, rage hook, and clean hook sessions
-- Marker-linked lyric sections with project-persisted scratch lyrics
+- Marker-linked lyric sections with project-persisted scratch lyrics and session notes
 - Timeline region duplicate/delete actions
 - Track rename with take label propagation
 - Non-destructive region trim controls with playback/export source-offset support

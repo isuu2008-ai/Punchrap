@@ -1663,6 +1663,10 @@ textarea:focus {
   margin-top: 4px;
 }
 
+.lyrics-pad + .lyrics-pad {
+  margin-top: 14px;
+}
+
 .lyric-section-list {
   display: grid;
   gap: 10px;
