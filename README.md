@@ -48,6 +48,7 @@ node .\scripts\check.mjs
 - File System Access project save/open when available, with browser download/input fallback
 - Separated DSP, audio utility, offline mix render, vocal render engine, swappable audio engine interface, and project storage modules under `src/`
 - Native bridge contract stub for future desktop/native audio integration
+- Audio engine status chip showing Web Audio fallback or future native engine activation
 - Node package scripts for local start and smoke checks
 - PWA manifest, local icon, platform bootstrap, and service worker shell cache for desktop-install preparation
 - Timeline view with marker management and take region start/nudge controls

@@ -148,6 +148,8 @@ const els = {
   playButton: document.querySelector("#playButton"),
   stopButton: document.querySelector("#stopButton"),
   recordButton: document.querySelector("#recordButton"),
+  engineStatus: document.querySelector("#engineStatus"),
+  engineStatusText: document.querySelector("#engineStatusText"),
   sessionState: document.querySelector("#sessionState"),
   clock: document.querySelector("#clock"),
   micStatus: document.querySelector("#micStatus"),
@@ -300,6 +302,7 @@ function init() {
   renderProjectTemplates();
   renderLyrics();
   applyPreset("trap-hard");
+  renderEngineStatus();
   updateTimelineHistoryButtons();
   updateInputGain();
   updatePunchControls();
@@ -309,11 +312,30 @@ function init() {
 
   window.addEventListener("resize", drawIdleWave);
   window.addEventListener("keydown", handleGlobalShortcut);
+  window.addEventListener("punchlab:native-ready", renderEngineStatus);
   window.addEventListener("load", () => {
     if (window.lucide) {
       window.lucide.createIcons();
     }
   });
+}
+
+function renderEngineStatus() {
+  if (!els.engineStatus || !els.engineStatusText) {
+    return;
+  }
+
+  const driver = window.PunchLabEngine?.getDriver?.();
+  const bridgeStatus = window.PunchLabNativeBridge?.getStatus?.();
+  const isNative = driver?.id === "native";
+  const missingCount = bridgeStatus?.missingMethods?.length || 0;
+  const driverName = driver?.name || "Web Audio Engine";
+
+  els.engineStatus.dataset.engine = isNative ? "native" : "web";
+  els.engineStatusText.textContent = isNative ? "Native" : "Web Audio";
+  els.engineStatus.title = isNative
+    ? `${driverName} active`
+    : `Web Audio fallback${missingCount ? ` / native bridge missing ${missingCount}` : ""}`;
 }
 
 function bindEvents() {

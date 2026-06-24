@@ -113,9 +113,35 @@ h1 {
 .session-readout {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 16px;
   min-width: 190px;
   justify-content: flex-end;
+}
+
+.engine-status {
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px;
+  color: var(--cyan);
+  background: #0f1411;
+  border: 1px solid rgba(65, 230, 208, 0.32);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.engine-status[data-engine="native"] {
+  color: #050706;
+  background: var(--lime);
+  border-color: var(--lime);
+}
+
+.engine-status svg {
+  width: 14px;
+  height: 14px;
 }
 
 .view-tabs {
