@@ -715,6 +715,19 @@ h1 {
   margin: 14px 0;
 }
 
+.template-control {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.template-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
 label {
   display: grid;
   gap: 7px;

@@ -80,6 +80,8 @@
 - `.punchlab.json`, manifest, README, beat asset, take audio asset을 `.punchlab.zip`에 저장
 - File System Access 파일 계층 1차
 - 지원 브라우저에서는 Save/Open 버튼이 OS 파일 선택창을 사용하고, 미지원 환경에서는 기존 download/input으로 fallback
+- Project templates 1차
+- Trap, drill, rage hook, clean hook 세션 템플릿으로 BPM/key/track mix/marker/preset 빠른 세팅
 - Waveform recording view
 - 녹음 중 waveform peak trail 표시
 - take별 waveform thumbnail 저장/복원

@@ -7,19 +7,20 @@
     <title>PunchLab</title>
     <link rel="icon" href="./assets/punchlab-icon.svg" type="image/svg+xml" />
     <link rel="manifest" href="./manifest.webmanifest" />
-    <link rel="stylesheet" href="./styles.css?v=20260624-39" />
+    <link rel="stylesheet" href="./styles.css?v=20260624-40" />
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
-    <script src="./src/dsp.js?v=20260624-39" defer></script>
-    <script src="./src/audio.js?v=20260624-39" defer></script>
-    <script src="./src/files.js?v=20260624-39" defer></script>
-    <script src="./src/mix.js?v=20260624-39" defer></script>
-    <script src="./src/vocal.js?v=20260624-39" defer></script>
-    <script src="./src/native-bridge.js?v=20260624-39" defer></script>
-    <script src="./src/engine.js?v=20260624-39" defer></script>
-    <script src="./src/project.js?v=20260624-39" defer></script>
-    <script src="./src/storage.js?v=20260624-39" defer></script>
-    <script src="./src/platform.js?v=20260624-39" defer></script>
-    <script src="./app.js?v=20260624-39" defer></script>
+    <script src="./src/dsp.js?v=20260624-40" defer></script>
+    <script src="./src/audio.js?v=20260624-40" defer></script>
+    <script src="./src/files.js?v=20260624-40" defer></script>
+    <script src="./src/templates.js?v=20260624-40" defer></script>
+    <script src="./src/mix.js?v=20260624-40" defer></script>
+    <script src="./src/vocal.js?v=20260624-40" defer></script>
+    <script src="./src/native-bridge.js?v=20260624-40" defer></script>
+    <script src="./src/engine.js?v=20260624-40" defer></script>
+    <script src="./src/project.js?v=20260624-40" defer></script>
+    <script src="./src/storage.js?v=20260624-40" defer></script>
+    <script src="./src/platform.js?v=20260624-40" defer></script>
+    <script src="./app.js?v=20260624-40" defer></script>
   </head>
   <body>
     <main class="studio-shell">
@@ -85,6 +86,19 @@
               </label>
 
               <div class="control-stack">
+                <div class="template-control">
+                  <div class="label-row">
+                    <span>Template</span>
+                    <strong id="templateMeta">Ready</strong>
+                  </div>
+                  <div class="template-row">
+                    <select id="templateSelect" aria-label="Project template"></select>
+                    <button id="applyTemplateButton" class="mini-icon-button" type="button" title="Apply template">
+                      <i data-lucide="wand-sparkles"></i>
+                      <span>Apply</span>
+                    </button>
+                  </div>
+                </div>
                 <label>
                   BPM
                   <input id="bpmInput" type="number" min="60" max="220" value="140" />

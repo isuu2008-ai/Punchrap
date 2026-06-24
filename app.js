@@ -103,6 +103,9 @@ const els = {
   saveProjectButton: document.querySelector("#saveProjectButton"),
   saveProjectZipButton: document.querySelector("#saveProjectZipButton"),
   recoverProjectButton: document.querySelector("#recoverProjectButton"),
+  templateSelect: document.querySelector("#templateSelect"),
+  templateMeta: document.querySelector("#templateMeta"),
+  applyTemplateButton: document.querySelector("#applyTemplateButton"),
   beatInput: document.querySelector("#beatInput"),
   beatName: document.querySelector("#beatName"),
   beatAudio: document.querySelector("#beatAudio"),
@@ -241,6 +244,7 @@ function init() {
   renderTimeline();
   renderExportPanel();
   renderPresets();
+  renderProjectTemplates();
   applyPreset("trap-hard");
   updateTimelineHistoryButtons();
   updateInputGain();
@@ -268,6 +272,8 @@ function bindEvents() {
   els.stopButton.addEventListener("click", stopAll);
   els.recordButton.addEventListener("click", toggleRecord);
   els.beatInput.addEventListener("change", loadBeat);
+  els.templateSelect.addEventListener("change", updateTemplateMeta);
+  els.applyTemplateButton.addEventListener("click", applySelectedTemplate);
   els.inputGainSlider.addEventListener("input", updateInputGain);
   els.punchToggle.addEventListener("click", togglePunchMode);
   els.loopToggle.addEventListener("click", toggleLoopMode);
@@ -2124,6 +2130,91 @@ function renderArmTracks() {
       renderTracks();
     });
   });
+}
+
+function renderProjectTemplates() {
+  if (!window.PunchLabTemplates || !els.templateSelect) {
+    return;
+  }
+
+  const templates = window.PunchLabTemplates.listTemplates();
+  els.templateSelect.innerHTML = templates
+    .map((template) => `<option value="${template.id}">${escapeHtml(template.name)}</option>`)
+    .join("");
+  updateTemplateMeta();
+}
+
+function updateTemplateMeta() {
+  if (!window.PunchLabTemplates || !els.templateMeta) {
+    return;
+  }
+
+  const template = window.PunchLabTemplates.getTemplate(els.templateSelect.value);
+  els.templateMeta.textContent = `${template.bpm} BPM / ${template.key}`;
+}
+
+function applySelectedTemplate() {
+  if (!window.PunchLabTemplates) {
+    els.sessionState.textContent = "Template module missing";
+    return;
+  }
+  if (state.isRecording || state.isPunchRecording || state.isPunchWaiting) {
+    els.sessionState.textContent = "Stop recording first";
+    return;
+  }
+
+  const template = window.PunchLabTemplates.getTemplate(els.templateSelect.value);
+  applyProjectTemplate(template);
+}
+
+function applyProjectTemplate(template) {
+  stopSessionPlayback(false);
+  stopTakeQueue(false);
+  stopCurrentTake(false);
+
+  els.bpmInput.value = template.bpm || 140;
+  els.countInSelect.value = template.countIn || "0";
+  els.keySelect.value = template.key || "C minor";
+  els.scaleModeSelect.value = template.scaleMode || "minor";
+  state.armedTrackId = tracks.some((track) => track.id === template.armedTrackId)
+    ? template.armedTrackId
+    : tracks[0]?.id || "main";
+  state.recordLatencyMs = Math.max(0, Number(template.recordLatencyMs || 0));
+  els.recordLatencyInput.value = state.recordLatencyMs;
+  state.markers = normalizeMarkers(template.markers);
+  clearTimelineHistory();
+
+  if (template.selectedPresetId && presets.some((preset) => preset.id === template.selectedPresetId)) {
+    applyPreset(template.selectedPresetId);
+  }
+
+  tracks.forEach((track) => {
+    const mix = template.tracks?.[track.id];
+    if (!mix) {
+      return;
+    }
+
+    track.volume = Math.max(0, Math.min(1, Number(mix.volume ?? track.volume)));
+    track.pan = Math.max(-1, Math.min(1, Number(mix.pan ?? track.pan)));
+    track.muted = Boolean(mix.muted);
+    track.solo = Boolean(mix.solo);
+  });
+
+  const armedTrack = findTrack(state.armedTrackId);
+  if (armedTrack) {
+    els.armedTrackName.textContent = armedTrack.name;
+  }
+
+  updatePunchControls();
+  renderTracks();
+  renderArmTracks();
+  renderTimeline();
+  renderVocalPanel();
+  updateExportButtons();
+  updateQueueButton();
+  updateTemplateMeta();
+  els.sessionState.textContent = `${template.name} template`;
+  scheduleAutosave();
 }
 
 function renderPresets() {
