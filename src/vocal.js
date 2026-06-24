@@ -32,6 +32,10 @@
     return {
       ...preset,
       comp: Number(tuneSettings.comp ?? preset.comp),
+      compThreshold: Number(tuneSettings.compThreshold ?? preset.compThreshold ?? -30),
+      compRatio: Number(tuneSettings.compRatio ?? preset.compRatio ?? 6),
+      compAttack: Number(tuneSettings.compAttack ?? preset.compAttack ?? 4),
+      compRelease: Number(tuneSettings.compRelease ?? preset.compRelease ?? 140),
       saturation: Number(tuneSettings.saturation ?? preset.saturation ?? 35),
       space: Number(tuneSettings.space ?? preset.space),
       delay: Number(tuneSettings.delay ?? preset.delay ?? preset.space),

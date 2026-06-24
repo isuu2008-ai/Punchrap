@@ -33,6 +33,7 @@ node .\scripts\check.mjs
 - Retune speed, humanize, and formant controls for rendered vocal takes
 - Correction-aware formant compensation for pitch-shifted vocal renders
 - User-adjustable compressor, space, and width controls for vocal renders and custom presets
+- Advanced compressor threshold, ratio, attack, and release controls for vocal renders
 - User-adjustable saturation control for vocal renders and custom presets
 - User-adjustable low, mid, air EQ and limiter ceiling controls for vocal renders and custom presets
 - User-adjustable delay and reverb controls for vocal renders and custom presets

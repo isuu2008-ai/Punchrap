@@ -161,6 +161,15 @@ const els = {
   deEssText: document.querySelector("#deEssText"),
   compSlider: document.querySelector("#compSlider"),
   compText: document.querySelector("#compText"),
+  compDetailText: document.querySelector("#compDetailText"),
+  compThresholdSlider: document.querySelector("#compThresholdSlider"),
+  compThresholdText: document.querySelector("#compThresholdText"),
+  compRatioSlider: document.querySelector("#compRatioSlider"),
+  compRatioText: document.querySelector("#compRatioText"),
+  compAttackSlider: document.querySelector("#compAttackSlider"),
+  compAttackText: document.querySelector("#compAttackText"),
+  compReleaseSlider: document.querySelector("#compReleaseSlider"),
+  compReleaseText: document.querySelector("#compReleaseText"),
   saturationSlider: document.querySelector("#saturationSlider"),
   saturationText: document.querySelector("#saturationText"),
   spaceSlider: document.querySelector("#spaceSlider"),
@@ -329,6 +338,23 @@ function bindEvents() {
     scheduleAutosave();
   });
   els.compSlider.addEventListener("input", () => {
+    syncCompDetailDefaults();
+    updateTuneControls();
+    scheduleAutosave();
+  });
+  els.compThresholdSlider.addEventListener("input", () => {
+    updateTuneControls();
+    scheduleAutosave();
+  });
+  els.compRatioSlider.addEventListener("input", () => {
+    updateTuneControls();
+    scheduleAutosave();
+  });
+  els.compAttackSlider.addEventListener("input", () => {
+    updateTuneControls();
+    scheduleAutosave();
+  });
+  els.compReleaseSlider.addEventListener("input", () => {
     updateTuneControls();
     scheduleAutosave();
   });
@@ -1047,6 +1073,18 @@ function applyProjectSettings(settings = {}) {
     els.gateSlider.value = settings.tune.gate ?? els.gateSlider.value;
     els.deEssSlider.value = settings.tune.deEss ?? els.deEssSlider.value;
     els.compSlider.value = settings.tune.comp ?? els.compSlider.value;
+    els.compThresholdSlider.value = settings.tune.compThreshold ?? els.compThresholdSlider.value;
+    els.compRatioSlider.value = settings.tune.compRatio ?? els.compRatioSlider.value;
+    els.compAttackSlider.value = settings.tune.compAttack ?? els.compAttackSlider.value;
+    els.compReleaseSlider.value = settings.tune.compRelease ?? els.compReleaseSlider.value;
+    if (
+      settings.tune.compThreshold == null ||
+      settings.tune.compRatio == null ||
+      settings.tune.compAttack == null ||
+      settings.tune.compRelease == null
+    ) {
+      syncCompDetailDefaults();
+    }
     els.saturationSlider.value = settings.tune.saturation ?? els.saturationSlider.value;
     els.spaceSlider.value = settings.tune.space ?? els.spaceSlider.value;
     els.delaySlider.value = settings.tune.delay ?? els.delaySlider.value;
@@ -2309,6 +2347,10 @@ function saveCustomPreset() {
     gate: tuneSettings.gate,
     deEss: tuneSettings.deEss,
     comp: tuneSettings.comp,
+    compThreshold: tuneSettings.compThreshold,
+    compRatio: tuneSettings.compRatio,
+    compAttack: tuneSettings.compAttack,
+    compRelease: tuneSettings.compRelease,
     saturation: tuneSettings.saturation,
     space: tuneSettings.space,
     delay: tuneSettings.delay,
@@ -2330,6 +2372,7 @@ function saveCustomPreset() {
 }
 
 function normalizePreset(preset) {
+  const comp = Number(preset.comp ?? 60);
   return {
     id: preset.id || `custom-${crypto.randomUUID()}`,
     name: preset.name || "Custom",
@@ -2338,7 +2381,11 @@ function normalizePreset(preset) {
     formant: Number(preset.formant ?? 0),
     gate: Number(preset.gate ?? 0),
     deEss: Number(preset.deEss ?? 0),
-    comp: Number(preset.comp ?? 60),
+    comp,
+    compThreshold: Number(preset.compThreshold ?? getDefaultCompThreshold(comp)),
+    compRatio: Number(preset.compRatio ?? getDefaultCompRatio(comp)),
+    compAttack: Number(preset.compAttack ?? 4),
+    compRelease: Number(preset.compRelease ?? getDefaultCompRelease(comp)),
     saturation: Number(preset.saturation ?? 35),
     space: Number(preset.space ?? 12),
     delay: Number(preset.delay ?? preset.space ?? 12),
@@ -2352,9 +2399,32 @@ function normalizePreset(preset) {
   };
 }
 
+function getDefaultCompThreshold(comp) {
+  const amount = Math.min(1, Math.max(0, Number(comp) || 0) / 100);
+  return Math.round(-18 - amount * 18);
+}
+
+function getDefaultCompRatio(comp) {
+  const amount = Math.min(1, Math.max(0, Number(comp) || 0) / 100);
+  return Math.round((2.5 + amount * 8) * 2) / 2;
+}
+
+function getDefaultCompRelease(comp) {
+  const amount = Math.min(1, Math.max(0, Number(comp) || 0) / 100);
+  return Math.round((80 + (1 - amount) * 180) / 10) * 10;
+}
+
+function syncCompDetailDefaults() {
+  const comp = Number(els.compSlider?.value) || 0;
+  els.compThresholdSlider.value = getDefaultCompThreshold(comp);
+  els.compRatioSlider.value = getDefaultCompRatio(comp);
+  els.compAttackSlider.value = 4;
+  els.compReleaseSlider.value = getDefaultCompRelease(comp);
+}
+
 function applyPreset(id) {
   state.selectedPresetId = id;
-  const preset = presets.find((item) => item.id === id) || presets[0];
+  const preset = normalizePreset(presets.find((item) => item.id === id) || presets[0]);
   state.selectedPresetId = preset.id;
   els.presetName.textContent = preset.name;
   els.compValue.textContent = preset.comp;
@@ -2366,6 +2436,10 @@ function applyPreset(id) {
   els.gateSlider.value = preset.gate || 0;
   els.deEssSlider.value = preset.deEss || 0;
   els.compSlider.value = preset.comp;
+  els.compThresholdSlider.value = preset.compThreshold;
+  els.compRatioSlider.value = preset.compRatio;
+  els.compAttackSlider.value = preset.compAttack;
+  els.compReleaseSlider.value = preset.compRelease;
   els.saturationSlider.value = preset.saturation ?? 35;
   els.spaceSlider.value = preset.space;
   els.delaySlider.value = preset.delay;
@@ -2458,6 +2532,11 @@ function updateTuneControls() {
   els.gateText.textContent = String(settings.gate);
   els.deEssText.textContent = String(settings.deEss);
   els.compText.textContent = String(settings.comp);
+  els.compThresholdText.textContent = `${formatDb(settings.compThreshold)} dB`;
+  els.compRatioText.textContent = `${formatRatio(settings.compRatio)}:1`;
+  els.compAttackText.textContent = `${settings.compAttack} ms`;
+  els.compReleaseText.textContent = `${settings.compRelease} ms`;
+  els.compDetailText.textContent = `${formatDb(settings.compThreshold)} dB / ${formatRatio(settings.compRatio)}:1`;
   els.saturationText.textContent = String(settings.saturation);
   els.spaceText.textContent = String(settings.space);
   els.delayText.textContent = String(settings.delay);
@@ -2479,6 +2558,10 @@ function setTuneControlsDisabled(isDisabled) {
   els.gateSlider.disabled = isDisabled;
   els.deEssSlider.disabled = isDisabled;
   els.compSlider.disabled = isDisabled;
+  els.compThresholdSlider.disabled = isDisabled;
+  els.compRatioSlider.disabled = isDisabled;
+  els.compAttackSlider.disabled = isDisabled;
+  els.compReleaseSlider.disabled = isDisabled;
   els.saturationSlider.disabled = isDisabled;
   els.spaceSlider.disabled = isDisabled;
   els.delaySlider.disabled = isDisabled;
@@ -4544,6 +4627,11 @@ function formatDb(value) {
   return `${value >= 0 ? "+" : ""}${value.toFixed(1)}`;
 }
 
+function formatRatio(value) {
+  const safeValue = Number.isFinite(Number(value)) ? Number(value) : 0;
+  return Number.isInteger(safeValue) ? String(safeValue) : safeValue.toFixed(1);
+}
+
 function formatLufs(value) {
   if (!Number.isFinite(value)) {
     return "-inf LUFS";
@@ -4597,6 +4685,10 @@ function getTuneSettings() {
     gate: Number(els.gateSlider?.value) || 0,
     deEss: Number(els.deEssSlider?.value) || 0,
     comp: Number(els.compSlider?.value) || 0,
+    compThreshold: Number(els.compThresholdSlider?.value) || 0,
+    compRatio: Number(els.compRatioSlider?.value) || 0,
+    compAttack: Number(els.compAttackSlider?.value) || 0,
+    compRelease: Number(els.compReleaseSlider?.value) || 0,
     saturation: Number(els.saturationSlider?.value) || 0,
     space: Number(els.spaceSlider?.value) || 0,
     delay: Number(els.delaySlider?.value) || 0,
@@ -4997,6 +5089,8 @@ function getTuneSignature(settings = {}) {
   const gate = Number(settings.gate ?? 0);
   const deEss = Number(settings.deEss ?? 0);
   const comp = Number(settings.comp ?? 0);
+  const compThreshold = Number(settings.compThreshold ?? getDefaultCompThreshold(comp));
+  const compRatio = Number(settings.compRatio ?? getDefaultCompRatio(comp));
   const saturation = Number(settings.saturation ?? 0);
   const space = Number(settings.space ?? 0);
   const delay = Number(settings.delay ?? 0);
@@ -5006,7 +5100,7 @@ function getTuneSignature(settings = {}) {
   const midEq = Number(settings.midEq ?? 0);
   const airEq = Number(settings.airEq ?? 0);
   const limiterCeiling = Number(settings.limiterCeiling ?? -3);
-  return `R${retuneSpeed} H${humanize} F${formatSigned(formant)} G${gate} D${deEss} C${comp} Sat${saturation} S${space} DL${delay} RV${reverb} W${width} EQ${formatDb(lowEq)}/${formatDb(midEq)}/${formatDb(airEq)} Lim${formatDb(limiterCeiling)}`;
+  return `R${retuneSpeed} H${humanize} F${formatSigned(formant)} G${gate} D${deEss} C${comp} Dyn${formatDb(compThreshold)}/${formatRatio(compRatio)} Sat${saturation} S${space} DL${delay} RV${reverb} W${width} EQ${formatDb(lowEq)}/${formatDb(midEq)}/${formatDb(airEq)} Lim${formatDb(limiterCeiling)}`;
 }
 
 function escapeHtml(value) {

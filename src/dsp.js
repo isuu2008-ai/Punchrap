@@ -24,6 +24,13 @@
     const limiter = context.createDynamicsCompressor();
 
     const compAmount = preset.comp / 100;
+    const defaultCompThreshold = -18 - compAmount * 18;
+    const defaultCompRatio = 2.5 + compAmount * 8;
+    const defaultCompRelease = (80 + (1 - compAmount) * 180) / 1000;
+    const compThreshold = clamp(Number(tuneSettings.compThreshold ?? preset.compThreshold ?? defaultCompThreshold), -48, -6);
+    const compRatio = clamp(Number(tuneSettings.compRatio ?? preset.compRatio ?? defaultCompRatio), 1.5, 20);
+    const compAttack = clamp(Number(tuneSettings.compAttack ?? preset.compAttack ?? 4), 1, 50) / 1000;
+    const compRelease = clamp(Number(tuneSettings.compRelease ?? preset.compRelease ?? defaultCompRelease * 1000), 30, 500) / 1000;
     const retuneAmount = (tuneSettings.retuneSpeed || 0) / 100;
     const humanizeAmount = (tuneSettings.humanize || 0) / 100;
     const formantAmount = (tuneSettings.formant || 0) / 50;
@@ -93,11 +100,11 @@
     formantFocus.Q.value = 1.05;
     formantFocus.gain.value = formantAmount * 4.2 - correctionTilt * 0.95;
 
-    compressor.threshold.value = -18 - compAmount * 18;
+    compressor.threshold.value = compThreshold;
     compressor.knee.value = 14 - compAmount * 8;
-    compressor.ratio.value = 2.5 + compAmount * 8;
-    compressor.attack.value = 0.004;
-    compressor.release.value = 0.08 + (1 - compAmount) * 0.18;
+    compressor.ratio.value = compRatio;
+    compressor.attack.value = compAttack;
+    compressor.release.value = compRelease;
 
     saturation.curve = makeSaturationCurve(0.08 + saturationAmount * 1.15 + retuneAmount * 0.22);
     saturation.oversample = "4x";

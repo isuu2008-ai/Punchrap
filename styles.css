@@ -1368,6 +1368,53 @@ textarea:focus {
   height: 18px;
 }
 
+.chain-detail {
+  padding: 10px;
+  border: 1px solid rgba(65, 230, 208, 0.24);
+  border-radius: 7px;
+  background: rgba(65, 230, 208, 0.05);
+}
+
+.chain-detail summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 800;
+  list-style: none;
+}
+
+.chain-detail summary::-webkit-details-marker {
+  display: none;
+}
+
+.chain-detail summary strong {
+  color: var(--cyan);
+  font-variant-numeric: tabular-nums;
+}
+
+.chain-detail-grid {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.detail-control {
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.detail-control strong {
+  color: var(--lime);
+}
+
+.detail-control input[type="range"] {
+  height: 18px;
+}
+
 .selected-take-card,
 .pitch-stat-grid div {
   min-height: 112px;

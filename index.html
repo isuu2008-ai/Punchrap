@@ -7,20 +7,20 @@
     <title>PunchLab</title>
     <link rel="icon" href="./assets/punchlab-icon.svg" type="image/svg+xml" />
     <link rel="manifest" href="./manifest.webmanifest" />
-    <link rel="stylesheet" href="./styles.css?v=20260624-46" />
+    <link rel="stylesheet" href="./styles.css?v=20260624-47" />
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
-    <script src="./src/dsp.js?v=20260624-46" defer></script>
-    <script src="./src/audio.js?v=20260624-46" defer></script>
-    <script src="./src/files.js?v=20260624-46" defer></script>
-    <script src="./src/templates.js?v=20260624-46" defer></script>
-    <script src="./src/mix.js?v=20260624-46" defer></script>
-    <script src="./src/vocal.js?v=20260624-46" defer></script>
-    <script src="./src/native-bridge.js?v=20260624-46" defer></script>
-    <script src="./src/engine.js?v=20260624-46" defer></script>
-    <script src="./src/project.js?v=20260624-46" defer></script>
-    <script src="./src/storage.js?v=20260624-46" defer></script>
-    <script src="./src/platform.js?v=20260624-46" defer></script>
-    <script src="./app.js?v=20260624-46" defer></script>
+    <script src="./src/dsp.js?v=20260624-47" defer></script>
+    <script src="./src/audio.js?v=20260624-47" defer></script>
+    <script src="./src/files.js?v=20260624-47" defer></script>
+    <script src="./src/templates.js?v=20260624-47" defer></script>
+    <script src="./src/mix.js?v=20260624-47" defer></script>
+    <script src="./src/vocal.js?v=20260624-47" defer></script>
+    <script src="./src/native-bridge.js?v=20260624-47" defer></script>
+    <script src="./src/engine.js?v=20260624-47" defer></script>
+    <script src="./src/project.js?v=20260624-47" defer></script>
+    <script src="./src/storage.js?v=20260624-47" defer></script>
+    <script src="./src/platform.js?v=20260624-47" defer></script>
+    <script src="./app.js?v=20260624-47" defer></script>
   </head>
   <body>
     <main class="studio-shell">
@@ -547,6 +547,42 @@
                     </span>
                     <input id="compSlider" type="range" min="0" max="100" step="1" value="72" />
                   </label>
+                  <details class="chain-detail">
+                    <summary>
+                      <span>Compressor details</span>
+                      <strong id="compDetailText">-31.0 dB / 8.5:1</strong>
+                    </summary>
+                    <div class="chain-detail-grid">
+                      <label class="detail-control">
+                        <span class="label-row">
+                          <span>Threshold</span>
+                          <strong id="compThresholdText">-31.0 dB</strong>
+                        </span>
+                        <input id="compThresholdSlider" type="range" min="-48" max="-6" step="1" value="-31" />
+                      </label>
+                      <label class="detail-control">
+                        <span class="label-row">
+                          <span>Ratio</span>
+                          <strong id="compRatioText">8.5:1</strong>
+                        </span>
+                        <input id="compRatioSlider" type="range" min="1.5" max="12" step="0.5" value="8.5" />
+                      </label>
+                      <label class="detail-control">
+                        <span class="label-row">
+                          <span>Attack</span>
+                          <strong id="compAttackText">4 ms</strong>
+                        </span>
+                        <input id="compAttackSlider" type="range" min="1" max="30" step="1" value="4" />
+                      </label>
+                      <label class="detail-control">
+                        <span class="label-row">
+                          <span>Release</span>
+                          <strong id="compReleaseText">130 ms</strong>
+                        </span>
+                        <input id="compReleaseSlider" type="range" min="40" max="320" step="10" value="130" />
+                      </label>
+                    </div>
+                  </details>
                   <label class="tune-control">
                     <span class="label-row">
                       <span>Saturation</span>
