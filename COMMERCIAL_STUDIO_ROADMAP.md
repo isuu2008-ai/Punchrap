@@ -97,6 +97,8 @@
 - 녹음/믹스 메모를 project bundle과 autosave에 저장/복원
 - Timeline region duplicate/delete 1차
 - Region row에서 take copy/delete를 직접 실행하고 timeline/take/export 상태를 즉시 갱신
+- Take rename 1차
+- Takes 탭에서 take 이름을 직접 바꾸고 project bundle/autosave/timeline 표시까지 함께 반영
 - Region grouping 1차
 - Verse/Hook/Adlib/Intro/Bridge/Outro region group을 take별로 저장하고 Timeline 표시/undo/project bundle에 반영
 - Track rename 1차

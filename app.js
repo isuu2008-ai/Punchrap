@@ -3365,9 +3365,10 @@ function renderTakes() {
         const isPlaying = take.id === state.currentTakeId || state.sessionPlayingTakeIds.has(take.id);
         return `
         <div class="take-item">
-          <div>
+          <div class="take-main">
             <strong>${escapeHtml(getTakeTitle(take, index))}</strong>
             <small>${getTakeSubtitle(take)}</small>
+            <input class="take-name-input" type="text" value="${escapeHtml(getTakeTitle(take, index))}" data-take-name="${take.id}" aria-label="Take name" maxlength="48" />
             ${renderTakeWaveform(take)}
           </div>
           <div class="take-controls">
@@ -3409,6 +3410,16 @@ function renderTakes() {
   els.takesList.querySelectorAll("[data-best-take]").forEach((button) => {
     button.addEventListener("click", () => {
       toggleBestTake(button.dataset.bestTake);
+    });
+  });
+  els.takesList.querySelectorAll("[data-take-name]").forEach((input) => {
+    input.addEventListener("change", () => {
+      setTakeName(input.dataset.takeName, input.value, "Take renamed");
+    });
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        input.blur();
+      }
     });
   });
 
@@ -4076,6 +4087,10 @@ function setRegionStart(takeId, value) {
 }
 
 function setRegionName(takeId, value) {
+  setTakeName(takeId, value, "Region renamed");
+}
+
+function setTakeName(takeId, value, statusText = "Take renamed") {
   const take = findTake(takeId);
   if (!take) {
     return;
@@ -4088,7 +4103,7 @@ function setRegionName(takeId, value) {
 
   recordTimelineHistory();
   take.name = nextName;
-  els.sessionState.textContent = "Region renamed";
+  els.sessionState.textContent = statusText;
   refreshTimelineEdit();
 }
 

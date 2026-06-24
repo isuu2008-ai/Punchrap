@@ -86,6 +86,7 @@ node .\scripts\check.mjs
 - Project templates for trap, drill, rage hook, and clean hook sessions
 - Marker-linked lyric sections with project-persisted scratch lyrics and session notes
 - Timeline region duplicate/delete actions
+- Take rename from the Takes tab with project persistence
 - Track rename with take label propagation
 - Non-destructive region trim controls with playback/export source-offset support
 

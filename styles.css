@@ -1843,7 +1843,7 @@ textarea:focus {
 }
 
 .take-item {
-  min-width: 190px;
+  min-width: 230px;
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
@@ -1852,6 +1852,12 @@ textarea:focus {
   border: 1px solid var(--line);
   border-radius: 7px;
   background: var(--panel-2);
+}
+
+.take-main {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
 }
 
 .take-item strong {
@@ -1866,6 +1872,23 @@ textarea:focus {
   color: var(--lime);
   font-size: 12px;
   text-decoration: none;
+}
+
+.take-name-input {
+  width: 100%;
+  min-width: 128px;
+  height: 30px;
+  padding: 0 8px;
+  color: var(--text);
+  background: #0f1411;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.take-name-input:focus {
+  border-color: rgba(65, 230, 208, 0.42);
 }
 
 .take-waveform {
