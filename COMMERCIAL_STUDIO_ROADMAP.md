@@ -119,6 +119,8 @@
 - Export metadata 기본형
 - Artist/Title 입력 프로젝트 저장/복원
 - WAV RIFF INFO chunk에 title, artist, BPM, key, software 기록
+- Export settings manifest 1차
+- project zip `manifest.json`에 WAV depth, normalize, loudness target, 최근 분석 상태 저장
 - Export preview 기본형
 - 완료된 export queue job의 마지막 WAV를 Preview 버튼으로 재생
 - Export redownload 기본형

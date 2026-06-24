@@ -963,6 +963,7 @@ async function buildProjectZipFiles(bundle, projectFilename) {
     exportedAt: new Date().toISOString(),
     project: projectFilename,
     preview: "preview.html",
+    exportSettings: summarizeExportSettings(),
     beat: null,
     markers: [],
     takes: [],
@@ -1045,6 +1046,7 @@ async function buildProjectZipFiles(bundle, projectFilename) {
     `${projectFilename} is the full PunchLab project bundle used by the current web app.`,
     "preview.html is a read-only browser preview for quick review after extracting the zip.",
     "manifest.json lists extracted audio assets for backup, transfer, and manual inspection.",
+    "manifest.json includes exportSettings for WAV depth, normalize, loudness target, and recent analysis context.",
     "Processed takes include automationState when a chain snapshot is available.",
     "assets/beat contains the loaded beat when available.",
     "assets/takes contains recorded and processed take audio files.",
@@ -1059,6 +1061,7 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
   const artist = metadata.artist || "PunchLab";
   const bpm = settings.bpm || Number(els.bpmInput.value) || 140;
   const key = settings.key || els.keySelect.value || "C minor";
+  const exportSettings = manifest.exportSettings || {};
   const takes = [...manifest.takes].sort(
     (left, right) => (left.startTime || 0) - (right.startTime || 0) || String(left.trackName).localeCompare(String(right.trackName)),
   );
@@ -1181,6 +1184,7 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
           <span>${escapeHtml(artist)}</span>
           <span>${escapeHtml(String(bpm))} BPM</span>
           <span>${escapeHtml(key)}</span>
+          <span>${escapeHtml(formatPreviewExportSettings(exportSettings))}</span>
           <span>${takes.length} takes</span>
           <span>${manifest.markers.length} markers</span>
         </div>
@@ -1307,6 +1311,45 @@ function formatFileSize(bytes) {
 function formatPreviewGain(volume, clipGain) {
   const gain = Math.max(0, Number(volume || 0) * Number(clipGain || 1));
   return `${Math.round(gain * 100)}%`;
+}
+
+function formatPreviewExportSettings(settings) {
+  const bitDepth = Number(settings?.wav?.bitDepth || 16);
+  const normalize = settings?.normalize?.enabled ? "norm" : "raw";
+  const loudness = settings?.loudnessNormalize?.enabled ? `${settings.loudnessNormalize.targetLufs} LUFS` : "no LUFS";
+  return `${bitDepth}-bit / ${normalize} / ${loudness}`;
+}
+
+function summarizeExportSettings() {
+  const report = state.loudnessReport;
+  const stale = report ? report.sourceSignature !== getMixSourceSignature() : false;
+  return {
+    metadata: getExportMetadata(),
+    wav: {
+      bitDepth: getExportBitDepth(),
+      format: "wav",
+    },
+    normalize: {
+      enabled: Boolean(els.exportNormalizeInput?.checked),
+      targetPeakDbfs: -1,
+      lastGainDb: gainToDb(state.lastExportNormalizeGain),
+    },
+    loudnessNormalize: {
+      enabled: Boolean(els.exportLoudnessNormalizeInput?.checked),
+      targetLufs: -14,
+      lastGainDb: gainToDb(state.lastExportLoudnessGain),
+    },
+    analysis: report
+      ? {
+        stale,
+        integratedLufs: Number(report.integratedLufs || 0),
+        peakDbfs: Number(report.peakDbfs || 0),
+        truePeakDbfs: Number(report.truePeakDbfs ?? report.peakDbfs ?? 0),
+        clippingSamples: Number(report.clippingSamples || 0),
+        recommendedGainDb: Number(report.recommendedGainDb || 0),
+      }
+      : null,
+  };
 }
 
 function formatPreviewRenderVersion(take) {
@@ -5897,8 +5940,12 @@ function formatDuration(seconds) {
 }
 
 function formatGainDb(gain) {
-  const db = 20 * Math.log10(gain);
+  const db = gainToDb(gain);
   return `${db >= 0 ? "+" : ""}${db.toFixed(1)} dB`;
+}
+
+function gainToDb(gain) {
+  return 20 * Math.log10(Math.max(0.000001, Number(gain) || 0.000001));
 }
 
 function formatDb(value) {
