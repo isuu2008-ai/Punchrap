@@ -90,6 +90,41 @@
       .replace(/\u2029/g, "\\u2029");
   }
 
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function formatDuration(seconds) {
+    const safeSeconds = Math.max(0, seconds || 0);
+    const minutes = Math.floor(safeSeconds / 60);
+    const secs = Math.floor(safeSeconds % 60);
+    const tenths = Math.floor((safeSeconds % 1) * 10);
+    return `${String(minutes).padStart(2, "0")}:${String(secs).padStart(2, "0")}.${tenths}`;
+  }
+
+  function formatDb(value) {
+    if (!Number.isFinite(value)) {
+      return "-inf";
+    }
+
+    return `${value >= 0 ? "+" : ""}${value.toFixed(1)}`;
+  }
+
+  function normalizeTimelineSnapMode(value) {
+    return ["off", "beat", "bar"].includes(value) ? value : "off";
+  }
+
+  function buildDescriptionListRows(rows = []) {
+    return rows
+      .map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`)
+      .join("");
+  }
+
   function getProjectZipPreviewStyles() {
     return `      :root { color-scheme: dark; --bg: #080a09; --panel: #101511; --line: #273129; --text: #f1f5ef; --muted: #8b978f; --lime: #c8ff4d; --cyan: #41e6d0; }
       * { box-sizing: border-box; }
@@ -206,6 +241,84 @@
       })();`;
   }
 
+  function buildProjectZipPreviewAutomationSchemaRows(automationManifest = {}) {
+    const parameters = Array.isArray(automationManifest.parameters) ? automationManifest.parameters : [];
+    if (!parameters.length) {
+      return `<article class="asset-card"><strong>No automation schema</strong><small>Processed take parameter values cannot be mapped to controls.</small></article>`;
+    }
+
+    return parameters
+      .map((parameter) => `
+        <article class="asset-card">
+          <strong>${escapeHtml(parameter.label || parameter.id)}</strong>
+          <small>${escapeHtml(parameter.automationId || parameter.id || "")}</small>
+          <dl>
+            <div><dt>Group</dt><dd>${escapeHtml(parameter.group || "")}</dd></div>
+            <div><dt>Range</dt><dd>${escapeHtml(`${parameter.min} to ${parameter.max}${parameter.unit ? ` ${parameter.unit}` : ""}`)}</dd></div>
+            <div><dt>Default</dt><dd>${escapeHtml(String(parameter.defaultValue ?? ""))}</dd></div>
+            <div><dt>Step</dt><dd>${escapeHtml(String(parameter.step ?? ""))}</dd></div>
+          </dl>
+        </article>`)
+      .join("");
+  }
+
+  function buildProjectZipPreviewSessionRows(sessionManifest = {}) {
+    const countIn = Number(sessionManifest.countInBars || 0);
+    const recordLatency = Number(sessionManifest.recordLatencyMs || 0);
+    const bufferSize = Number(sessionManifest.nativeBufferSize || 0);
+    return buildDescriptionListRows([
+      ["BPM", String(sessionManifest.bpm || 140)],
+      ["Key", sessionManifest.key || "C minor"],
+      ["Scale", formatProjectZipPreviewScaleMode(sessionManifest.scaleMode)],
+      ["Target", sessionManifest.targetNote || "Scale nearest"],
+      ["Count-in", countIn > 0 ? `${countIn} bar${countIn === 1 ? "" : "s"}` : "Off"],
+      ["Snap", formatProjectZipPreviewSnapMode(sessionManifest.timelineSnap)],
+      ["Armed", sessionManifest.armedTrackName || sessionManifest.armedTrackId || "Main"],
+      ["Punch", sessionManifest.punchEnabled ? `${formatDuration(sessionManifest.punchIn)} - ${formatDuration(sessionManifest.punchOut)}` : "Off"],
+      ["Loop", sessionManifest.loopEnabled ? "On" : "Off"],
+      ["Metronome", sessionManifest.metronomeEnabled ? "On" : "Off"],
+      ["Record Latency", recordLatency > 0 ? `${Math.round(recordLatency)} ms` : "None"],
+      ["Native Buffer", bufferSize > 0 ? `${bufferSize} samples` : "Default"],
+    ]);
+  }
+
+  function formatProjectZipPreviewScaleMode(scaleMode) {
+    const value = String(scaleMode || "minor");
+    return value === "custom" ? "Custom" : value === "chromatic" ? "Chromatic" : "Minor";
+  }
+
+  function formatProjectZipPreviewSnapMode(snapMode) {
+    const value = normalizeTimelineSnapMode(snapMode || "off");
+    return value === "bar" ? "Bar" : value === "beat" ? "Beat" : "Off";
+  }
+
+  function buildProjectZipPreviewPresetRows(presetManifest = []) {
+    if (!presetManifest.length) {
+      return `<article class="asset-card"><strong>No presets</strong><small>The project bundle did not include vocal chain presets.</small></article>`;
+    }
+
+    return presetManifest
+      .map((preset) => `
+        <article class="asset-card">
+          <div class="asset-heading">
+            <div>
+              <strong>${escapeHtml(preset.name || preset.id)}</strong>
+              <small>${escapeHtml(preset.tuneSignature || "No tune signature")}</small>
+            </div>
+            <span>${escapeHtml(preset.selected ? "Selected" : preset.custom ? "Custom" : "Built-in")}</span>
+          </div>
+          <dl>
+            <div><dt>Retune</dt><dd>${escapeHtml(String(preset.retune ?? ""))}</dd></div>
+            <div><dt>Humanize</dt><dd>${escapeHtml(String(preset.humanize ?? ""))}</dd></div>
+            <div><dt>Comp</dt><dd>${escapeHtml(String(preset.comp ?? ""))}</dd></div>
+            <div><dt>Space</dt><dd>${escapeHtml(String(preset.space ?? ""))}</dd></div>
+            <div><dt>EQ</dt><dd>${escapeHtml(`${formatDb(Number(preset.lowEq || 0))}/${formatDb(Number(preset.midEq || 0))}/${formatDb(Number(preset.airEq || 0))}`)}</dd></div>
+            <div><dt>Limiter</dt><dd>${escapeHtml(formatDb(Number(preset.limiterCeiling ?? -3)))}</dd></div>
+          </dl>
+        </article>`)
+      .join("");
+  }
+
   window.PunchLabProjectZip = {
     README_MANIFEST_LINES,
     createProjectZipManifest,
@@ -216,5 +329,8 @@
     escapeScriptJson,
     getProjectZipPreviewStyles,
     getProjectZipPreviewPlayerScript,
+    buildProjectZipPreviewAutomationSchemaRows,
+    buildProjectZipPreviewSessionRows,
+    buildProjectZipPreviewPresetRows,
   };
 })();

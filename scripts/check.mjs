@@ -222,7 +222,7 @@ if (!appSource.includes("automationManifest: summarizeAutomationParameterManifes
   console.error("Project zip manifest must include the vocal chain automation parameter schema.");
   failed = true;
 }
-if (!appSource.includes("presets: summarizePresetManifest") || !appSource.includes("buildPreviewPresetManifestRows") || !zipSource.includes("manifest.json includes presets")) {
+if (!appSource.includes("presets: summarizePresetManifest") || !projectZipSource.includes("buildProjectZipPreviewPresetRows") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewPresetRows") || !zipSource.includes("manifest.json includes presets")) {
   console.error("Project zip manifest and preview must expose vocal chain preset summaries.");
   failed = true;
 }
@@ -230,7 +230,7 @@ if (!appSource.includes("notes: summarizeProjectNotes") || !appSource.includes("
   console.error("Project zip manifest and preview must expose scratch lyrics, marker lyrics, and session notes.");
   failed = true;
 }
-if (!appSource.includes("session: summarizeSessionManifest") || !appSource.includes("buildPreviewSessionRows") || !zipSource.includes("manifest.json includes session settings")) {
+if (!appSource.includes("session: summarizeSessionManifest") || !projectZipSource.includes("buildProjectZipPreviewSessionRows") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewSessionRows") || !zipSource.includes("manifest.json includes session settings")) {
   console.error("Project zip manifest and preview must expose session settings.");
   failed = true;
 }
@@ -250,7 +250,7 @@ if (!projectZipSource.includes("getProjectZipPreviewStyles") || !projectZipSourc
   console.error("Project zip preview style and player boilerplate must live in src/project-zip.js and be used by app.js.");
   failed = true;
 }
-if (!appSource.includes("Automation Schema") || !appSource.includes("buildPreviewAutomationSchemaRows")) {
+if (!appSource.includes("Automation Schema") || !projectZipSource.includes("buildProjectZipPreviewAutomationSchemaRows") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewAutomationSchemaRows")) {
   console.error("Project zip preview must display the vocal chain automation parameter schema.");
   failed = true;
 }

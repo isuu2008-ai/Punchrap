@@ -130,6 +130,7 @@ node .\scripts\check.mjs
 - Desktop package manifest defines the Tauri-first wrapper, native migration gate, and no-rewrite core boundary
 - Project zip manifest and README policy live in `src/project-zip.js` instead of the app UI controller
 - Project zip preview sort, playback data, style, and player boilerplate live in `src/project-zip.js`
+- Project zip preview automation schema, session, and preset rows are formatted in `src/project-zip.js`
 - Export queue with sequential job status for mix, stems, beat stem, vocal stem, dry vocals, and tuned vocals
 - Export queue retry, remove, and clear-finished controls
 - WAV export metadata for artist, title, BPM, key, and software
