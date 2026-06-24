@@ -258,11 +258,11 @@ if (!appSource.includes("Automation Schema") || !projectZipSource.includes("buil
   console.error("Project zip preview must display the vocal chain automation parameter schema.");
   failed = true;
 }
-if (!appSource.includes("formatAutomationParameterValue") || !appSource.includes("formatAutomationStateSummary(take.automationState, automationManifest)")) {
+if (!projectZipSource.includes("formatProjectZipAutomationParameterValue") || !projectZipSource.includes("formatProjectZipAutomationStateSummary(take.automationState, automationManifest)") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewTakeRows(takes, automationManifest)")) {
   console.error("Project zip preview must summarize processed take automation values with schema labels.");
   failed = true;
 }
-if (!appSource.includes("formatPreviewPreset") || !appSource.includes("formatPreviewTune") || !appSource.includes("formatPreviewKeyMode")) {
+if (!projectZipSource.includes("formatProjectZipPreviewPreset") || !projectZipSource.includes("formatProjectZipPreviewTune") || !projectZipSource.includes("formatProjectZipPreviewKeyMode")) {
   console.error("Project zip preview must display processed take preset, tune, and key lineage.");
   failed = true;
 }
@@ -270,11 +270,11 @@ if (!appSource.includes("regionColor: getTakeRegionColor(take)") || !appSource.i
   console.error("Project zip manifest must preserve take region and fade metadata.");
   failed = true;
 }
-if (!appSource.includes("formatPreviewRegion") || !appSource.includes("region-chip")) {
+if (!projectZipSource.includes("formatProjectZipPreviewRegion") || !projectZipSource.includes("region-chip") || !projectZipSource.includes("buildProjectZipPreviewTakeRows")) {
   console.error("Project zip preview must display take region group and color metadata.");
   failed = true;
 }
-if (!appSource.includes("formatPreviewLatency") || !appSource.includes("formatPreviewTrim") || !appSource.includes("formatPreviewFade")) {
+if (!projectZipSource.includes("formatProjectZipPreviewLatency") || !projectZipSource.includes("formatProjectZipPreviewTrim") || !projectZipSource.includes("formatProjectZipPreviewFade")) {
   console.error("Project zip preview must display take latency, trim, and fade metadata.");
   failed = true;
 }

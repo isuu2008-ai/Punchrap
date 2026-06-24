@@ -1261,38 +1261,7 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
 
   const beatSection = window.PunchLabProjectZip.buildProjectZipPreviewBeatSection(manifest.beat);
   const markerRows = window.PunchLabProjectZip.buildProjectZipPreviewMarkerRows(manifest.markers);
-  const takeRows = takes.length
-    ? takes
-      .map(
-        (take) => `
-          <article class="asset-card">
-            <div class="asset-heading">
-              <div>
-                <strong>${escapeHtml(take.name)}</strong>
-                <small>${escapeHtml(take.trackName)} / ${escapeHtml(getRegionGroupLabel(take.regionGroup))}</small>
-              </div>
-              <span>${take.bestTake ? "Best" : take.processed ? "Tuned" : "Raw"}</span>
-            </div>
-            <dl>
-              <div><dt>Start</dt><dd>${escapeHtml(formatDuration(take.startTime))}</dd></div>
-              <div><dt>Length</dt><dd>${escapeHtml(formatDuration(take.duration))}</dd></div>
-              <div><dt>Version</dt><dd>${escapeHtml(formatPreviewRenderVersion(take))}</dd></div>
-              <div><dt>Source</dt><dd>${escapeHtml(formatPreviewSourceTake(take))}</dd></div>
-              <div><dt>Preset</dt><dd>${escapeHtml(formatPreviewPreset(take))}</dd></div>
-              <div><dt>Tune</dt><dd>${escapeHtml(formatPreviewTune(take))}</dd></div>
-              <div><dt>Key</dt><dd>${escapeHtml(formatPreviewKeyMode(take))}</dd></div>
-              <div><dt>Region</dt><dd><span class="region-chip"><i style="background:${escapeHtml(getPreviewRegionColor(take))}"></i>${escapeHtml(formatPreviewRegion(take))}</span></dd></div>
-              <div><dt>Gain</dt><dd>${escapeHtml(formatPreviewGain(take.volume, take.clipGain))}</dd></div>
-              <div><dt>Latency</dt><dd>${escapeHtml(formatPreviewLatency(take.recordLatencyMs))}</dd></div>
-              <div><dt>Trim</dt><dd>${escapeHtml(formatPreviewTrim(take))}</dd></div>
-              <div><dt>Fade</dt><dd>${escapeHtml(formatPreviewFade(take))}</dd></div>
-              <div><dt>Chain</dt><dd>${escapeHtml(formatAutomationStateSummary(take.automationState, automationManifest))}</dd></div>
-            </dl>
-            <audio controls src="${escapeHtml(take.path)}"></audio>
-          </article>`,
-      )
-      .join("")
-    : `<p>No take audio assets exported.</p>`;
+  const takeRows = window.PunchLabProjectZip.buildProjectZipPreviewTakeRows(takes, automationManifest);
   const compRows = window.PunchLabProjectZip.buildProjectZipPreviewCompRows(compTakes);
   const handoffStageRows = window.PunchLabProjectZip.buildProjectZipPreviewHandoffRows(desktopReadiness);
   const pluginHostRows = window.PunchLabProjectZip.buildProjectZipPreviewPluginHostRows(pluginHost);
@@ -1479,38 +1448,6 @@ function summarizeProjectNotes(bundle = {}) {
   };
 }
 
-function formatPreviewGain(volume, clipGain) {
-  const gain = Math.max(0, Number(volume || 0) * Number(clipGain || 1));
-  return `${Math.round(gain * 100)}%`;
-}
-
-function getPreviewRegionColor(take) {
-  return normalizeRegionColor(take?.regionColor) || "#c8ff4d";
-}
-
-function formatPreviewRegion(take) {
-  return `${getRegionGroupLabel(take?.regionGroup)} / ${getPreviewRegionColor(take).toUpperCase()}`;
-}
-
-function formatPreviewLatency(recordLatencyMs) {
-  const latencyMs = Number(recordLatencyMs || 0);
-  return latencyMs > 0 ? `-${Math.round(latencyMs)} ms` : "None";
-}
-
-function formatPreviewTrim(take) {
-  const sourceOffset = Number(take?.sourceOffset || 0);
-  const sourceDuration = Number(take?.sourceDuration || 0);
-  return sourceOffset > 0 || sourceDuration > Number(take?.duration || 0)
-    ? `${formatDuration(sourceOffset)} offset / ${formatDuration(sourceDuration)} source`
-    : "Full source";
-}
-
-function formatPreviewFade(take) {
-  const fadeIn = Number(take?.fadeIn || 0);
-  const fadeOut = Number(take?.fadeOut || 0);
-  return fadeIn > 0 || fadeOut > 0 ? `In ${formatDuration(fadeIn)} / Out ${formatDuration(fadeOut)}` : "None";
-}
-
 function summarizeExportSettings() {
   const report = state.loudnessReport;
   const stale = report ? report.sourceSignature !== getMixSourceSignature() : false;
@@ -1652,39 +1589,6 @@ function getProjectEnvironment() {
   };
 }
 
-function formatPreviewRenderVersion(take) {
-  if (!take?.processed) {
-    return "Raw take";
-  }
-
-  return take.renderLabel || `${take.presetName || "Processed"} v${take.renderVersion || 1}`;
-}
-
-function formatPreviewSourceTake(take) {
-  if (!take?.processed) {
-    return "Original";
-  }
-
-  return take.sourceTakeName || take.sourceTakeId || "Unknown raw";
-}
-
-function formatPreviewPreset(take) {
-  return take?.processed ? take.presetName || take.presetId || "Processed" : "None";
-}
-
-function formatPreviewTune(take) {
-  return take?.processed ? take.tuneSignature || "Unknown tune" : "None";
-}
-
-function formatPreviewKeyMode(take) {
-  const chain = take?.chain || {};
-  if (!take?.processed) {
-    return "Project key";
-  }
-
-  return [chain.key, chain.scaleMode].filter(Boolean).join(" / ") || "Unknown key";
-}
-
 function summarizeProcessedChain(take) {
   if (!take?.processed) {
     return null;
@@ -1720,30 +1624,6 @@ function summarizeAutomationState(automationState) {
       value: Number(parameter.value || 0),
     })),
   };
-}
-
-function formatAutomationStateSummary(automationState, automationManifest = null) {
-  const count = automationState?.parameters?.length || 0;
-  if (!count) {
-    return "None";
-  }
-
-  const schema = new Map((automationManifest?.parameters || []).map((parameter) => [parameter.id, parameter]));
-  const highlights = ["retuneSpeed", "humanize", "formant", "comp"]
-    .map((id) => automationState.parameters.find((parameter) => parameter.id === id))
-    .filter(Boolean)
-    .map((parameter) => formatAutomationParameterValue(parameter, schema.get(parameter.id)))
-    .filter(Boolean);
-
-  return highlights.length ? `${count} params / ${highlights.join(" / ")}` : `${count} params`;
-}
-
-function formatAutomationParameterValue(parameter, schema = null) {
-  const label = schema?.label || parameter.id || parameter.automationId || "Param";
-  const unit = schema?.unit || "";
-  const value = Number(parameter.value);
-  const displayValue = Number.isFinite(value) ? value : 0;
-  return `${label} ${displayValue}${unit}`;
 }
 
 function reserveZipPath(usedPaths, requestedPath) {

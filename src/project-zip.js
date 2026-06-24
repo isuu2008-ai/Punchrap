@@ -9,6 +9,14 @@
     "manifest.json includes presets for vocal chain backup and transfer review.",
     "manifest.json includes notes and marker lyrics for read-only archive review.",
   ]);
+  const REGION_GROUPS = Object.freeze([
+    { id: "verse", label: "Verse" },
+    { id: "hook", label: "Hook" },
+    { id: "adlib", label: "Adlib" },
+    { id: "intro", label: "Intro" },
+    { id: "bridge", label: "Bridge" },
+    { id: "outro", label: "Outro" },
+  ]);
 
   function createProjectZipManifest({
     projectFilename = "session.punchlab.json",
@@ -278,6 +286,148 @@
       : "";
   }
 
+  function buildProjectZipPreviewTakeRows(takes = [], automationManifest = null) {
+    const safeTakes = Array.isArray(takes) ? takes : [];
+    return safeTakes.length
+      ? safeTakes
+        .map(
+          (take) => `
+          <article class="asset-card">
+            <div class="asset-heading">
+              <div>
+                <strong>${escapeHtml(take.name)}</strong>
+                <small>${escapeHtml(take.trackName)} / ${escapeHtml(getProjectZipRegionGroupLabel(take.regionGroup))}</small>
+              </div>
+              <span>${take.bestTake ? "Best" : take.processed ? "Tuned" : "Raw"}</span>
+            </div>
+            <dl>
+              <div><dt>Start</dt><dd>${escapeHtml(formatDuration(take.startTime))}</dd></div>
+              <div><dt>Length</dt><dd>${escapeHtml(formatDuration(take.duration))}</dd></div>
+              <div><dt>Version</dt><dd>${escapeHtml(formatProjectZipPreviewRenderVersion(take))}</dd></div>
+              <div><dt>Source</dt><dd>${escapeHtml(formatProjectZipPreviewSourceTake(take))}</dd></div>
+              <div><dt>Preset</dt><dd>${escapeHtml(formatProjectZipPreviewPreset(take))}</dd></div>
+              <div><dt>Tune</dt><dd>${escapeHtml(formatProjectZipPreviewTune(take))}</dd></div>
+              <div><dt>Key</dt><dd>${escapeHtml(formatProjectZipPreviewKeyMode(take))}</dd></div>
+              <div><dt>Region</dt><dd><span class="region-chip"><i style="background:${escapeHtml(getProjectZipPreviewRegionColor(take))}"></i>${escapeHtml(formatProjectZipPreviewRegion(take))}</span></dd></div>
+              <div><dt>Gain</dt><dd>${escapeHtml(formatProjectZipPreviewGain(take.volume, take.clipGain))}</dd></div>
+              <div><dt>Latency</dt><dd>${escapeHtml(formatProjectZipPreviewLatency(take.recordLatencyMs))}</dd></div>
+              <div><dt>Trim</dt><dd>${escapeHtml(formatProjectZipPreviewTrim(take))}</dd></div>
+              <div><dt>Fade</dt><dd>${escapeHtml(formatProjectZipPreviewFade(take))}</dd></div>
+              <div><dt>Chain</dt><dd>${escapeHtml(formatProjectZipAutomationStateSummary(take.automationState, automationManifest))}</dd></div>
+            </dl>
+            <audio controls src="${escapeHtml(take.path)}"></audio>
+          </article>`,
+        )
+        .join("")
+      : `<p>No take audio assets exported.</p>`;
+  }
+
+  function getProjectZipRegionGroupLabel(groupId) {
+    return REGION_GROUPS.find((group) => group.id === groupId)?.label || "Verse";
+  }
+
+  function normalizeRegionColor(value) {
+    const color = String(value || "").trim();
+    if (/^#[0-9a-f]{6}$/i.test(color)) {
+      return color.toLowerCase();
+    }
+
+    if (/^#[0-9a-f]{3}$/i.test(color)) {
+      return `#${color[1]}${color[1]}${color[2]}${color[2]}${color[3]}${color[3]}`.toLowerCase();
+    }
+
+    return "";
+  }
+
+  function formatProjectZipPreviewGain(volume, clipGain) {
+    const gain = Math.max(0, Number(volume || 0) * Number(clipGain || 1));
+    return `${Math.round(gain * 100)}%`;
+  }
+
+  function getProjectZipPreviewRegionColor(take) {
+    return normalizeRegionColor(take?.regionColor) || "#c8ff4d";
+  }
+
+  function formatProjectZipPreviewRegion(take) {
+    return `${getProjectZipRegionGroupLabel(take?.regionGroup)} / ${getProjectZipPreviewRegionColor(take).toUpperCase()}`;
+  }
+
+  function formatProjectZipPreviewLatency(recordLatencyMs) {
+    const latencyMs = Number(recordLatencyMs || 0);
+    return latencyMs > 0 ? `-${Math.round(latencyMs)} ms` : "None";
+  }
+
+  function formatProjectZipPreviewTrim(take) {
+    const sourceOffset = Number(take?.sourceOffset || 0);
+    const sourceDuration = Number(take?.sourceDuration || 0);
+    return sourceOffset > 0 || sourceDuration > Number(take?.duration || 0)
+      ? `${formatDuration(sourceOffset)} offset / ${formatDuration(sourceDuration)} source`
+      : "Full source";
+  }
+
+  function formatProjectZipPreviewFade(take) {
+    const fadeIn = Number(take?.fadeIn || 0);
+    const fadeOut = Number(take?.fadeOut || 0);
+    return fadeIn > 0 || fadeOut > 0 ? `In ${formatDuration(fadeIn)} / Out ${formatDuration(fadeOut)}` : "None";
+  }
+
+  function formatProjectZipPreviewRenderVersion(take) {
+    if (!take?.processed) {
+      return "Raw take";
+    }
+
+    return take.renderLabel || `${take.presetName || "Processed"} v${take.renderVersion || 1}`;
+  }
+
+  function formatProjectZipPreviewSourceTake(take) {
+    if (!take?.processed) {
+      return "Original";
+    }
+
+    return take.sourceTakeName || take.sourceTakeId || "Unknown raw";
+  }
+
+  function formatProjectZipPreviewPreset(take) {
+    return take?.processed ? take.presetName || take.presetId || "Processed" : "None";
+  }
+
+  function formatProjectZipPreviewTune(take) {
+    return take?.processed ? take.tuneSignature || "Unknown tune" : "None";
+  }
+
+  function formatProjectZipPreviewKeyMode(take) {
+    const chain = take?.chain || {};
+    if (!take?.processed) {
+      return "Project key";
+    }
+
+    return [chain.key, chain.scaleMode].filter(Boolean).join(" / ") || "Unknown key";
+  }
+
+  function formatProjectZipAutomationStateSummary(automationState, automationManifest = null) {
+    const count = automationState?.parameters?.length || 0;
+    if (!count) {
+      return "None";
+    }
+
+    const schema = new Map((automationManifest?.parameters || []).map((parameter) => [parameter.id, parameter]));
+    const highlights = ["retuneSpeed", "humanize", "formant", "comp"]
+      .map((id) => automationState.parameters.find((parameter) => parameter.id === id))
+      .filter(Boolean)
+      .map((parameter) => formatProjectZipAutomationParameterValue(parameter, schema.get(parameter.id)))
+      .filter(Boolean);
+
+    return highlights.length ? `${count} params / ${highlights.join(" / ")}` : `${count} params`;
+  }
+
+  function formatProjectZipAutomationParameterValue(parameter, schema = null) {
+    const label = schema?.label || parameter.id || parameter.automationId || "Param";
+    const unit = schema?.unit || "";
+    const value = Number(parameter.value);
+    const displayValue = Number.isFinite(value) ? value : 0;
+    return `${label} ${displayValue}${unit}`;
+  }
+
   function buildProjectZipPreviewMarkerRows(markers = []) {
     const safeMarkers = Array.isArray(markers) ? markers : [];
     return safeMarkers.length
@@ -515,6 +665,7 @@
     getProjectZipPreviewStyles,
     getProjectZipPreviewPlayerScript,
     buildProjectZipPreviewBeatSection,
+    buildProjectZipPreviewTakeRows,
     buildProjectZipPreviewMarkerRows,
     buildProjectZipPreviewCompRows,
     buildProjectZipPreviewAutomationSchemaRows,
