@@ -18,7 +18,7 @@ Then open `http://localhost:4173`.
 node .\scripts\check.mjs
 ```
 
-`package.json` also exposes `npm start` and `npm run check` for environments with npm installed.
+`package.json` also exposes `npm start`, `npm run check`, and `npm run desktop:check` for environments with npm installed.
 
 ## Current MVP
 
@@ -66,6 +66,7 @@ node .\scripts\check.mjs
 - PWA manifest, local icon, platform bootstrap, and service worker shell cache for desktop-install preparation
 - Desktop host manifest and runtime desktop-readiness diagnostics for future Tauri/Electron/native wrapper integration
 - Desktop wrapper manifest for shell size, permission, bridge, and handoff-stage planning
+- Desktop wrapper contract check for shell, permission, bridge, plugin, and handoff-stage requirements
 - Desktop readiness exposes wrapper handoff-stage progress for browser, desktop, native engine, and plugin host
 - Plugin host manifest separates VST3/AU scan, chain role, and automation contract planning
 - Native engine adapter exposes plugin-host scanning through `scanPluginHosts`

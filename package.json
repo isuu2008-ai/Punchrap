@@ -5,7 +5,8 @@
   "description": "Local rap vocal recorder and render studio prototype.",
   "scripts": {
     "start": "node server.mjs",
-    "check": "node scripts/check.mjs"
+    "check": "node scripts/check.mjs",
+    "desktop:check": "node scripts/check-desktop-contract.mjs"
   },
   "engines": {
     "node": ">=18"

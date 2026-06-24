@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 
 const syntaxFiles = [
   "server.mjs",
+  "scripts/check-desktop-contract.mjs",
   "app.js",
   "src/chain-params.js",
   "src/audio.js",
@@ -63,6 +64,13 @@ for (const file of syntaxFiles) {
   if (result.status !== 0) {
     failed = true;
   }
+}
+
+const desktopContractResult = spawnSync(process.execPath, ["scripts/check-desktop-contract.mjs"], {
+  stdio: "inherit",
+});
+if (desktopContractResult.status !== 0) {
+  failed = true;
 }
 
 const indexHtml = readFileSync("index.html", "utf8");

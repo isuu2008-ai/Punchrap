@@ -34,6 +34,8 @@
 - `src/native-adapter.js`가 native host bridge를 swappable engine interface로 연결
 - Desktop wrapper manifest 1차
 - Tauri/Electron wrapper에 필요한 shell, 권한, bridge, handoff stage 계약을 `desktop-wrapper-manifest.json`으로 분리
+- Desktop wrapper contract check 1차
+- shell size, local-first permission, native bridge, plugin host, handoff stage 조건을 `scripts/check-desktop-contract.mjs`에서 검증
 - Desktop wrapper readiness 1차
 - browser, desktop wrapper, native audio engine, plugin host handoff stage를 readiness 결과와 engine status title에 노출
 - Plugin host manifest 1차
