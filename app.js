@@ -36,6 +36,7 @@ const state = {
   mimeType: "",
   inputGain: 2,
   audioInputDeviceId: "",
+  audioOutputDeviceId: "",
   monitorEnabled: false,
   isExportingMix: false,
   isExportingAssets: false,
@@ -143,6 +144,7 @@ const els = {
   scaleModeSelect: document.querySelector("#scaleModeSelect"),
   targetMidiSelect: document.querySelector("#targetMidiSelect"),
   audioInputSelect: document.querySelector("#audioInputSelect"),
+  audioOutputSelect: document.querySelector("#audioOutputSelect"),
   inputGainSlider: document.querySelector("#inputGainSlider"),
   inputGainText: document.querySelector("#inputGainText"),
   micButton: document.querySelector("#micButton"),
@@ -305,7 +307,7 @@ function init() {
   renderLyrics();
   applyPreset("trap-hard");
   renderEngineStatus();
-  refreshAudioInputDevices();
+  refreshAudioDevices();
   updateTimelineHistoryButtons();
   updateInputGain();
   updatePunchControls();
@@ -316,7 +318,7 @@ function init() {
   window.addEventListener("resize", drawIdleWave);
   window.addEventListener("keydown", handleGlobalShortcut);
   window.addEventListener("punchlab:native-ready", renderEngineStatus);
-  navigator.mediaDevices?.addEventListener?.("devicechange", refreshAudioInputDevices);
+  navigator.mediaDevices?.addEventListener?.("devicechange", refreshAudioDevices);
   window.addEventListener("load", () => {
     if (window.lucide) {
       window.lucide.createIcons();
@@ -358,6 +360,7 @@ function bindEvents() {
   els.applyTemplateButton.addEventListener("click", applySelectedTemplate);
   els.inputGainSlider.addEventListener("input", updateInputGain);
   els.audioInputSelect.addEventListener("change", changeAudioInputDevice);
+  els.audioOutputSelect.addEventListener("change", changeAudioOutputDevice);
   els.punchToggle.addEventListener("click", togglePunchMode);
   els.loopToggle.addEventListener("click", toggleLoopMode);
   els.metronomeToggle.addEventListener("click", toggleMetronome);
@@ -595,43 +598,50 @@ function getBestMimeType() {
   return types.find((type) => !type || MediaRecorder.isTypeSupported(type)) || "";
 }
 
-async function refreshAudioInputDevices() {
-  if (!els.audioInputSelect || !navigator.mediaDevices?.enumerateDevices) {
+async function refreshAudioDevices() {
+  if (!window.PunchLabDevices?.listAudioDevices) {
     return;
   }
 
   try {
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    const inputs = devices.filter((device) => device.kind === "audioinput");
-    const selectedId = state.audioInputDeviceId || els.audioInputSelect.value || "";
-    const options = [
-      `<option value="">Default mic</option>`,
-      ...inputs.map((device, index) => {
-        const label = device.label || `Input ${index + 1}`;
-        return `<option value="${escapeHtml(device.deviceId)}">${escapeHtml(label)}</option>`;
-      }),
-    ];
-
-    els.audioInputSelect.innerHTML = options.join("");
-    els.audioInputSelect.value = inputs.some((device) => device.deviceId === selectedId) ? selectedId : "";
+    const [inputs, outputs] = await Promise.all([
+      window.PunchLabDevices.listAudioDevices("audioinput"),
+      window.PunchLabDevices.listAudioDevices("audiooutput"),
+    ]);
+    renderAudioDeviceSelect(els.audioInputSelect, inputs, state.audioInputDeviceId, "Default mic");
+    renderAudioDeviceSelect(els.audioOutputSelect, outputs, state.audioOutputDeviceId, "Default output");
+    if (els.audioOutputSelect) {
+      els.audioOutputSelect.disabled = !(
+        window.PunchLabDevices.canSetMediaOutput?.() || window.PunchLabDevices.canSetAudioContextOutput?.()
+      );
+    }
     state.audioInputDeviceId = els.audioInputSelect.value;
+    state.audioOutputDeviceId = els.audioOutputSelect.value;
   } catch (error) {
     console.error(error);
   }
 }
 
-function getMicConstraints() {
-  const audio = {
-    echoCancellation: false,
-    noiseSuppression: false,
-    autoGainControl: false,
-  };
-
-  if (state.audioInputDeviceId) {
-    audio.deviceId = { exact: state.audioInputDeviceId };
+function renderAudioDeviceSelect(select, devices, selectedId, defaultLabel) {
+  if (!select) {
+    return;
   }
 
-  return { audio };
+  const options = [
+    `<option value="">${defaultLabel}</option>`,
+    ...devices.map((device) => `<option value="${escapeHtml(device.id)}">${escapeHtml(device.label)}</option>`),
+  ];
+
+  select.innerHTML = options.join("");
+  select.value = devices.some((device) => device.id === selectedId) ? selectedId : "";
+}
+
+function getMicConstraints() {
+  if (window.PunchLabDevices?.getMicConstraints) {
+    return window.PunchLabDevices.getMicConstraints(state.audioInputDeviceId);
+  }
+
+  return { audio: true };
 }
 
 function releaseMicInput() {
@@ -675,6 +685,56 @@ async function changeAudioInputDevice() {
   await enableMic();
 }
 
+async function changeAudioOutputDevice() {
+  state.audioOutputDeviceId = els.audioOutputSelect.value;
+  scheduleAutosave();
+  const supported = await applyCurrentPlaybackOutput();
+  els.sessionState.textContent = supported
+    ? state.audioOutputDeviceId
+      ? "Output selected"
+      : "Default output"
+    : "Output routing unsupported";
+}
+
+async function applyPlaybackOutput(audio) {
+  let supported = false;
+
+  try {
+    if (window.PunchLabDevices?.setMediaOutput) {
+      supported = (await window.PunchLabDevices.setMediaOutput(audio, state.audioOutputDeviceId)) || supported;
+    }
+  } catch (error) {
+    els.sessionState.textContent = "Output switch failed";
+    console.error(error);
+  }
+
+  return supported;
+}
+
+async function applyAudioContextOutput() {
+  try {
+    if (window.PunchLabDevices?.setAudioContextOutput) {
+      return await window.PunchLabDevices.setAudioContextOutput(state.audioContext, state.audioOutputDeviceId);
+    }
+  } catch (error) {
+    console.error(error);
+  }
+
+  return false;
+}
+
+async function applyCurrentPlaybackOutput() {
+  const targets = [
+    els.beatAudio,
+    state.currentTakeAudio,
+    state.exportPreviewAudio,
+    ...state.sessionPlayers.map((player) => player.audio),
+  ].filter(Boolean);
+  const mediaResults = await Promise.all(targets.map((audio) => applyPlaybackOutput(audio)));
+  const contextResult = await applyAudioContextOutput();
+  return contextResult || mediaResults.some(Boolean);
+}
+
 async function ensureAudioContext() {
   if (!state.audioContext) {
     state.audioContext = new AudioContext();
@@ -684,6 +744,7 @@ async function ensureAudioContext() {
     await state.audioContext.resume();
   }
 
+  await applyAudioContextOutput();
   return state.audioContext;
 }
 
@@ -724,7 +785,7 @@ async function enableMic() {
     els.sessionState.textContent = "Mic ready";
     updateMonitorButton();
     updateInputGain();
-    refreshAudioInputDevices();
+    refreshAudioDevices();
     startMeter();
   } catch (error) {
     els.sessionState.textContent = "Mic blocked";
@@ -793,6 +854,7 @@ async function loadBeat(event) {
   state.beatFileName = file.name;
   state.beatUrl = URL.createObjectURL(file);
   els.beatAudio.src = state.beatUrl;
+  await applyPlaybackOutput(els.beatAudio);
   els.beatName.textContent = file.name;
   els.sessionState.textContent = "Beat loaded";
   updateExportButtons();
@@ -1145,6 +1207,7 @@ function applyLoadedProject(project) {
     state.beatFileName = project.beat.fileName;
     state.beatUrl = URL.createObjectURL(project.beat.blob);
     els.beatAudio.src = state.beatUrl;
+    applyPlaybackOutput(els.beatAudio);
     els.beatName.textContent = project.beat.fileName;
   } else {
     state.beatArrayBuffer = null;
@@ -1219,6 +1282,7 @@ function getProjectSettings() {
     customScaleIntervals: [...state.customScaleIntervals],
     inputGain: state.inputGain,
     audioInputDeviceId: state.audioInputDeviceId,
+    audioOutputDeviceId: state.audioOutputDeviceId,
     armedTrackId: state.armedTrackId,
     trackFolderCollapsed: normalizeTrackFolderCollapsed(state.trackFolderCollapsed),
     selectedPresetId: state.selectedPresetId,
@@ -1256,7 +1320,9 @@ function applyProjectSettings(settings = {}) {
   els.timelineSnapSelect.value = normalizeTimelineSnapMode(settings.timelineSnap || "off");
   els.inputGainSlider.value = settings.inputGain || 2;
   state.audioInputDeviceId = settings.audioInputDeviceId || "";
+  state.audioOutputDeviceId = settings.audioOutputDeviceId || "";
   els.audioInputSelect.value = state.audioInputDeviceId;
+  els.audioOutputSelect.value = state.audioOutputDeviceId;
   state.armedTrackId = tracks.some((track) => track.id === settings.armedTrackId)
     ? settings.armedTrackId
     : tracks[0]?.id || "main";
@@ -1446,6 +1512,7 @@ async function playSession() {
   if (els.beatAudio.src) {
     els.beatAudio.currentTime = origin;
     els.beatAudio.volume = 1;
+    await applyPlaybackOutput(els.beatAudio);
     try {
       await els.beatAudio.play();
     } catch (error) {
@@ -1514,6 +1581,7 @@ async function startSessionTake(take, offset) {
 
   const ctx = await ensureAudioContext();
   const audio = new Audio(take.url);
+  await applyPlaybackOutput(audio);
   const sourceOffset = getTakeSourceOffset(take);
   const remainingDuration = Math.max(0, takeDuration - offset);
   audio.currentTime = Math.max(0, Math.min(sourceOffset + offset, Math.max(0, sourceOffset + takeDuration - 0.05)));
@@ -1667,10 +1735,11 @@ async function playTake(takeId) {
   await playTakeAudio(take, `Playing ${take.trackName}`);
 }
 
-function playTakeAudio(take, label) {
+async function playTakeAudio(take, label) {
   stopCurrentTake(false);
   els.beatAudio.pause();
   const audio = new Audio(take.url);
+  await applyPlaybackOutput(audio);
   const takeDuration = getTakeVisibleDuration(take);
   audio.currentTime = getTakeSourceOffset(take);
   audio.volume = Math.min(1, getTakeClipGain(take));
@@ -4791,7 +4860,7 @@ function storeExportPreview(job, blob, filename) {
   job.previewName = filename;
 }
 
-function playExportPreview(jobId) {
+async function playExportPreview(jobId) {
   const job = state.exportQueue.find((item) => item.id === jobId);
   if (!job?.previewUrl) {
     els.sessionState.textContent = "No preview";
@@ -4804,6 +4873,7 @@ function playExportPreview(jobId) {
   stopExportPreview(false);
 
   const audio = new Audio(job.previewUrl);
+  await applyPlaybackOutput(audio);
   state.exportPreviewAudio = audio;
   audio.addEventListener("ended", () => {
     if (state.exportPreviewAudio === audio) {

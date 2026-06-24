@@ -42,6 +42,8 @@
 - Rolling project backup 기본형
 - IndexedDB에 최근 project backup 5개를 보관하고 Recover가 autosave 실패 시 최신 backup을 fallback으로 복원
 - Storage Layer `src/storage.js` 분리
+- Device Layer `src/devices.js` 분리
+- 브라우저 input/output 장치 목록, mic constraints, playback sink routing을 UI 밖 모듈로 분리
 - BPM 기반 metronome toggle
 - recording/session playback 중 metronome tick
 - Count-in 고도화 1차
@@ -55,6 +57,8 @@
 - 마이크 신호를 monitor gain node를 통해 destination으로 라우팅
 - Audio input device selector 1차
 - 브라우저에서 audioinput 장치를 선택하고 project bundle/autosave에 저장
+- Playback output device selector 1차
+- 지원 브라우저에서 beat/take/export preview와 AudioContext 출력 장치를 선택하고 project bundle/autosave에 저장
 - Custom vocal preset 저장
 - 저장한 preset 프로젝트 저장/복원
 - Vocal gate slider
