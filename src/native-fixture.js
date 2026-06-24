@@ -22,6 +22,22 @@
         audioOutput: [],
       };
     },
+    getLatencyStats() {
+      return {
+        inputLatencyMs: 6,
+        outputLatencyMs: 6,
+        roundTripLatencyMs: 12,
+        bufferSize: 128,
+        sampleRate: 48000,
+      };
+    },
+    setBufferSize(payload = {}) {
+      const requested = Number(payload.bufferSize || payload.size || 128);
+      return {
+        bufferSize: [64, 128, 256, 512, 1024].includes(requested) ? requested : 128,
+        sampleRate: 48000,
+      };
+    },
     startInputMonitor() {
       return { active: true, fixture: true };
     },

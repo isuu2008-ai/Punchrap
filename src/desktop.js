@@ -47,6 +47,7 @@
   function getReadiness() {
     const platform = window.PunchLabPlatform?.platform || {};
     const bridgeStatus = window.PunchLabNativeBridge?.getStatus?.() || null;
+    const nativeHost = window.PunchLabNativeBridge?.getNativeHost?.() || null;
     const engineDriver = window.PunchLabEngine?.getDriver?.() || null;
     const capabilities = engineDriver?.capabilities || {};
     const requiredCapabilities = window.PunchLabEngineContract?.getRequiredEngineCapabilities?.() || [];
@@ -87,6 +88,14 @@
           ? `Missing ${missingCapabilities.join(", ")}.`
           : `${engineDriver?.name || "Audio engine"} satisfies required render/export capabilities.`,
       ),
+      makeCheck(
+        "latency-buffer-control",
+        "Latency/buffer control",
+        hasNativeMethods(nativeHost, ["getLatencyStats", "setBufferSize"]) ? "ready" : "fallback",
+        hasNativeMethods(nativeHost, ["getLatencyStats", "setBufferSize"])
+          ? "Native host can report latency and change buffer size."
+          : "Browser fallback active; native host needs getLatencyStats and setBufferSize for low-latency tuning.",
+      ),
     ];
     const readyCount = checks.filter((check) => check.status === "ready").length;
 
@@ -94,6 +103,10 @@
       manifest: getManifest(),
       displayMode: platform.displayMode || "browser",
       bridgeStatus,
+      latencyControl: {
+        available: hasNativeMethods(nativeHost, ["getLatencyStats", "setBufferSize"]),
+        missingMethods: getMissingNativeMethods(nativeHost, ["getLatencyStats", "setBufferSize"]),
+      },
       engineDriver: engineDriver
         ? {
           id: engineDriver.id,
@@ -134,6 +147,17 @@
 
   function makeCheck(id, label, status, detail) {
     return { id, label, status, detail };
+  }
+
+  function hasNativeMethods(host, methods) {
+    return getMissingNativeMethods(host, methods).length === 0;
+  }
+
+  function getMissingNativeMethods(host, methods) {
+    if (!host) {
+      return [...methods];
+    }
+    return methods.filter((method) => typeof host[method] !== "function");
   }
 
   window.PunchLabDesktop = {
