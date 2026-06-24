@@ -447,6 +447,23 @@ h1 {
   margin: 12px 0;
 }
 
+.checkbox-row {
+  min-height: 38px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 9px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.checkbox-row input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--lime);
+}
+
 .export-panel {
   grid-template-rows: auto minmax(0, 1fr);
 }

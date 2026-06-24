@@ -37,6 +37,7 @@ const state = {
   exportQueue: [],
   exportJobSeq: 1,
   exportPreviewAudio: null,
+  lastExportNormalizeGain: 1,
   isRenderingVocal: false,
   autosaveTimer: 0,
   isAutosaving: false,
@@ -200,6 +201,7 @@ const els = {
   exportList: document.querySelector("#exportList"),
   exportArtistInput: document.querySelector("#exportArtistInput"),
   exportTitleInput: document.querySelector("#exportTitleInput"),
+  exportNormalizeInput: document.querySelector("#exportNormalizeInput"),
 };
 
 function init() {
@@ -306,6 +308,7 @@ function bindEvents() {
   els.exportTunedVocalsButton.addEventListener("click", exportTunedVocals);
   els.exportArtistInput.addEventListener("input", updateExportMetadata);
   els.exportTitleInput.addEventListener("input", updateExportMetadata);
+  els.exportNormalizeInput.addEventListener("change", updateExportMetadata);
   els.saveCustomPresetButton.addEventListener("click", saveCustomPreset);
 }
 
@@ -748,6 +751,7 @@ function getProjectSettings() {
     selectedPresetId: state.selectedPresetId,
     tune: getTuneSettings(),
     exportMetadata: getExportMetadata(),
+    exportNormalize: els.exportNormalizeInput.checked,
     punchEnabled: state.punchEnabled,
     loopEnabled: state.loopEnabled,
     metronomeEnabled: state.metronomeEnabled,
@@ -765,6 +769,7 @@ function applyProjectSettings(settings = {}) {
   state.customScaleIntervals = normalizeScaleIntervals(settings.customScaleIntervals);
   els.exportArtistInput.value = settings.exportMetadata?.artist || "";
   els.exportTitleInput.value = settings.exportMetadata?.title || "";
+  els.exportNormalizeInput.checked = settings.exportNormalize !== false;
   els.inputGainSlider.value = settings.inputGain || 2;
   state.armedTrackId = tracks.some((track) => track.id === settings.armedTrackId)
     ? settings.armedTrackId
@@ -2686,6 +2691,7 @@ function renderExportPanel() {
     { label: "Dry vocals", count: getAllTakes().filter((take) => !take.processed).length, unit: "source" },
     { label: "Tuned vocals", count: getAllTakes().filter((take) => take.processed).length, unit: "source" },
     { label: "Metadata", count: [metadata.artist, metadata.title, metadata.bpm, metadata.key].filter(Boolean).length, unit: "field" },
+    { label: "Normalize", count: els.exportNormalizeInput.checked ? `On ${formatGainDb(state.lastExportNormalizeGain)}` : "Off", unit: "" },
   ];
   const jobs = state.exportQueue.slice(-8).reverse();
 
@@ -2694,7 +2700,7 @@ function renderExportPanel() {
       (row) => `
         <div class="export-row">
           <strong>${row.label}</strong>
-          <small>${row.count} ${row.unit}${row.count === 1 ? "" : "s"}</small>
+          <small>${formatExportRowCount(row)}</small>
         </div>
       `,
     )
@@ -2728,6 +2734,14 @@ function renderExportPanel() {
   els.exportList.querySelectorAll("[data-preview-export]").forEach((button) => {
     button.addEventListener("click", () => playExportPreview(button.dataset.previewExport));
   });
+}
+
+function formatExportRowCount(row) {
+  if (typeof row.count === "string") {
+    return row.count;
+  }
+
+  return `${row.count} ${row.unit}${row.count === 1 ? "" : "s"}`;
 }
 
 function updateExportMetadata() {
@@ -3166,7 +3180,7 @@ async function renderFullMixBlob() {
     scheduleBuffer(renderContext, buffer, take.startTime || 0, getTrackOutputVolume(track), track.pan, take);
   });
 
-  return encodeWav(await renderContext.startRendering(), getExportMetadata());
+  return encodeWav(applyExportNormalize(await renderContext.startRendering()), getExportMetadata());
 }
 
 async function exportTrackStems() {
@@ -3413,7 +3427,7 @@ async function renderTakeMixBlob(takes, includeBeat = false) {
     scheduleBuffer(renderContext, buffer, take.startTime || 0, getTrackOutputVolume(track), track.pan, take);
   });
 
-  return encodeWav(await renderContext.startRendering(), getExportMetadata());
+  return encodeWav(applyExportNormalize(await renderContext.startRendering()), getExportMetadata());
 }
 
 function getStemExportGroups() {
@@ -3465,6 +3479,41 @@ function scheduleBuffer(context, buffer, startTime, volume, pan, take = null) {
   }
 
   source.start(Math.max(0, startTime));
+}
+
+function applyExportNormalize(audioBuffer) {
+  if (!els.exportNormalizeInput.checked) {
+    state.lastExportNormalizeGain = 1;
+    return audioBuffer;
+  }
+
+  const peak = getAudioBufferPeak(audioBuffer);
+  if (peak <= 0.000001) {
+    state.lastExportNormalizeGain = 1;
+    return audioBuffer;
+  }
+
+  const targetPeak = Math.pow(10, -1 / 20);
+  const gain = targetPeak / peak;
+  state.lastExportNormalizeGain = gain;
+  for (let channel = 0; channel < audioBuffer.numberOfChannels; channel += 1) {
+    const data = audioBuffer.getChannelData(channel);
+    for (let index = 0; index < data.length; index += 1) {
+      data[index] = Math.max(-1, Math.min(1, data[index] * gain));
+    }
+  }
+  return audioBuffer;
+}
+
+function getAudioBufferPeak(audioBuffer) {
+  let peak = 0;
+  for (let channel = 0; channel < audioBuffer.numberOfChannels; channel += 1) {
+    const data = audioBuffer.getChannelData(channel);
+    for (let index = 0; index < data.length; index += 1) {
+      peak = Math.max(peak, Math.abs(data[index]));
+    }
+  }
+  return peak;
 }
 
 function encodeWav(audioBuffer, metadata = null) {

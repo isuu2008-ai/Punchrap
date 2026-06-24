@@ -37,6 +37,7 @@ Then open `http://localhost:4173`.
 - Export preview playback from completed queue jobs
 - Project zip export containing the current `.punchlab.json` bundle
 - Recording waveform capture with saved take waveform thumbnails
+- Export peak normalization to -1 dBFS
 - IndexedDB autosave with project recovery
 - BPM-based metronome toggle for recording and session playback
 - Global shortcuts for transport, metronome, stop, and tab switching outside text inputs
@@ -55,7 +56,7 @@ See [COMMERCIAL_STUDIO_ROADMAP.md](./COMMERCIAL_STUDIO_ROADMAP.md) for the comme
 
 ## Next DSP Steps
 
-- Export loudness normalize
+- Comp lane editing
 - Formant-aware pitch shifting
 - Better EQ, compressor, delay, reverb, and limiter controls
-- Comp lane editing
+- Project bundle zip upgrade
