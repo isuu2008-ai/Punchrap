@@ -35,6 +35,7 @@ const state = {
   isExportQueueRunning: false,
   exportQueue: [],
   exportJobSeq: 1,
+  exportPreviewAudio: null,
   isRenderingVocal: false,
   autosaveTimer: 0,
   isAutosaving: false,
@@ -1261,6 +1262,7 @@ function stopAll() {
   stopTakeQueue(false);
   stopSessionPlayback(false, true);
   stopCurrentTake();
+  stopExportPreview(false);
   els.beatAudio.pause();
   els.beatAudio.currentTime = 0;
   els.sessionState.textContent = "Stopped";
@@ -2528,9 +2530,12 @@ function renderExportPanel() {
           <div class="export-row export-job-row ${job.status}">
             <div>
               <strong>${escapeHtml(job.label)}</strong>
-              <small>${escapeHtml(job.detail || getExportJobStatusLabel(job.status))}</small>
+              <small>${escapeHtml(job.previewName || job.detail || getExportJobStatusLabel(job.status))}</small>
             </div>
-            <span>${getExportJobStatusLabel(job.status)}</span>
+            <div class="export-job-actions">
+              <span>${getExportJobStatusLabel(job.status)}</span>
+              ${job.previewUrl ? `<button class="mini-button" type="button" data-preview-export="${job.id}">Preview</button>` : ""}
+            </div>
           </div>
         `,
       )
@@ -2543,6 +2548,10 @@ function renderExportPanel() {
     <div class="export-section-heading">Queue</div>
     ${queueRows}
   `;
+
+  els.exportList.querySelectorAll("[data-preview-export]").forEach((button) => {
+    button.addEventListener("click", () => playExportPreview(button.dataset.previewExport));
+  });
 }
 
 function updateExportMetadata() {
@@ -3100,6 +3109,7 @@ async function runExportQueue() {
 async function executeExportJob(job) {
   if (job.type === "mix") {
     const wavBlob = await renderFullMixBlob();
+    storeExportPreview(job, wavBlob, job.filename);
     downloadBlob(wavBlob, job.filename);
     return;
   }
@@ -3110,7 +3120,61 @@ async function executeExportJob(job) {
     els.exportStatusText.textContent = job.detail;
     renderExportPanel();
     const wavBlob = await renderTakeMixBlob(group.takes, group.includeBeat);
+    storeExportPreview(job, wavBlob, group.filename);
     downloadBlob(wavBlob, group.filename);
+  }
+}
+
+function storeExportPreview(job, blob, filename) {
+  if (job.previewUrl) {
+    URL.revokeObjectURL(job.previewUrl);
+  }
+
+  job.previewUrl = URL.createObjectURL(blob);
+  job.previewName = filename;
+}
+
+function playExportPreview(jobId) {
+  const job = state.exportQueue.find((item) => item.id === jobId);
+  if (!job?.previewUrl) {
+    els.sessionState.textContent = "No preview";
+    return;
+  }
+
+  stopTakeQueue(false);
+  stopSessionPlayback(false);
+  stopCurrentTake(false);
+  stopExportPreview(false);
+
+  const audio = new Audio(job.previewUrl);
+  state.exportPreviewAudio = audio;
+  audio.addEventListener("ended", () => {
+    if (state.exportPreviewAudio === audio) {
+      state.exportPreviewAudio = null;
+      els.sessionState.textContent = "Preview ended";
+    }
+  });
+  audio
+    .play()
+    .then(() => {
+      els.sessionState.textContent = `Preview ${job.label}`;
+    })
+    .catch((error) => {
+      state.exportPreviewAudio = null;
+      els.sessionState.textContent = "Preview blocked";
+      console.error(error);
+    });
+}
+
+function stopExportPreview(shouldRender = true) {
+  if (state.exportPreviewAudio) {
+    state.exportPreviewAudio.pause();
+    state.exportPreviewAudio.currentTime = 0;
+  }
+
+  state.exportPreviewAudio = null;
+  if (shouldRender) {
+    renderExportPanel();
   }
 }
 
@@ -3127,6 +3191,11 @@ function trimExportQueue() {
     .slice(0, overflow)
     .map(({ index }) => index);
 
+  state.exportQueue.forEach((job, index) => {
+    if (removable.includes(index) && job.previewUrl) {
+      URL.revokeObjectURL(job.previewUrl);
+    }
+  });
   state.exportQueue = state.exportQueue.filter((_, index) => !removable.includes(index));
 }
 
