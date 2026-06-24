@@ -10,7 +10,8 @@
   "entry": {
     "webEntry": "index.html",
     "devServer": "http://localhost:4173",
-    "productionDir": "."
+    "productionDir": ".",
+    "tauriConfig": "src-tauri/tauri.conf.json"
   },
   "requiredArtifacts": [
     "index.html",
@@ -18,6 +19,7 @@
     "desktop-host-manifest.json",
     "desktop-wrapper-manifest.json",
     "plugin-host-manifest.json",
+    "src-tauri/tauri.conf.json",
     "src/engine-contract.js",
     "src/native-bridge.js",
     "src/native-adapter.js",
@@ -28,7 +30,7 @@
     {
       "id": "wrapper-scaffold",
       "label": "Create Tauri/Electron shell",
-      "status": "planned"
+      "status": "scaffolded"
     },
     {
       "id": "file-association",

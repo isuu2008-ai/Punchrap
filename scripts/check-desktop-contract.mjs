@@ -4,6 +4,7 @@ const wrapper = readJson("desktop-wrapper-manifest.json");
 const host = readJson("desktop-host-manifest.json");
 const plugin = readJson("plugin-host-manifest.json");
 const packageManifest = readJson("desktop-package-manifest.json");
+const tauriConfig = readJson("src-tauri/tauri.conf.json");
 const indexHtml = readFileSync("index.html", "utf8");
 const desktopSource = readFileSync("src/desktop.js", "utf8");
 let failed = false;
@@ -39,6 +40,7 @@ requireString(wrapper.appId, "wrapper.appId");
 requireString(wrapper.appName, "wrapper.appName");
 requireString(wrapper.shell?.entry, "wrapper.shell.entry");
 requireString(wrapper.shell?.windowTitle, "wrapper.shell.windowTitle");
+requireString(wrapper.shell?.tauriConfig, "wrapper.shell.tauriConfig");
 
 const requiredMeta = {
   "punchlab-desktop-manifest": "./desktop-host-manifest.json",
@@ -116,6 +118,9 @@ if (packageManifest.entry?.webEntry !== wrapper.shell?.entry) {
 if (packageManifest.entry?.devServer !== wrapper.shell?.devServer) {
   fail("Desktop package dev server must match wrapper shell devServer.");
 }
+if (packageManifest.entry?.tauriConfig !== wrapper.shell?.tauriConfig) {
+  fail("Desktop package Tauri config path must match wrapper shell tauriConfig.");
+}
 if (packageManifest.preferredWrapper?.framework !== "Tauri") {
   fail("Desktop package manifest must keep Tauri as the preferred wrapper.");
 }
@@ -130,6 +135,9 @@ for (const artifact of ["desktop-package-manifest.json", "desktop-host-manifest.
   if (!packageArtifacts.includes(artifact)) {
     fail(`Desktop package manifest must list required artifact: ${artifact}`);
   }
+}
+if (!packageArtifacts.includes(wrapper.shell?.tauriConfig)) {
+  fail("Desktop package manifest must list the Tauri shell config artifact.");
 }
 
 const packageStageIds = new Set((packageManifest.packagingStages || []).map((stage) => stage.id));
@@ -206,6 +214,45 @@ if (!desktopSource.includes("nativeAudioEngine") || !desktopSource.includes("get
 }
 if (!desktopSource.includes("packageManifestPath")) {
   fail("Desktop runtime manifest must expose the desktop package manifest path.");
+}
+if (!desktopSource.includes("tauriConfig")) {
+  fail("Desktop runtime manifest must expose the Tauri config path.");
+}
+
+if (tauriConfig.$schema !== "https://schema.tauri.app/config/2") {
+  fail("Tauri config must use the Tauri v2 schema.");
+}
+if (tauriConfig.identifier !== wrapper.appId || tauriConfig.identifier !== packageManifest.appId) {
+  fail("Tauri config identifier must match PunchLab desktop appId.");
+}
+if (tauriConfig.productName !== wrapper.appName || tauriConfig.productName !== packageManifest.appName) {
+  fail("Tauri config productName must match PunchLab desktop appName.");
+}
+if (tauriConfig.build?.devUrl !== wrapper.shell?.devServer) {
+  fail("Tauri config devUrl must match the desktop wrapper dev server.");
+}
+if (tauriConfig.build?.frontendDist !== "../") {
+  fail("Tauri config frontendDist must point to the static PunchLab shell.");
+}
+const mainWindow = (tauriConfig.app?.windows || []).find((windowConfig) => windowConfig.label === "main");
+if (!mainWindow) {
+  fail("Tauri config must define a main window.");
+} else {
+  if (mainWindow.title !== wrapper.shell?.windowTitle) {
+    fail("Tauri main window title must match wrapper shell windowTitle.");
+  }
+  if (Number(mainWindow.minWidth || 0) !== Number(wrapper.shell?.minWidth || 0)) {
+    fail("Tauri main window minWidth must match wrapper shell minWidth.");
+  }
+  if (Number(mainWindow.minHeight || 0) !== Number(wrapper.shell?.minHeight || 0)) {
+    fail("Tauri main window minHeight must match wrapper shell minHeight.");
+  }
+}
+const tauriResources = tauriConfig.bundle?.resources || [];
+for (const resource of ["../desktop-host-manifest.json", "../desktop-wrapper-manifest.json", "../desktop-package-manifest.json", "../plugin-host-manifest.json"]) {
+  if (!tauriResources.includes(resource)) {
+    fail(`Tauri bundle resources must include ${resource}.`);
+  }
 }
 
 if (failed) {

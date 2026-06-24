@@ -54,6 +54,7 @@ const requiredFiles = [
   "desktop-wrapper-manifest.json",
   "plugin-host-manifest.json",
   "desktop-package-manifest.json",
+  "src-tauri/tauri.conf.json",
   "assets/punchlab-icon.svg",
   "sw.js",
 ];

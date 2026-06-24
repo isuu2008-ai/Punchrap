@@ -77,7 +77,9 @@ node .\scripts\check.mjs
 - PWA manifest, local icon, platform bootstrap, and service worker shell cache for desktop-install preparation
 - Desktop host manifest and runtime desktop-readiness diagnostics for future Tauri/Electron/native wrapper integration
 - Desktop wrapper manifest for shell size, permission, bridge, and handoff-stage planning
+- Tauri shell config scaffold at `src-tauri/tauri.conf.json` for the first desktop wrapper boundary
 - Desktop wrapper contract check for shell, permission, bridge, plugin, and handoff-stage requirements
+- Desktop contract check validates the Tauri app id, dev server, main window, and bundled manifest resources
 - Desktop contract check verifies HTML manifest meta tags and host contract file paths
 - Desktop contract check verifies native output routing permission and `setOutputDevice` alignment
 - Native project save/open handoff through optional `saveProjectFile` and `openProjectFile`

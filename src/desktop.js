@@ -20,7 +20,7 @@
 
   const WRAPPER_HANDOFF_STAGES = [
     { id: "browser-shell", label: "Browser shell", status: "ready" },
-    { id: "desktop-wrapper", label: "Tauri/Electron wrapper", status: "planned" },
+    { id: "desktop-wrapper", label: "Tauri/Electron wrapper", status: "scaffolded" },
     { id: "native-audio-engine", label: "Native low-latency audio engine", status: "planned" },
     { id: "plugin-host", label: "VST3/AU plugin host", status: "planned" },
   ];
@@ -49,6 +49,7 @@
       wrapper: {
         shell: {
           entry: "index.html",
+          tauriConfig: "src-tauri/tauri.conf.json",
           minWidth: 1180,
           minHeight: 760,
         },

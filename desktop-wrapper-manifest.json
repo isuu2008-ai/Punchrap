@@ -6,6 +6,7 @@
   "shell": {
     "devServer": "http://localhost:4173",
     "entry": "index.html",
+    "tauriConfig": "src-tauri/tauri.conf.json",
     "windowTitle": "PunchLab",
     "minWidth": 1180,
     "minHeight": 760
@@ -51,7 +52,7 @@
     {
       "id": "desktop-wrapper",
       "label": "Tauri/Electron wrapper",
-      "status": "planned"
+      "status": "scaffolded"
     },
     {
       "id": "native-audio-engine",
