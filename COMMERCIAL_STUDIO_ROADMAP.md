@@ -96,6 +96,8 @@
 - Rust Tauri shell에 `set_output_device` command를 추가하되 native audio engine 미준비 상태에서는 `unsupported=true`를 반환
 - Tauri compressed-export shell command 1차
 - Rust Tauri shell에 `export_compressed_audio` command를 추가하되 native MP3/M4A encoder 미준비 상태에서는 `unsupported=true`를 반환
+- Tauri plugin-scan shell command 1차
+- Rust Tauri shell에 `scan_plugin_hosts` command를 추가하되 real plugin host 미준비 상태에서는 빈 VST3/AU scan 결과와 `plugin_host_ready=false`를 반환
 - Tauri main capability scaffold 1차
 - `src-tauri/capabilities/main.json`에 main window, core/dialog/fs 기본 permission 계약을 추가
 - Desktop wrapper contract check 1차

@@ -107,6 +107,8 @@
             "setBufferSize",
             "openProjectFile",
             "saveProjectFile",
+            "exportCompressedAudio",
+            "scanPluginHosts",
           ],
           nativeBridgeReady: false,
           activatesNativeBridgeWhen: "nativeBridgeReady",

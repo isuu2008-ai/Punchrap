@@ -118,7 +118,7 @@ if (wrapper.tauriBridge?.activatesNativeBridgeWhen !== "nativeBridgeReady") {
 if (wrapper.tauriBridge?.nativeBridgeReady !== false || packageManifest.tauriBridge?.nativeBridgeReady !== false) {
   fail("Tauri bridge manifests must keep nativeBridgeReady false until render and monitoring commands exist.");
 }
-for (const method of ["getCapabilities", "getDevices", "getLatencyStats", "setOutputDevice", "setBufferSize", "openProjectFile", "saveProjectFile", "exportCompressedAudio"]) {
+for (const method of ["getCapabilities", "getDevices", "getLatencyStats", "setOutputDevice", "setBufferSize", "openProjectFile", "saveProjectFile", "exportCompressedAudio", "scanPluginHosts"]) {
   if (!wrapper.tauriBridge?.implementedMethods?.includes(method) || !packageManifest.tauriBridge?.implementedMethods?.includes(method)) {
     fail(`Tauri bridge manifests must list implemented method ${method}.`);
   }
@@ -360,6 +360,7 @@ for (const requiredSnippet of [
   "set_output_device",
   "set_buffer_size",
   "export_compressed_audio",
+  "scan_plugin_hosts",
   "open_project_file",
   "save_project_file",
   "PunchLabBridgeStatus",
@@ -367,6 +368,7 @@ for (const requiredSnippet of [
   "PunchLabDevices",
   "OutputDeviceResult",
   "CompressedAudioExportResult",
+  "PluginScanResult",
   "NativeAudioState",
   "PunchLabLatencyStats",
   "SetBufferSizePayload",
@@ -381,6 +383,7 @@ for (const requiredSnippet of [
   "openProjectFile",
   "saveProjectFile",
   "exportCompressedAudio",
+  "scanPluginHosts",
   "implemented_methods: IMPLEMENTED_NATIVE_METHODS.to_vec()",
   "native_audio_engine_ready: false",
   "realtime_native_monitoring: false",
@@ -392,6 +395,9 @@ for (const requiredSnippet of [
   "state.set_buffer_size(buffer_size)",
   "normalize_compressed_format",
   "compressed_audio_export: false",
+  "plugin_host_ready: false",
+  "plugin_host: false",
+  "default_plugin_scan_formats",
   "SUPPORTED_BUFFER_SIZES",
   "audio_input: Vec::new()",
   "audio_output: Vec::new()",
@@ -408,6 +414,7 @@ for (const requiredSnippet of [
   "set_output_device,",
   "set_buffer_size,",
   "export_compressed_audio,",
+  "scan_plugin_hosts,",
   "open_project_file,",
   "save_project_file",
   ".manage(NativeAudioState::default())",

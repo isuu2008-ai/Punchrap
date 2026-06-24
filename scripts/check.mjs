@@ -189,12 +189,20 @@ if (!tauriLibSource.includes("export_compressed_audio") || !tauriLibSource.inclu
   console.error("Tauri Rust shell must expose compressed export handoff while keeping real encoding unsupported.");
   failed = true;
 }
+if (!tauriLibSource.includes("scan_plugin_hosts") || !tauriLibSource.includes("PluginScanResult") || !tauriLibSource.includes("plugin_host_ready: false")) {
+  console.error("Tauri Rust shell must expose plugin scan handoff while keeping plugin host capability false.");
+  failed = true;
+}
 if (!tauriLibSource.includes("round_trip_latency_ms: None") || !tauriLibSource.includes("source: \"tauri-shell\"")) {
   console.error("Tauri latency scaffold must keep actual native audio latency unset until the audio engine exists.");
   failed = true;
 }
 if (!tauriLibSource.includes("compressed_audio_export: false")) {
   console.error("Tauri compressed export scaffold must keep compressedAudioExport capability false until encoding exists.");
+  failed = true;
+}
+if (!tauriLibSource.includes("plugin_host: false")) {
+  console.error("Tauri plugin scan scaffold must keep pluginHost capability false until plugin hosting exists.");
   failed = true;
 }
 if (!tauriLibSource.includes("native_bridge_ready: false") || !tauriLibSource.includes("native_audio_engine_ready: false")) {

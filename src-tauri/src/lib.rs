@@ -20,7 +20,7 @@ const PLANNED_NATIVE_METHODS: [&str; 13] = [
     "scanPluginHosts",
 ];
 
-const IMPLEMENTED_NATIVE_METHODS: [&str; 8] = [
+const IMPLEMENTED_NATIVE_METHODS: [&str; 9] = [
     "getCapabilities",
     "getDevices",
     "getLatencyStats",
@@ -29,6 +29,7 @@ const IMPLEMENTED_NATIVE_METHODS: [&str; 8] = [
     "openProjectFile",
     "saveProjectFile",
     "exportCompressedAudio",
+    "scanPluginHosts",
 ];
 
 const SUPPORTED_BUFFER_SIZES: [u32; 5] = [64, 128, 256, 512, 1024];
@@ -178,6 +179,31 @@ struct CompressedAudioExportResult {
     native_audio_engine_ready: bool,
     supported: bool,
     unsupported: bool,
+    source: &'static str,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ScanPluginHostsPayload {
+    formats: Option<Vec<String>>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct PluginScanItem {
+    id: String,
+    name: String,
+    format: String,
+    path: Option<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct PluginScanResult {
+    formats: Vec<String>,
+    plugins: Vec<PluginScanItem>,
+    plugin_host_ready: bool,
+    scanned_at: Option<String>,
     source: &'static str,
 }
 
@@ -332,6 +358,23 @@ fn export_compressed_audio(
 }
 
 #[tauri::command]
+fn scan_plugin_hosts(payload: Option<ScanPluginHostsPayload>) -> PluginScanResult {
+    let formats = payload
+        .and_then(|value| value.formats)
+        .map(normalize_plugin_scan_formats)
+        .filter(|value| !value.is_empty())
+        .unwrap_or_else(default_plugin_scan_formats);
+
+    PluginScanResult {
+        formats,
+        plugins: Vec::new(),
+        plugin_host_ready: false,
+        scanned_at: None,
+        source: "tauri-shell",
+    }
+}
+
+#[tauri::command]
 async fn open_project_file(
     app: tauri::AppHandle,
     payload: Option<OpenProjectFilePayload>,
@@ -442,6 +485,26 @@ fn compressed_mime_type(format: &str) -> &'static str {
     }
 }
 
+fn default_plugin_scan_formats() -> Vec<String> {
+    vec!["VST3".to_string(), "AU".to_string()]
+}
+
+fn normalize_plugin_scan_formats(formats: Vec<String>) -> Vec<String> {
+    let mut normalized = Vec::new();
+    for format in formats {
+        let value = format.trim().to_ascii_uppercase();
+        let format = match value.as_str() {
+            "VST3" => "VST3",
+            "AU" | "AUDIOUNIT" | "AUDIO UNIT" => "AU",
+            _ => continue,
+        };
+        if !normalized.iter().any(|item| item.as_str() == format) {
+            normalized.push(format.to_string());
+        }
+    }
+    normalized
+}
+
 fn make_latency_stats(state: &NativeAudioState) -> PunchLabLatencyStats {
     PunchLabLatencyStats {
         input_latency_ms: None,
@@ -468,6 +531,7 @@ pub fn run() {
             set_output_device,
             set_buffer_size,
             export_compressed_audio,
+            scan_plugin_hosts,
             open_project_file,
             save_project_file
         ])
