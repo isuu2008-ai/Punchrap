@@ -83,6 +83,8 @@
     const hasLatencyControl = missingLatencyMethods.length === 0;
     const missingProjectFileMethods = getMissingOptionalMethods(bridgeStatus, ["openProjectFile", "saveProjectFile"]);
     const hasProjectFileHandoff = missingProjectFileMethods.length === 0;
+    const missingCompressedExportMethods = getMissingOptionalMethods(bridgeStatus, ["exportCompressedAudio"]);
+    const hasCompressedExportMethod = missingCompressedExportMethods.length === 0;
     const missingPluginMethods = getMissingOptionalMethods(bridgeStatus, ["scanPluginHosts"]);
     const hasPluginScan = missingPluginMethods.length === 0;
     const handoffStages = getWrapperHandoffStages(bridgeStatus, capabilities);
@@ -139,6 +141,14 @@
           : "Browser fallback active; native host needs getLatencyStats and setBufferSize for low-latency tuning.",
       ),
       makeCheck(
+        "compressed-export-handoff",
+        "Compressed export handoff",
+        hasCompressedExportMethod ? "ready" : "fallback",
+        hasCompressedExportMethod
+          ? "Native host can receive compressed MP3/M4A export requests."
+          : "MP3/M4A export waits for native exportCompressedAudio support.",
+      ),
+      makeCheck(
         "plugin-host-scan",
         "Plugin host scan",
         hasPluginScan ? "ready" : "fallback",
@@ -161,6 +171,11 @@
         nativeAvailable: hasProjectFileHandoff,
         missingMethods: missingProjectFileMethods,
         browserFileSystemAccess: Boolean(window.PunchLabFiles?.supportsFileSystemAccess?.()),
+      },
+      compressedExport: {
+        methodAvailable: hasCompressedExportMethod,
+        capabilityReady: capabilities.compressedAudioExport === true,
+        missingMethods: missingCompressedExportMethods,
       },
       pluginHost: {
         scanAvailable: hasPluginScan,
