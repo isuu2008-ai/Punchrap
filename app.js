@@ -69,6 +69,9 @@ const state = {
   punchTimers: [],
   isPunchWaiting: false,
   isPunchRecording: false,
+  isLoopRecording: false,
+  currentLoopCycle: false,
+  loopRecordTakeCount: 0,
   markers: [
     { id: "marker-intro", type: "Intro", time: 0 },
     { id: "marker-verse", type: "Verse", time: 16 },
@@ -1632,6 +1635,8 @@ function stopCurrentTake(shouldRender = true) {
 }
 
 function stopAll() {
+  state.isLoopRecording = false;
+  state.currentLoopCycle = false;
   if (state.isRecording) {
     stopRecording();
   }
@@ -1648,11 +1653,13 @@ function stopAll() {
 
 async function toggleRecord() {
   if (state.isRecording) {
+    state.isLoopRecording = false;
     stopRecording();
     return;
   }
 
   if (state.isPunchWaiting) {
+    state.isLoopRecording = false;
     cancelPunchWait();
     els.sessionState.textContent = "Punch canceled";
     return;
@@ -1667,7 +1674,9 @@ async function toggleRecord() {
   }
 
   if (state.punchEnabled) {
-    startPunchRecording();
+    state.isLoopRecording = state.loopEnabled && state.punchOut > state.punchIn;
+    state.loopRecordTakeCount = 0;
+    startPunchRecording({ loopCycle: state.isLoopRecording });
     return;
   }
 
@@ -1679,9 +1688,10 @@ async function toggleRecord() {
   startRecording();
 }
 
-async function startPunchRecording() {
+async function startPunchRecording(options = {}) {
   if (state.punchOut <= state.punchIn) {
     els.sessionState.textContent = "Set punch out";
+    state.isLoopRecording = false;
     return;
   }
 
@@ -1691,7 +1701,7 @@ async function startPunchRecording() {
   clearPunchTimers();
   await ensureAudioContext();
 
-  const preRoll = getCountInSeconds();
+  const preRoll = options.skipPreRoll ? 0 : getCountInSeconds();
   const punchIn = state.punchIn;
   const punchOut = state.punchOut;
   const playStart = Math.max(0, punchIn - preRoll);
@@ -1700,7 +1710,7 @@ async function startPunchRecording() {
 
   state.isPunchWaiting = true;
   els.recordButton.classList.add("armed");
-  els.sessionState.textContent = "Punch armed";
+  els.sessionState.textContent = options.loopCycle ? "Loop record armed" : "Punch armed";
 
   if (els.beatAudio.src) {
     els.beatAudio.currentTime = playStart;
@@ -1722,6 +1732,7 @@ async function startPunchRecording() {
       keepBeat: true,
       autoStopAfter: durationMs,
       punch: true,
+      loopCycle: Boolean(options.loopCycle),
     });
   }, waitMs);
 
@@ -1770,10 +1781,13 @@ function startRecording(options = {}) {
   state.recordStartPosition = Number.isFinite(options.startPosition) ? options.startPosition : getCurrentSessionPosition();
   state.recordWaveform = [];
   state.isPunchRecording = Boolean(options.punch);
+  state.currentLoopCycle = Boolean(options.loopCycle);
   state.mediaRecorder.start(250);
   state.isRecording = true;
   els.recordButton.classList.add("active");
-  els.sessionState.textContent = options.punch ? "Punch recording" : "Recording";
+  els.sessionState.textContent = options.loopCycle
+    ? `Loop take ${state.loopRecordTakeCount + 1}`
+    : options.punch ? "Punch recording" : "Recording";
   startMetronome();
 
   if (els.beatAudio.src && els.beatAudio.paused) {
@@ -1796,12 +1810,14 @@ function stopRecording() {
   }
 
   const wasPunchRecording = state.isPunchRecording;
+  const wasLoopCycle = state.currentLoopCycle;
   clearPunchTimers();
   state.mediaRecorder.stop();
   state.isRecording = false;
   state.isPunchRecording = false;
+  state.currentLoopCycle = false;
   els.recordButton.classList.remove("active");
-  els.sessionState.textContent = wasPunchRecording ? "Punch saved" : "Take saved";
+  els.sessionState.textContent = wasLoopCycle ? "Loop take saved" : wasPunchRecording ? "Punch saved" : "Take saved";
   if (!state.isSessionPlaying) {
     stopMetronome();
   }
@@ -1811,7 +1827,9 @@ function stopRecording() {
     els.beatAudio.play().catch((error) => {
       console.error(error);
     });
-    els.sessionState.textContent = "Looping punch";
+    if (!wasLoopCycle) {
+      els.sessionState.textContent = "Looping punch";
+    }
   }
 }
 
@@ -1849,6 +1867,31 @@ function saveTake() {
   updateQueueButton();
   updateExportButtons();
   scheduleAutosave();
+  scheduleNextLoopRecordTake();
+}
+
+function scheduleNextLoopRecordTake() {
+  if (
+    !state.isLoopRecording ||
+    state.isRecording ||
+    state.isPunchWaiting ||
+    !state.punchEnabled ||
+    !state.loopEnabled ||
+    state.punchOut <= state.punchIn
+  ) {
+    return;
+  }
+
+  state.loopRecordTakeCount += 1;
+  els.sessionState.textContent = `Loop take ${state.loopRecordTakeCount} saved`;
+  const timer = window.setTimeout(() => {
+    if (!state.isLoopRecording || state.isRecording || state.isPunchWaiting) {
+      return;
+    }
+
+    startPunchRecording({ loopCycle: true, skipPreRoll: true });
+  }, 180);
+  state.punchTimers.push(timer);
 }
 
 async function countIn(bars) {

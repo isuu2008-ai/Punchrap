@@ -68,6 +68,7 @@ node .\scripts\check.mjs
 - BPM-based metronome toggle for recording and session playback
 - Global shortcuts for transport, metronome, stop, and tab switching outside text inputs
 - Recording latency compensation in milliseconds, applied to new take placement
+- Punch + Loop recording mode that keeps stacking takes until stopped
 - Input monitoring toggle through the Web Audio mic chain
 - Custom vocal preset saving and project restore
 - Vocal gate and de-ess controls in the offline render chain
