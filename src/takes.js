@@ -8,6 +8,48 @@
     return Number.isFinite(createdTime) ? createdTime : 0;
   }
 
+  function slugifyTakeValue(value, fallback = "session") {
+    return String(value || fallback)
+      .toLowerCase()
+      .replace(/\.[^.]+$/, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "") || fallback;
+  }
+
+  function makeTakeFilename(take = {}) {
+    const slug = slugifyTakeValue(take.trackName);
+    const preset = take.presetName ? `-${slugifyTakeValue(take.presetName, "preset")}` : "";
+    const version = take.processed ? `-v${take.version || 1}` : "";
+    const id = String(take.id || "take").slice(0, 8) || "take";
+    const extension = String(take.extension || "wav").replace(/^\.+/, "") || "wav";
+    return `punchlab-${slug}${preset}${version}-${id}.${extension}`;
+  }
+
+  function getTakeTitle(take = {}, index = 0) {
+    if (take.name) {
+      return take.name;
+    }
+
+    if (take.processed) {
+      return `${take.trackName} ${take.presetName || "Processed"} v${take.version || 1}`;
+    }
+
+    return `${take.trackName} take ${Number(index) + 1}`;
+  }
+
+  function getTakeShortName(take = {}) {
+    if (take.name) {
+      return take.name;
+    }
+
+    return take.processed ? `${take.trackName} ${take.presetName || "Processed"} v${take.version || 1}` : `${take.trackName} raw`;
+  }
+
+  function formatTakeLatencyTag(take = {}) {
+    const latencyMs = Number(take?.recordLatencyMs || 0);
+    return latencyMs > 0 ? ` / latency -${Math.round(latencyMs)}ms` : "";
+  }
+
   function getTakeCompOrder(take = {}) {
     if (take.compOrder == null || take.compOrder === "") {
       return Number.POSITIVE_INFINITY;
@@ -100,11 +142,16 @@
     compareProcessedTimeline,
     compareProcessedVersions,
     compareTakeCreatedAt,
+    formatTakeLatencyTag,
     getNextCompOrder,
     getNextProcessedVersion,
     getTakeCreatedTime,
+    getTakeShortName,
+    getTakeTitle,
+    makeTakeFilename,
     moveCompTakeOrder,
     normalizeCompOrder,
+    slugifyTakeValue,
     sortBestTakesForComp,
     sortCompTakes,
     sortProcessedVersions,

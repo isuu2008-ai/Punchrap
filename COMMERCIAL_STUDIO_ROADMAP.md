@@ -232,6 +232,8 @@
 - take 생성시각 정렬, comp order 정렬, processed version 계산을 `src/takes.js`로 분리
 - Take comp order policy split 1차
 - best take의 comp 투입 순서, comp lane 이동, comp order 정규화를 `src/takes.js`로 분리
+- Take metadata policy split 1차
+- take 파일명, title, short name, latency tag 생성을 `src/takes.js`로 분리
 - Project zip asset/timeline formatter split 1차
 - project zip preview의 beat section, marker rows, comp lane rows를 `src/project-zip.js`로 분리
 - Project zip take card formatter split 1차

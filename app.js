@@ -6976,10 +6976,7 @@ function formatPan(value) {
 }
 
 function makeTakeFilename(take) {
-  const slug = slugify(take.trackName);
-  const preset = take.presetName ? `-${slugify(take.presetName)}` : "";
-  const version = take.processed ? `-v${take.version || 1}` : "";
-  return `punchlab-${slug}${preset}${version}-${take.id.slice(0, 8)}.${take.extension}`;
+  return window.PunchLabTakes.makeTakeFilename(take);
 }
 
 function makeMixFilename() {
@@ -7002,15 +6999,7 @@ function slugify(value) {
 }
 
 function getTakeTitle(take, index) {
-  if (take.name) {
-    return take.name;
-  }
-
-  if (take.processed) {
-    return `${take.trackName} ${take.presetName || "Processed"} v${take.version || 1}`;
-  }
-
-  return `${take.trackName} take ${index + 1}`;
+  return window.PunchLabTakes.getTakeTitle(take, index);
 }
 
 function getTakeSubtitle(take) {
@@ -7025,16 +7014,11 @@ function getTakeSubtitle(take) {
 }
 
 function getTakeShortName(take) {
-  if (take.name) {
-    return take.name;
-  }
-
-  return take.processed ? `${take.trackName} ${take.presetName || "Processed"} v${take.version || 1}` : `${take.trackName} raw`;
+  return window.PunchLabTakes.getTakeShortName(take);
 }
 
 function formatTakeLatencyTag(take) {
-  const latencyMs = Number(take?.recordLatencyMs || 0);
-  return latencyMs > 0 ? ` / latency -${Math.round(latencyMs)}ms` : "";
+  return window.PunchLabTakes.formatTakeLatencyTag(take);
 }
 
 function getTuneSignature(settings = {}) {
