@@ -148,9 +148,9 @@
     const output = context.createBuffer(channelCount, sourceBuffer.length, sourceBuffer.sampleRate);
     const frameSize = 2048;
     const wet = clamp(0.32 + amount * 0.66 - humanize * 0.24, 0.12, 0.98);
-    const usableFrames = frames.filter((frame) => Math.abs(frame.correctionSemitones) > 0.04);
+    const correctionFrames = getCorrectionFrames(frames, amount, humanize, frameSize);
 
-    if (!usableFrames.length) {
+    if (!correctionFrames.length) {
       return sourceBuffer;
     }
 
@@ -161,12 +161,8 @@
       const weight = new Float32Array(input.length);
 
       outputData.set(input);
-      usableFrames.forEach((frame) => {
-        const deadband = humanize * 0.18;
-        const frameCorrection = Math.abs(frame.correctionSemitones) < deadband ? 0 : frame.correctionSemitones;
-        const confidenceScale = clamp(0.52 + frame.confidence * 0.48 - humanize * 0.18, 0.35, 1);
-        const correction = clamp(frameCorrection, -4, 4) * amount * (1 - humanize * 0.58) * confidenceScale;
-        const pitchRatio = Math.pow(2, correction / 12);
+      correctionFrames.forEach((frame) => {
+        const pitchRatio = Math.pow(2, frame.smoothedCorrection / 12);
         const start = Math.max(0, Math.min(input.length - frameSize, Math.round(frame.start)));
         const center = (frameSize - 1) / 2;
 
@@ -194,20 +190,14 @@
 
   function getCorrectionStats(pitchPlan, amount, humanize) {
     const frames = pitchPlan?.frames || [];
+    const correctionFrames = getCorrectionFrames(frames, amount, humanize);
     let weightedCorrection = 0;
     let weightedAbsCorrection = 0;
     let totalWeight = 0;
 
-    frames.forEach((frame) => {
-      if (!Number.isFinite(frame.correctionSemitones) || Math.abs(frame.correctionSemitones) < 0.04) {
-        return;
-      }
-
-      const deadband = humanize * 0.18;
-      const frameCorrection = Math.abs(frame.correctionSemitones) < deadband ? 0 : frame.correctionSemitones;
-      const confidenceScale = clamp(0.52 + frame.confidence * 0.48 - humanize * 0.18, 0.35, 1);
-      const correction = clamp(frameCorrection, -4, 4) * amount * (1 - humanize * 0.58) * confidenceScale;
-      const weight = Math.max(0.001, (frame.rms || 0.05) * confidenceScale);
+    correctionFrames.forEach((frame) => {
+      const correction = frame.smoothedCorrection;
+      const weight = Math.max(0.001, (frame.rms || 0.05) * frame.confidenceScale);
       weightedCorrection += correction * weight;
       weightedAbsCorrection += Math.abs(correction) * weight;
       totalWeight += weight;
@@ -224,6 +214,45 @@
       averageSemitones: weightedCorrection / totalWeight,
       averageAbsSemitones: weightedAbsCorrection / totalWeight,
     };
+  }
+
+  function getCorrectionFrames(frames, amount, humanize, frameSize = 2048) {
+    const output = [];
+    const deadband = humanize * 0.18;
+    const smoothing = clamp(0.12 + humanize * 0.42 + (1 - amount) * 0.16, 0.1, 0.64);
+    const follow = 1 - smoothing;
+    let smoothedCorrection = 0;
+    let previousStart = null;
+    let hasPrevious = false;
+
+    frames.forEach((frame) => {
+      if (!Number.isFinite(frame.correctionSemitones)) {
+        return;
+      }
+
+      const rawCorrection = Math.abs(frame.correctionSemitones) < deadband ? 0 : frame.correctionSemitones;
+      const confidenceScale = clamp(0.52 + frame.confidence * 0.48 - humanize * 0.18, 0.35, 1);
+      const correction = clamp(rawCorrection, -4, 4) * amount * (1 - humanize * 0.58) * confidenceScale;
+      const gap = previousStart !== null && frame.start - previousStart > frameSize * 1.75;
+
+      smoothedCorrection = !hasPrevious || gap
+        ? correction
+        : smoothedCorrection + (correction - smoothedCorrection) * follow;
+      previousStart = frame.start;
+      hasPrevious = true;
+
+      if (Math.abs(smoothedCorrection) <= 0.01) {
+        return;
+      }
+
+      output.push({
+        ...frame,
+        confidenceScale,
+        smoothedCorrection,
+      });
+    });
+
+    return output;
   }
 
   function createNoiseGateBuffer(context, sourceBuffer, amount) {
