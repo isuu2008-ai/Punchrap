@@ -7,7 +7,9 @@ const packageManifest = readJson("desktop-package-manifest.json");
 const tauriConfig = readJson("src-tauri/tauri.conf.json");
 const mainCapability = readJson("src-tauri/capabilities/main.json");
 const indexHtml = readFileSync("index.html", "utf8");
+const appSource = readFileSync("app.js", "utf8");
 const desktopSource = readFileSync("src/desktop.js", "utf8");
+const engineSource = readFileSync("src/engine.js", "utf8");
 const tauriBridgeSource = readFileSync("src/tauri-bridge.js", "utf8");
 const tauriCargo = readFileSync("src-tauri/Cargo.toml", "utf8");
 const tauriBuildScript = readFileSync("src-tauri/build.rs", "utf8");
@@ -291,6 +293,9 @@ if (!desktopSource.includes("const compressedExportReady = hasCompressedExportMe
 }
 if (!desktopSource.includes("const pluginHostReady = hasPluginScan && capabilities.pluginHost === true") || !desktopSource.includes("methodAvailable: hasPluginScan") || !desktopSource.includes("ready: pluginHostReady")) {
   fail("Desktop readiness must separate plugin scan method availability from pluginHost capability readiness.");
+}
+if (!engineSource.includes("startInputMonitor") || !appSource.includes("activateInputMonitorRoute") || !appSource.includes("state.monitorMode === \"native\"")) {
+  fail("Input monitoring must expose native handoff through the shared engine API.");
 }
 if (!desktopSource.includes("packageManifestPath")) {
   fail("Desktop runtime manifest must expose the desktop package manifest path.");

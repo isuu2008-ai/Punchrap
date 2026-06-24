@@ -264,6 +264,8 @@
 - take subtitle, record review, zip manifest에 적용된 latency ms 표시/보존
 - Input monitoring toggle
 - 마이크 신호를 monitor gain node를 통해 destination으로 라우팅
+- Native monitor handoff 1차
+- active engine이 realtimeNativeMonitoring을 지원하면 같은 monitor 버튼이 native startInputMonitor/stopInputMonitor로 라우팅되고, 미지원 시 Web Audio monitor로 fallback
 - Audio input device selector 1차
 - 브라우저에서 audioinput 장치를 선택하고 project bundle/autosave에 저장
 - Playback output device selector 1차

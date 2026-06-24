@@ -43,6 +43,8 @@
       renderProcessedVocal: window.PunchLabVocal.renderProcessedVocal,
       scanPluginHosts: async () => null,
       setBufferSize: async () => null,
+      startInputMonitor: async () => null,
+      stopInputMonitor: async () => null,
     };
   }
 
@@ -75,5 +77,7 @@
     renderProcessedVocal: (...args) => requireMethod("renderProcessedVocal")(...args),
     scanPluginHosts: (...args) => requireMethod("scanPluginHosts")(...args),
     setBufferSize: (...args) => requireMethod("setBufferSize")(...args),
+    startInputMonitor: (...args) => requireMethod("startInputMonitor")(...args),
+    stopInputMonitor: (...args) => requireMethod("stopInputMonitor")(...args),
   };
 })();

@@ -479,6 +479,10 @@ if (!appSource.includes("getDisplayLatencyStatsUpdatedAt") || !appSource.include
   console.error("Native audio summaries must show latency stats freshness when available.");
   failed = true;
 }
+if (!readFileSync("src/engine.js", "utf8").includes("startInputMonitor") || !appSource.includes("activateInputMonitorRoute") || !appSource.includes("state.monitorMode === \"native\"")) {
+  console.error("Input monitoring must hand off to native monitoring when the active engine supports it.");
+  failed = true;
+}
 
 if (failed) {
   process.exit(1);

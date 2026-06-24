@@ -8,6 +8,8 @@ const state = {
   gainNode: null,
   monitorGain: null,
   monitorConnected: false,
+  monitorMode: null,
+  nativeMonitorActive: false,
   recorderDestination: null,
   mediaRecorder: null,
   chunks: [],
@@ -842,6 +844,9 @@ function getMicConstraints() {
 function releaseMicInput() {
   cancelAnimationFrame(state.waveFrame);
   state.waveFrame = 0;
+  if (state.nativeMonitorActive) {
+    void stopNativeInputMonitor();
+  }
   state.stream?.getTracks().forEach((track) => track.stop());
 
   try {
@@ -858,6 +863,7 @@ function releaseMicInput() {
   state.monitorGain = null;
   state.recorderDestination = null;
   state.monitorConnected = false;
+  state.monitorMode = null;
   els.micStatus.classList.remove("ready");
 }
 
@@ -876,14 +882,23 @@ async function changeAudioInputDevice() {
     return;
   }
 
+  if (state.nativeMonitorActive) {
+    await stopNativeInputMonitor();
+  }
   releaseMicInput();
   await enableMic();
+  if (state.monitorEnabled) {
+    await activateInputMonitorRoute();
+  }
 }
 
 async function changeAudioOutputDevice() {
   state.audioOutputDeviceId = els.audioOutputSelect.value;
   scheduleAutosave();
   const supported = await applyCurrentPlaybackOutput();
+  if (state.monitorEnabled) {
+    await activateInputMonitorRoute();
+  }
   els.sessionState.textContent = supported
     ? state.audioOutputDeviceId
       ? "Output selected"
@@ -1002,19 +1017,101 @@ async function enableMic() {
 }
 
 async function toggleInputMonitor() {
-  state.monitorEnabled = !state.monitorEnabled;
-  if (!state.stream) {
+  const nextEnabled = !state.monitorEnabled;
+  if (nextEnabled && !state.stream) {
     await enableMic();
     if (!state.stream) {
       state.monitorEnabled = false;
+      state.monitorMode = null;
       updateMonitorButton();
       return;
     }
   }
 
+  state.monitorEnabled = nextEnabled;
+  if (state.monitorEnabled) {
+    await activateInputMonitorRoute();
+  } else {
+    await deactivateInputMonitorRoute();
+  }
+  updateMonitorButton();
+  els.sessionState.textContent = state.monitorEnabled
+    ? state.monitorMode === "native" ? "Native monitor on" : "Monitor on"
+    : "Monitor off";
+}
+
+async function activateInputMonitorRoute() {
+  await stopNativeInputMonitor();
+  disconnectBrowserInputMonitor();
+  state.monitorMode = null;
+
+  if (await startNativeInputMonitor()) {
+    state.monitorMode = "native";
+    updateMonitorButton();
+    return;
+  }
+
+  state.monitorMode = "web";
   syncMonitorRouting();
   updateMonitorButton();
-  els.sessionState.textContent = state.monitorEnabled ? "Monitor on" : "Monitor off";
+}
+
+async function deactivateInputMonitorRoute() {
+  await stopNativeInputMonitor();
+  state.monitorMode = null;
+  syncMonitorRouting();
+  updateMonitorButton();
+}
+
+async function startNativeInputMonitor() {
+  const driver = window.PunchLabEngine?.getDriver?.();
+  if (
+    driver?.id !== "native" ||
+    driver?.capabilities?.realtimeNativeMonitoring !== true ||
+    typeof window.PunchLabEngine?.startInputMonitor !== "function"
+  ) {
+    return false;
+  }
+
+  try {
+    const result = await window.PunchLabEngine.startInputMonitor(getNativeMonitorPayload());
+    if (!result || result.unsupported) {
+      state.nativeMonitorActive = false;
+      return false;
+    }
+    state.nativeMonitorActive = result.active !== false;
+    return state.nativeMonitorActive;
+  } catch (error) {
+    state.nativeMonitorActive = false;
+    console.warn("PunchLab native input monitor failed; falling back to Web Audio.", error);
+    return false;
+  }
+}
+
+async function stopNativeInputMonitor() {
+  if (!state.nativeMonitorActive || typeof window.PunchLabEngine?.stopInputMonitor !== "function") {
+    state.nativeMonitorActive = false;
+    return false;
+  }
+
+  try {
+    await window.PunchLabEngine.stopInputMonitor(getNativeMonitorPayload());
+  } catch (error) {
+    console.warn("PunchLab native input monitor stop failed.", error);
+  }
+
+  state.nativeMonitorActive = false;
+  return true;
+}
+
+function getNativeMonitorPayload() {
+  return {
+    inputDeviceId: state.audioInputDeviceId || "",
+    outputDeviceId: state.audioOutputDeviceId || "",
+    gain: Number(state.monitorGain?.gain?.value ?? 0.35),
+    bufferSize: state.nativeBufferSize,
+    sampleRate: state.audioContext?.sampleRate || null,
+  };
 }
 
 function syncMonitorRouting() {
@@ -1022,21 +1119,29 @@ function syncMonitorRouting() {
     return;
   }
 
-  if (state.monitorEnabled && !state.monitorConnected) {
+  if (state.monitorEnabled && state.monitorMode !== "native" && !state.monitorConnected) {
     state.gainNode.connect(state.monitorGain).connect(state.audioContext.destination);
     state.monitorConnected = true;
     return;
   }
 
-  if (!state.monitorEnabled && state.monitorConnected) {
-    try {
-      state.gainNode.disconnect(state.monitorGain);
-      state.monitorGain.disconnect();
-    } catch {
-      // The node may already be disconnected by the browser.
-    }
-    state.monitorConnected = false;
+  if ((!state.monitorEnabled || state.monitorMode === "native") && state.monitorConnected) {
+    disconnectBrowserInputMonitor();
   }
+}
+
+function disconnectBrowserInputMonitor() {
+  if (!state.monitorConnected) {
+    return;
+  }
+
+  try {
+    state.gainNode?.disconnect(state.monitorGain);
+    state.monitorGain?.disconnect();
+  } catch {
+    // The node may already be disconnected by the browser.
+  }
+  state.monitorConnected = false;
 }
 
 function updateMonitorButton() {
@@ -1046,6 +1151,9 @@ function updateMonitorButton() {
 
   els.monitorButton.classList.toggle("monitor-active", state.monitorEnabled);
   els.monitorButton.setAttribute("aria-pressed", String(state.monitorEnabled));
+  els.monitorButton.title = state.monitorEnabled
+    ? state.monitorMode === "native" ? "Native input monitor on" : "Input monitor on"
+    : "Input monitor";
 }
 
 async function loadBeat(event) {
