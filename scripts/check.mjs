@@ -135,8 +135,12 @@ if (!appSource.includes("nativeAudioEngine?.detail")) {
   console.error("app.js must surface native audio engine readiness detail in the engine status.");
   failed = true;
 }
-if (!appSource.includes("nativeBufferSize") || !appSource.includes("applyNativeBufferSize")) {
+if (!appSource.includes("nativeBufferSize") || !appSource.includes("applyNativeBufferSize") || !appSource.includes("changeNativeBufferSize")) {
   console.error("app.js must persist and apply the native buffer-size preference.");
+  failed = true;
+}
+if (!indexHtml.includes("nativeBufferSizeSelect")) {
+  console.error("index.html must include the native buffer-size selector.");
   failed = true;
 }
 

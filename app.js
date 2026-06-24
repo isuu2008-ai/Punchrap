@@ -150,6 +150,7 @@ const els = {
   targetMidiSelect: document.querySelector("#targetMidiSelect"),
   audioInputSelect: document.querySelector("#audioInputSelect"),
   audioOutputSelect: document.querySelector("#audioOutputSelect"),
+  nativeBufferSizeSelect: document.querySelector("#nativeBufferSizeSelect"),
   inputGainSlider: document.querySelector("#inputGainSlider"),
   inputGainText: document.querySelector("#inputGainText"),
   micButton: document.querySelector("#micButton"),
@@ -432,6 +433,7 @@ function bindEvents() {
   els.inputGainSlider.addEventListener("input", updateInputGain);
   els.audioInputSelect.addEventListener("change", changeAudioInputDevice);
   els.audioOutputSelect.addEventListener("change", changeAudioOutputDevice);
+  els.nativeBufferSizeSelect.addEventListener("change", changeNativeBufferSize);
   els.punchToggle.addEventListener("click", togglePunchMode);
   els.loopToggle.addEventListener("click", toggleLoopMode);
   els.metronomeToggle.addEventListener("click", toggleMetronome);
@@ -1864,6 +1866,7 @@ function applyProjectSettings(settings = {}) {
   state.audioInputDeviceId = settings.audioInputDeviceId || "";
   state.audioOutputDeviceId = settings.audioOutputDeviceId || "";
   state.nativeBufferSize = normalizeNativeBufferSize(settings.nativeBufferSize);
+  els.nativeBufferSizeSelect.value = String(state.nativeBufferSize);
   applyNativeBufferSize();
   els.audioInputSelect.value = state.audioInputDeviceId;
   els.audioOutputSelect.value = state.audioOutputDeviceId;
@@ -1974,6 +1977,16 @@ async function applyNativeBufferSize() {
     console.error(error);
     return false;
   }
+}
+
+async function changeNativeBufferSize() {
+  state.nativeBufferSize = normalizeNativeBufferSize(els.nativeBufferSizeSelect.value);
+  els.nativeBufferSizeSelect.value = String(state.nativeBufferSize);
+  scheduleAutosave();
+  const supported = await applyNativeBufferSize();
+  els.sessionState.textContent = supported
+    ? `Buffer ${state.nativeBufferSize}`
+    : "Buffer saved";
 }
 
 function normalizeNativeBufferSize(value) {
