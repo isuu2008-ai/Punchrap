@@ -29,6 +29,7 @@ node .\scripts\check.mjs
 - Count-in
 - Main, Double, Adlib L, Adlib R, and Hook tracks
 - Take recording and download
+- Record-screen latest/recent take review playback
 - Rap vocal chain preset UI
 - Vocal chain parameter manifest for automation/native/plugin mapping
 - Processed take chain snapshots include plugin-style automation parameter state

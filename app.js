@@ -164,6 +164,10 @@ const els = {
   waveCanvas: document.querySelector("#waveCanvas"),
   waveformStatus: document.querySelector("#waveformStatus"),
   countdown: document.querySelector("#countdown"),
+  quickTakeTitle: document.querySelector("#quickTakeTitle"),
+  quickTakeMeta: document.querySelector("#quickTakeMeta"),
+  playLatestTakeButton: document.querySelector("#playLatestTakeButton"),
+  quickTakeList: document.querySelector("#quickTakeList"),
   trackList: document.querySelector("#trackList"),
   armTrackList: document.querySelector("#armTrackList"),
   armedTrackName: document.querySelector("#armedTrackName"),
@@ -395,6 +399,7 @@ function bindEvents() {
   els.compClearButton.addEventListener("click", clearCompLane);
   els.compBestButton.addEventListener("click", addBestTakesToComp);
   els.exportMixButton.addEventListener("click", exportFullMix);
+  els.playLatestTakeButton.addEventListener("click", playLatestTake);
   els.downloadLatestButton.addEventListener("click", downloadLatestTake);
   els.retuneSpeedSlider.addEventListener("input", () => {
     updateTuneControls();
@@ -2137,6 +2142,17 @@ async function playTake(takeId) {
   await playTakeAudio(take, `Playing ${take.trackName}`);
 }
 
+function playLatestTake() {
+  const latestTake = state.latestTake || getAllTakes().at(-1);
+  if (!latestTake) {
+    els.sessionState.textContent = "No take";
+    return;
+  }
+
+  state.latestTake = latestTake;
+  playTake(latestTake.id);
+}
+
 async function playTakeAudio(take, label) {
   stopCurrentTake(false);
   els.beatAudio.pause();
@@ -2451,6 +2467,7 @@ function startRecording(options = {}) {
   state.mediaRecorder.start(250);
   state.isRecording = true;
   els.recordButton.classList.add("active");
+  renderQuickTakeReview();
   els.sessionState.textContent = options.loopCycle
     ? `Loop take ${state.loopRecordTakeCount + 1}`
     : options.punch ? "Punch recording" : "Recording";
@@ -4012,10 +4029,52 @@ function renderTakes() {
 
   updateQueueButton();
   updateExportButtons();
+  renderQuickTakeReview(allTakes);
   renderCompView();
   renderVocalPanel();
   renderTimeline();
   renderExportPanel();
+}
+
+function renderQuickTakeReview(allTakes = getAllTakes()) {
+  if (!els.quickTakeTitle || !els.quickTakeMeta || !els.playLatestTakeButton || !els.quickTakeList) {
+    return;
+  }
+
+  const latestTake = state.latestTake || allTakes.at(-1);
+  const recentTakes = allTakes.slice(-4).reverse();
+  const latestIsPlaying = latestTake && (state.currentTakeId === latestTake.id || state.sessionPlayingTakeIds.has(latestTake.id));
+
+  els.quickTakeTitle.textContent = latestTake ? getTakeShortName(latestTake) : "No take yet";
+  els.quickTakeMeta.textContent = latestTake
+    ? `${latestTake.trackName} / ${getTakeSubtitle(latestTake)}`
+    : "Record a take to review it here.";
+  els.playLatestTakeButton.disabled = !latestTake || state.isRecording;
+  els.playLatestTakeButton.textContent = latestIsPlaying ? "Pause latest" : "Play latest";
+  els.playLatestTakeButton.classList.toggle("active", Boolean(latestIsPlaying));
+  els.quickTakeList.innerHTML = recentTakes.length
+    ? recentTakes
+      .map((take) => {
+        const isPlaying = take.id === state.currentTakeId || state.sessionPlayingTakeIds.has(take.id);
+        return `
+          <button class="quick-take-button ${isPlaying ? "active" : ""}" type="button" data-quick-play-take="${take.id}">
+            <strong>${escapeHtml(getTakeShortName(take))}</strong>
+            <span>${escapeHtml(formatDuration(take.duration))}</span>
+          </button>
+        `;
+      })
+      .join("")
+    : `<span class="empty-takes">Recent takes will appear here</span>`;
+
+  els.quickTakeList.querySelectorAll("[data-quick-play-take]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const take = findTake(button.dataset.quickPlayTake);
+      if (take) {
+        state.latestTake = take;
+      }
+      playTake(button.dataset.quickPlayTake);
+    });
+  });
 }
 
 function renderCompView() {
