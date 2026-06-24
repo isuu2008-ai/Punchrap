@@ -61,6 +61,7 @@ const state = {
   pluginScanResult: null,
   loadedProjectEnvironment: null,
   isPluginScanning: false,
+  isRefreshingNativeStats: false,
   isQueuePlaying: false,
   queueMode: "all",
   queueTakeIds: [],
@@ -155,6 +156,7 @@ const els = {
   nativeAudioSummary: document.querySelector("#nativeAudioSummary"),
   nativeAudioDriverText: document.querySelector("#nativeAudioDriverText"),
   nativeAudioDetailText: document.querySelector("#nativeAudioDetailText"),
+  nativeLatencyRefreshButton: document.querySelector("#nativeLatencyRefreshButton"),
   inputGainSlider: document.querySelector("#inputGainSlider"),
   inputGainText: document.querySelector("#inputGainText"),
   micButton: document.querySelector("#micButton"),
@@ -389,11 +391,18 @@ function renderNativeAudioSummary(desktopReadiness = window.PunchLabDesktop?.get
   const latencyText = formatRuntimeLatency(getDisplayRoundTripLatency(desktopReadiness)) || "Latency pending";
   const sampleRateText = formatDisplaySampleRate(getDisplaySampleRate(desktopReadiness)) || "Rate pending";
   const detail = [`${buffer} samples`, latencyText, sampleRateText].filter(Boolean).join(" / ");
+  const canRefresh = Boolean(desktopReadiness?.latencyControl?.available && window.PunchLabPlatform?.refreshLatencyStats);
 
   els.nativeAudioSummary.dataset.ready = nativeAudio.ready ? "true" : "false";
   els.nativeAudioDriverText.textContent = driver;
   els.nativeAudioDetailText.textContent = detail;
   els.nativeAudioSummary.title = nativeAudio.detail ? `${driver} / ${detail} / ${nativeAudio.detail}` : `${driver} / ${detail}`;
+  if (els.nativeLatencyRefreshButton) {
+    els.nativeLatencyRefreshButton.disabled = !canRefresh || state.isRefreshingNativeStats;
+    els.nativeLatencyRefreshButton.title = canRefresh
+      ? state.isRefreshingNativeStats ? "Refreshing native audio stats" : "Refresh native audio stats"
+      : "Native latency refresh unavailable";
+  }
 }
 
 function formatRuntimeLatency(value) {
@@ -463,6 +472,30 @@ async function scanPluginHosts() {
   }
 }
 
+async function refreshNativeLatencyStats() {
+  const desktopReadiness = window.PunchLabDesktop?.getReadiness?.();
+  if (!desktopReadiness?.latencyControl?.available || !window.PunchLabPlatform?.refreshLatencyStats) {
+    els.sessionState.textContent = "Native latency unavailable";
+    renderNativeAudioSummary(desktopReadiness);
+    return;
+  }
+
+  try {
+    state.isRefreshingNativeStats = true;
+    els.sessionState.textContent = "Refreshing native latency";
+    renderNativeAudioSummary(desktopReadiness);
+    const stats = await window.PunchLabPlatform.refreshLatencyStats();
+    renderEngineStatus();
+    els.sessionState.textContent = stats ? "Native latency refreshed" : "Native latency unavailable";
+  } catch (error) {
+    els.sessionState.textContent = "Native latency failed";
+    console.error(error);
+  } finally {
+    state.isRefreshingNativeStats = false;
+    renderEngineStatus();
+  }
+}
+
 function bindEvents() {
   els.viewTabs.forEach((button) => {
     button.addEventListener("click", () => setActiveView(button.dataset.view));
@@ -473,6 +506,7 @@ function bindEvents() {
   els.stopButton.addEventListener("click", stopAll);
   els.recordButton.addEventListener("click", toggleRecord);
   els.pluginScanStatus.addEventListener("click", scanPluginHosts);
+  els.nativeLatencyRefreshButton?.addEventListener("click", refreshNativeLatencyStats);
   els.beatInput.addEventListener("change", loadBeat);
   els.bpmInput.addEventListener("input", updateTempoSettings);
   els.countInSelect.addEventListener("change", scheduleAutosave);

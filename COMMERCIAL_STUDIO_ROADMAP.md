@@ -72,6 +72,8 @@
 - runtime stats 또는 loaded project environment의 sample rate를 engine status tooltip에 표시
 - Native audio record summary 1차
 - Record Session 패널에 driver, buffer, latency, sample rate compact summary를 표시
+- Native latency manual refresh 1차
+- Record Session 패널에서 getLatencyStats를 수동 갱신해 latency/sample rate runtime 상태를 다시 표시
 - Native adapter 1차
 - `src/native-adapter.js`가 native host bridge를 swappable engine interface로 연결
 - Desktop wrapper manifest 1차

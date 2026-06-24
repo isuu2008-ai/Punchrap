@@ -223,6 +223,10 @@ if (!indexHtml.includes("nativeAudioSummary") || !appSource.includes("renderNati
   console.error("Record setup must include a compact native audio runtime summary.");
   failed = true;
 }
+if (!indexHtml.includes("nativeLatencyRefreshButton") || !appSource.includes("refreshNativeLatencyStats")) {
+  console.error("Record setup must expose a native latency stats refresh control.");
+  failed = true;
+}
 
 if (failed) {
   process.exit(1);

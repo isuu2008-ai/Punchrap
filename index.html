@@ -10,26 +10,26 @@
     <meta name="punchlab-desktop-manifest" content="./desktop-host-manifest.json" />
     <meta name="punchlab-wrapper-manifest" content="./desktop-wrapper-manifest.json" />
     <meta name="punchlab-plugin-host-manifest" content="./plugin-host-manifest.json" />
-    <link rel="stylesheet" href="./styles.css?v=20260624-132" />
+    <link rel="stylesheet" href="./styles.css?v=20260624-133" />
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
-    <script src="./src/chain-params.js?v=20260624-132" defer></script>
-    <script src="./src/dsp.js?v=20260624-132" defer></script>
-    <script src="./src/audio.js?v=20260624-132" defer></script>
-    <script src="./src/files.js?v=20260624-132" defer></script>
-    <script src="./src/templates.js?v=20260624-132" defer></script>
-    <script src="./src/devices.js?v=20260624-132" defer></script>
-    <script src="./src/mix.js?v=20260624-132" defer></script>
-    <script src="./src/vocal.js?v=20260624-132" defer></script>
-    <script src="./src/engine-contract.js?v=20260624-132" defer></script>
-    <script src="./src/native-bridge.js?v=20260624-132" defer></script>
-    <script src="./src/native-fixture.js?v=20260624-132" defer></script>
-    <script src="./src/native-adapter.js?v=20260624-132" defer></script>
-    <script src="./src/engine.js?v=20260624-132" defer></script>
-    <script src="./src/project.js?v=20260624-132" defer></script>
-    <script src="./src/storage.js?v=20260624-132" defer></script>
-    <script src="./src/platform.js?v=20260624-132" defer></script>
-    <script src="./src/desktop.js?v=20260624-132" defer></script>
-    <script src="./app.js?v=20260624-132" defer></script>
+    <script src="./src/chain-params.js?v=20260624-133" defer></script>
+    <script src="./src/dsp.js?v=20260624-133" defer></script>
+    <script src="./src/audio.js?v=20260624-133" defer></script>
+    <script src="./src/files.js?v=20260624-133" defer></script>
+    <script src="./src/templates.js?v=20260624-133" defer></script>
+    <script src="./src/devices.js?v=20260624-133" defer></script>
+    <script src="./src/mix.js?v=20260624-133" defer></script>
+    <script src="./src/vocal.js?v=20260624-133" defer></script>
+    <script src="./src/engine-contract.js?v=20260624-133" defer></script>
+    <script src="./src/native-bridge.js?v=20260624-133" defer></script>
+    <script src="./src/native-fixture.js?v=20260624-133" defer></script>
+    <script src="./src/native-adapter.js?v=20260624-133" defer></script>
+    <script src="./src/engine.js?v=20260624-133" defer></script>
+    <script src="./src/project.js?v=20260624-133" defer></script>
+    <script src="./src/storage.js?v=20260624-133" defer></script>
+    <script src="./src/platform.js?v=20260624-133" defer></script>
+    <script src="./src/desktop.js?v=20260624-133" defer></script>
+    <script src="./app.js?v=20260624-133" defer></script>
   </head>
   <body>
     <main class="studio-shell">
@@ -184,9 +184,14 @@
                   </select>
                 </label>
                 <div id="nativeAudioSummary" class="native-audio-summary" title="Native audio runtime summary">
-                  <div class="label-row">
+                  <div class="label-row native-audio-title-row">
                     <span>Native audio</span>
-                    <strong id="nativeAudioDriverText">Web fallback</strong>
+                    <span class="native-audio-actions">
+                      <strong id="nativeAudioDriverText">Web fallback</strong>
+                      <button id="nativeLatencyRefreshButton" class="native-refresh-button" type="button" title="Refresh native audio stats" aria-label="Refresh native audio stats" disabled>
+                        <i data-lucide="refresh-cw"></i>
+                      </button>
+                    </span>
                   </div>
                   <small id="nativeAudioDetailText">128 samples / pending latency / pending rate</small>
                 </div>
