@@ -91,6 +91,8 @@
 - Mix/stem/dry/tuned export 순차 실행
 - Export queue recovery 1차
 - failed job retry, done/failed remove, clear finished controls
+- Export queue redownload 1차
+- 완료된 export queue job의 마지막 preview WAV를 다시 다운로드
 - Batch scope 고도화 1차
 - comp lane raw takes와 best raw takes에 현재 체인을 batch render
 - Custom scale editor
@@ -113,6 +115,8 @@
 - WAV RIFF INFO chunk에 title, artist, BPM, key, software 기록
 - Export preview 기본형
 - 완료된 export queue job의 마지막 WAV를 Preview 버튼으로 재생
+- Export redownload 기본형
+- 완료된 export queue job의 마지막 WAV를 Download 버튼으로 재다운로드
 - Project zip export asset 포함형
 - `.punchlab.json`, manifest, README, beat asset, take audio asset을 `.punchlab.zip`에 저장
 - Read-only mix preview 1차

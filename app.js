@@ -4107,6 +4107,7 @@ function renderExportPanel() {
             <div class="export-job-actions">
               <span>${getExportJobStatusLabel(job.status)}</span>
               ${job.previewUrl ? `<button class="mini-button" type="button" data-preview-export="${job.id}">Preview</button>` : ""}
+              ${job.status === "done" && job.previewBlob ? `<button class="mini-button" type="button" data-download-export="${job.id}">Download</button>` : ""}
               ${job.status === "failed" ? `<button class="mini-button" type="button" data-retry-export="${job.id}">Retry</button>` : ""}
               ${job.status === "done" || job.status === "failed" ? `<button class="mini-button danger" type="button" data-remove-export="${job.id}">Remove</button>` : ""}
             </div>
@@ -4130,6 +4131,9 @@ function renderExportPanel() {
 
   els.exportList.querySelectorAll("[data-preview-export]").forEach((button) => {
     button.addEventListener("click", () => playExportPreview(button.dataset.previewExport));
+  });
+  els.exportList.querySelectorAll("[data-download-export]").forEach((button) => {
+    button.addEventListener("click", () => downloadExportJob(button.dataset.downloadExport));
   });
   els.exportList.querySelectorAll("[data-retry-export]").forEach((button) => {
     button.addEventListener("click", () => retryExportJob(button.dataset.retryExport));
@@ -5253,8 +5257,21 @@ async function executeExportJob(job) {
 function storeExportPreview(job, blob, filename) {
   cleanupExportJob(job);
 
+  job.previewBlob = blob;
   job.previewUrl = URL.createObjectURL(blob);
   job.previewName = filename;
+}
+
+function downloadExportJob(jobId) {
+  const job = state.exportQueue.find((item) => item.id === jobId);
+  if (!job?.previewBlob) {
+    els.sessionState.textContent = "No export file";
+    return;
+  }
+
+  const filename = job.previewName || `${slugify(job.label || "export")}.wav`;
+  downloadBlob(job.previewBlob, filename);
+  els.sessionState.textContent = `Downloaded ${filename}`;
 }
 
 async function playExportPreview(jobId) {
@@ -5369,6 +5386,7 @@ function cleanupExportJob(job) {
     URL.revokeObjectURL(job.previewUrl);
   }
   if (job) {
+    job.previewBlob = null;
     job.previewUrl = "";
     job.previewName = "";
   }

@@ -72,7 +72,7 @@ node .\scripts\check.mjs
 - Export queue with sequential job status for mix, stems, beat stem, vocal stem, dry vocals, and tuned vocals
 - Export queue retry, remove, and clear-finished controls
 - WAV export metadata for artist, title, BPM, key, and software
-- Export preview playback from completed queue jobs
+- Export preview playback and re-download from completed queue jobs
 - Project zip export containing the `.punchlab.json` bundle, manifest, README, beat asset, and take audio assets
 - Read-only `preview.html` inside project zip archives for extracted browser timeline playback review
 - Recording waveform capture with saved take waveform thumbnails
