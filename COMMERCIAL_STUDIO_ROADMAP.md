@@ -42,6 +42,8 @@
 - native `scanPluginHosts`를 PunchLabEngine API로 노출하고 fixture에서 빈 스캔 결과를 반환
 - Plugin scan readiness 1차
 - scanPluginHosts 지원 여부와 pluginHost capability 상태를 desktop readiness에서 분리 표시
+- Plugin scan status chip 1차
+- topbar에서 scanPluginHosts 사용 가능 여부와 최근 scan count를 작은 상태 칩으로 표시
 - Native fixture mode 1차
 - `?nativeFixture=1`로 native adapter/engine 선택 경로를 브라우저에서 검증
 - Vocal chain parameter manifest 1차

@@ -70,6 +70,7 @@ node .\scripts\check.mjs
 - Plugin host manifest separates VST3/AU scan, chain role, and automation contract planning
 - Native engine adapter exposes plugin-host scanning through `scanPluginHosts`
 - Desktop readiness reports plugin-host scan method availability separately from plugin-host capability
+- Topbar plugin scan chip calls native `scanPluginHosts` when available and shows scan count
 - Desktop readiness checks required audio engine capabilities before native handoff
 - Desktop readiness reports native latency statistics and buffer-size control availability
 - Native bridge exposes optional latency statistics and buffer-size control through the engine adapter

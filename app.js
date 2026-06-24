@@ -57,6 +57,8 @@ const state = {
   currentTakeAudio: null,
   currentTakeId: null,
   currentTakeResolve: null,
+  pluginScanResult: null,
+  isPluginScanning: false,
   isQueuePlaying: false,
   queueMode: "all",
   queueTakeIds: [],
@@ -156,6 +158,8 @@ const els = {
   recordButton: document.querySelector("#recordButton"),
   engineStatus: document.querySelector("#engineStatus"),
   engineStatusText: document.querySelector("#engineStatusText"),
+  pluginScanStatus: document.querySelector("#pluginScanStatus"),
+  pluginScanStatusText: document.querySelector("#pluginScanStatusText"),
   sessionState: document.querySelector("#sessionState"),
   clock: document.querySelector("#clock"),
   micStatus: document.querySelector("#micStatus"),
@@ -356,6 +360,52 @@ function renderEngineStatus() {
   els.engineStatus.title = desktopReadiness
     ? `${descriptor.title} / Desktop ${desktopReadiness.summary} / ${desktopReadiness.wrapper?.summary || "wrapper pending"}`
     : descriptor.title;
+  renderPluginScanStatus(desktopReadiness);
+}
+
+function renderPluginScanStatus(desktopReadiness = window.PunchLabDesktop?.getReadiness?.()) {
+  if (!els.pluginScanStatus || !els.pluginScanStatusText) {
+    return;
+  }
+
+  const pluginHost = desktopReadiness?.pluginHost || {};
+  const scanAvailable = Boolean(pluginHost.scanAvailable);
+  const resultCount = Array.isArray(state.pluginScanResult?.plugins) ? state.pluginScanResult.plugins.length : null;
+  els.pluginScanStatus.disabled = !scanAvailable || state.isPluginScanning;
+  els.pluginScanStatus.dataset.scan = scanAvailable ? "ready" : "fallback";
+  els.pluginScanStatusText.textContent = state.isPluginScanning
+    ? "Scanning"
+    : resultCount === null ? "Plugin" : `Plugin ${resultCount}`;
+  els.pluginScanStatus.title = scanAvailable
+    ? resultCount === null
+      ? "Scan VST3/AU plugins"
+      : `${resultCount} plugin(s) found`
+    : `Plugin scan unavailable: ${(pluginHost.missingMethods || ["scanPluginHosts"]).join(", ")}`;
+}
+
+async function scanPluginHosts() {
+  const desktopReadiness = window.PunchLabDesktop?.getReadiness?.();
+  if (!desktopReadiness?.pluginHost?.scanAvailable) {
+    els.sessionState.textContent = "Plugin scan unavailable";
+    renderPluginScanStatus(desktopReadiness);
+    return;
+  }
+
+  try {
+    state.isPluginScanning = true;
+    renderPluginScanStatus(desktopReadiness);
+    els.sessionState.textContent = "Scanning plugins";
+    const result = await window.PunchLabEngine.scanPluginHosts();
+    state.pluginScanResult = result || { plugins: [] };
+    const count = Array.isArray(state.pluginScanResult.plugins) ? state.pluginScanResult.plugins.length : 0;
+    els.sessionState.textContent = `Plugin scan ${count}`;
+  } catch (error) {
+    els.sessionState.textContent = "Plugin scan failed";
+    console.error(error);
+  } finally {
+    state.isPluginScanning = false;
+    renderPluginScanStatus();
+  }
 }
 
 function bindEvents() {
@@ -367,6 +417,7 @@ function bindEvents() {
   els.playButton.addEventListener("click", toggleSessionPlayback);
   els.stopButton.addEventListener("click", stopAll);
   els.recordButton.addEventListener("click", toggleRecord);
+  els.pluginScanStatus.addEventListener("click", scanPluginHosts);
   els.beatInput.addEventListener("change", loadBeat);
   els.bpmInput.addEventListener("input", updateTempoSettings);
   els.countInSelect.addEventListener("change", scheduleAutosave);

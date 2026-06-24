@@ -139,6 +139,22 @@ h1 {
   border-color: var(--lime);
 }
 
+.plugin-status {
+  color: var(--muted);
+  background: #111613;
+  border-color: var(--line);
+}
+
+.plugin-status[data-scan="ready"] {
+  color: var(--amber);
+  border-color: rgba(255, 183, 74, 0.42);
+}
+
+.plugin-status:disabled {
+  cursor: default;
+  opacity: 0.78;
+}
+
 .engine-status svg {
   width: 14px;
   height: 14px;
