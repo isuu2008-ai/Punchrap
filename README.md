@@ -24,6 +24,7 @@ node .\scripts\check.mjs
 
 - Beat upload and playback
 - Microphone permission and live input meter
+- Audio input device selector with project persistence
 - Count-in
 - Main, Double, Adlib L, Adlib R, and Hook tracks
 - Take recording and download

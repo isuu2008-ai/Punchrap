@@ -35,6 +35,7 @@ const state = {
   beatFileName: "",
   mimeType: "",
   inputGain: 2,
+  audioInputDeviceId: "",
   monitorEnabled: false,
   isExportingMix: false,
   isExportingAssets: false,
@@ -141,6 +142,7 @@ const els = {
   keySelect: document.querySelector("#keySelect"),
   scaleModeSelect: document.querySelector("#scaleModeSelect"),
   targetMidiSelect: document.querySelector("#targetMidiSelect"),
+  audioInputSelect: document.querySelector("#audioInputSelect"),
   inputGainSlider: document.querySelector("#inputGainSlider"),
   inputGainText: document.querySelector("#inputGainText"),
   micButton: document.querySelector("#micButton"),
@@ -303,6 +305,7 @@ function init() {
   renderLyrics();
   applyPreset("trap-hard");
   renderEngineStatus();
+  refreshAudioInputDevices();
   updateTimelineHistoryButtons();
   updateInputGain();
   updatePunchControls();
@@ -313,6 +316,7 @@ function init() {
   window.addEventListener("resize", drawIdleWave);
   window.addEventListener("keydown", handleGlobalShortcut);
   window.addEventListener("punchlab:native-ready", renderEngineStatus);
+  navigator.mediaDevices?.addEventListener?.("devicechange", refreshAudioInputDevices);
   window.addEventListener("load", () => {
     if (window.lucide) {
       window.lucide.createIcons();
@@ -353,6 +357,7 @@ function bindEvents() {
   els.templateSelect.addEventListener("change", updateTemplateMeta);
   els.applyTemplateButton.addEventListener("click", applySelectedTemplate);
   els.inputGainSlider.addEventListener("input", updateInputGain);
+  els.audioInputSelect.addEventListener("change", changeAudioInputDevice);
   els.punchToggle.addEventListener("click", togglePunchMode);
   els.loopToggle.addEventListener("click", toggleLoopMode);
   els.metronomeToggle.addEventListener("click", toggleMetronome);
@@ -590,6 +595,86 @@ function getBestMimeType() {
   return types.find((type) => !type || MediaRecorder.isTypeSupported(type)) || "";
 }
 
+async function refreshAudioInputDevices() {
+  if (!els.audioInputSelect || !navigator.mediaDevices?.enumerateDevices) {
+    return;
+  }
+
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const inputs = devices.filter((device) => device.kind === "audioinput");
+    const selectedId = state.audioInputDeviceId || els.audioInputSelect.value || "";
+    const options = [
+      `<option value="">Default mic</option>`,
+      ...inputs.map((device, index) => {
+        const label = device.label || `Input ${index + 1}`;
+        return `<option value="${escapeHtml(device.deviceId)}">${escapeHtml(label)}</option>`;
+      }),
+    ];
+
+    els.audioInputSelect.innerHTML = options.join("");
+    els.audioInputSelect.value = inputs.some((device) => device.deviceId === selectedId) ? selectedId : "";
+    state.audioInputDeviceId = els.audioInputSelect.value;
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+function getMicConstraints() {
+  const audio = {
+    echoCancellation: false,
+    noiseSuppression: false,
+    autoGainControl: false,
+  };
+
+  if (state.audioInputDeviceId) {
+    audio.deviceId = { exact: state.audioInputDeviceId };
+  }
+
+  return { audio };
+}
+
+function releaseMicInput() {
+  cancelAnimationFrame(state.waveFrame);
+  state.waveFrame = 0;
+  state.stream?.getTracks().forEach((track) => track.stop());
+
+  try {
+    state.gainNode?.disconnect();
+    state.monitorGain?.disconnect();
+  } catch {
+    // Browser audio nodes can already be disconnected during device swaps.
+  }
+
+  state.stream = null;
+  state.processedStream = null;
+  state.analyser = null;
+  state.gainNode = null;
+  state.monitorGain = null;
+  state.recorderDestination = null;
+  state.monitorConnected = false;
+  els.micStatus.classList.remove("ready");
+}
+
+async function changeAudioInputDevice() {
+  if (state.isRecording || state.isPunchWaiting || state.isPunchRecording) {
+    els.audioInputSelect.value = state.audioInputDeviceId;
+    els.sessionState.textContent = "Stop recording first";
+    return;
+  }
+
+  state.audioInputDeviceId = els.audioInputSelect.value;
+  scheduleAutosave();
+
+  if (!state.stream) {
+    els.sessionState.textContent = state.audioInputDeviceId ? "Input selected" : "Default input";
+    return;
+  }
+
+  releaseMicInput();
+  await enableMic();
+}
+
 async function ensureAudioContext() {
   if (!state.audioContext) {
     state.audioContext = new AudioContext();
@@ -608,13 +693,16 @@ async function enableMic() {
   }
 
   try {
-    state.stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: false,
-        noiseSuppression: false,
-        autoGainControl: false,
-      },
-    });
+    try {
+      state.stream = await navigator.mediaDevices.getUserMedia(getMicConstraints());
+    } catch (error) {
+      if (!state.audioInputDeviceId) {
+        throw error;
+      }
+      state.audioInputDeviceId = "";
+      els.audioInputSelect.value = "";
+      state.stream = await navigator.mediaDevices.getUserMedia(getMicConstraints());
+    }
 
     state.audioContext = await ensureAudioContext();
     const source = state.audioContext.createMediaStreamSource(state.stream);
@@ -636,6 +724,7 @@ async function enableMic() {
     els.sessionState.textContent = "Mic ready";
     updateMonitorButton();
     updateInputGain();
+    refreshAudioInputDevices();
     startMeter();
   } catch (error) {
     els.sessionState.textContent = "Mic blocked";
@@ -1129,6 +1218,7 @@ function getProjectSettings() {
     targetMidi: getTargetMidiValue(),
     customScaleIntervals: [...state.customScaleIntervals],
     inputGain: state.inputGain,
+    audioInputDeviceId: state.audioInputDeviceId,
     armedTrackId: state.armedTrackId,
     trackFolderCollapsed: normalizeTrackFolderCollapsed(state.trackFolderCollapsed),
     selectedPresetId: state.selectedPresetId,
@@ -1165,6 +1255,8 @@ function applyProjectSettings(settings = {}) {
   els.sessionNotesInput.value = settings.sessionNotes || "";
   els.timelineSnapSelect.value = normalizeTimelineSnapMode(settings.timelineSnap || "off");
   els.inputGainSlider.value = settings.inputGain || 2;
+  state.audioInputDeviceId = settings.audioInputDeviceId || "";
+  els.audioInputSelect.value = state.audioInputDeviceId;
   state.armedTrackId = tracks.some((track) => track.id === settings.armedTrackId)
     ? settings.armedTrackId
     : tracks[0]?.id || "main";
