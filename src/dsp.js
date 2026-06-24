@@ -33,6 +33,7 @@
     const midEqDb = clamp(Number(tuneSettings.midEq) || 0, -12, 12);
     const airEqDb = clamp(Number(tuneSettings.airEq) || 0, -12, 12);
     const limiterCeiling = clamp(Number(tuneSettings.limiterCeiling ?? -3), -8, 0);
+    const saturationAmount = clamp(Number(tuneSettings.saturation ?? preset.saturation ?? 35), 0, 100) / 100;
     const delayAmount = delaySetting / 100;
     const reverbAmount = reverbSetting / 100;
     const widthAmount = preset.width / 100;
@@ -98,7 +99,7 @@
     compressor.attack.value = 0.004;
     compressor.release.value = 0.08 + (1 - compAmount) * 0.18;
 
-    saturation.curve = makeSaturationCurve(0.18 + retuneAmount * 0.58);
+    saturation.curve = makeSaturationCurve(0.08 + saturationAmount * 1.15 + retuneAmount * 0.22);
     saturation.oversample = "4x";
 
     dryGain.gain.value = 0.82;

@@ -32,6 +32,7 @@
     return {
       ...preset,
       comp: Number(tuneSettings.comp ?? preset.comp),
+      saturation: Number(tuneSettings.saturation ?? preset.saturation ?? 35),
       space: Number(tuneSettings.space ?? preset.space),
       delay: Number(tuneSettings.delay ?? preset.delay ?? preset.space),
       reverb: Number(tuneSettings.reverb ?? preset.reverb ?? Math.round(Number(preset.space ?? 12) * 0.65)),

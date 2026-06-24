@@ -87,12 +87,12 @@ const tracks = [
 ];
 
 const presets = [
-  { id: "trap-hard", name: "Trap Hard", retune: 88, humanize: 10, formant: 10, gate: 18, deEss: 28, comp: 72, space: 18, width: 42 },
-  { id: "drill-dark", name: "Drill Dark", retune: 72, humanize: 18, formant: -12, gate: 24, deEss: 34, comp: 82, space: 12, width: 28 },
-  { id: "clean-rap", name: "Clean Rap", retune: 22, humanize: 60, formant: 0, gate: 10, deEss: 20, comp: 62, space: 8, width: 18 },
-  { id: "rage-wide", name: "Rage Wide", retune: 95, humanize: 5, formant: 18, gate: 16, deEss: 38, comp: 76, space: 34, width: 86 },
-  { id: "radio-hook", name: "Radio Hook", retune: 58, humanize: 30, formant: 8, gate: 12, deEss: 30, comp: 68, space: 45, width: 72 },
-  { id: "lofi-demo", name: "Lo-Fi Demo", retune: 36, humanize: 55, formant: -18, gate: 4, deEss: 14, comp: 54, space: 22, width: 12 },
+  { id: "trap-hard", name: "Trap Hard", retune: 88, humanize: 10, formant: 10, gate: 18, deEss: 28, comp: 72, saturation: 38, space: 18, width: 42 },
+  { id: "drill-dark", name: "Drill Dark", retune: 72, humanize: 18, formant: -12, gate: 24, deEss: 34, comp: 82, saturation: 46, space: 12, width: 28 },
+  { id: "clean-rap", name: "Clean Rap", retune: 22, humanize: 60, formant: 0, gate: 10, deEss: 20, comp: 62, saturation: 18, space: 8, width: 18 },
+  { id: "rage-wide", name: "Rage Wide", retune: 95, humanize: 5, formant: 18, gate: 16, deEss: 38, comp: 76, saturation: 58, space: 34, width: 86 },
+  { id: "radio-hook", name: "Radio Hook", retune: 58, humanize: 30, formant: 8, gate: 12, deEss: 30, comp: 68, saturation: 32, space: 45, width: 72 },
+  { id: "lofi-demo", name: "Lo-Fi Demo", retune: 36, humanize: 55, formant: -18, gate: 4, deEss: 14, comp: 54, saturation: 62, space: 22, width: 12 },
 ];
 
 const els = {
@@ -161,6 +161,8 @@ const els = {
   deEssText: document.querySelector("#deEssText"),
   compSlider: document.querySelector("#compSlider"),
   compText: document.querySelector("#compText"),
+  saturationSlider: document.querySelector("#saturationSlider"),
+  saturationText: document.querySelector("#saturationText"),
   spaceSlider: document.querySelector("#spaceSlider"),
   spaceText: document.querySelector("#spaceText"),
   delaySlider: document.querySelector("#delaySlider"),
@@ -327,6 +329,10 @@ function bindEvents() {
     scheduleAutosave();
   });
   els.compSlider.addEventListener("input", () => {
+    updateTuneControls();
+    scheduleAutosave();
+  });
+  els.saturationSlider.addEventListener("input", () => {
     updateTuneControls();
     scheduleAutosave();
   });
@@ -1041,6 +1047,7 @@ function applyProjectSettings(settings = {}) {
     els.gateSlider.value = settings.tune.gate ?? els.gateSlider.value;
     els.deEssSlider.value = settings.tune.deEss ?? els.deEssSlider.value;
     els.compSlider.value = settings.tune.comp ?? els.compSlider.value;
+    els.saturationSlider.value = settings.tune.saturation ?? els.saturationSlider.value;
     els.spaceSlider.value = settings.tune.space ?? els.spaceSlider.value;
     els.delaySlider.value = settings.tune.delay ?? els.delaySlider.value;
     els.reverbSlider.value = settings.tune.reverb ?? els.reverbSlider.value;
@@ -2302,6 +2309,7 @@ function saveCustomPreset() {
     gate: tuneSettings.gate,
     deEss: tuneSettings.deEss,
     comp: tuneSettings.comp,
+    saturation: tuneSettings.saturation,
     space: tuneSettings.space,
     delay: tuneSettings.delay,
     reverb: tuneSettings.reverb,
@@ -2331,6 +2339,7 @@ function normalizePreset(preset) {
     gate: Number(preset.gate ?? 0),
     deEss: Number(preset.deEss ?? 0),
     comp: Number(preset.comp ?? 60),
+    saturation: Number(preset.saturation ?? 35),
     space: Number(preset.space ?? 12),
     delay: Number(preset.delay ?? preset.space ?? 12),
     reverb: Number(preset.reverb ?? Math.round(Number(preset.space ?? 12) * 0.65)),
@@ -2357,6 +2366,7 @@ function applyPreset(id) {
   els.gateSlider.value = preset.gate || 0;
   els.deEssSlider.value = preset.deEss || 0;
   els.compSlider.value = preset.comp;
+  els.saturationSlider.value = preset.saturation ?? 35;
   els.spaceSlider.value = preset.space;
   els.delaySlider.value = preset.delay;
   els.reverbSlider.value = preset.reverb;
@@ -2448,6 +2458,7 @@ function updateTuneControls() {
   els.gateText.textContent = String(settings.gate);
   els.deEssText.textContent = String(settings.deEss);
   els.compText.textContent = String(settings.comp);
+  els.saturationText.textContent = String(settings.saturation);
   els.spaceText.textContent = String(settings.space);
   els.delayText.textContent = String(settings.delay);
   els.reverbText.textContent = String(settings.reverb);
@@ -2468,6 +2479,7 @@ function setTuneControlsDisabled(isDisabled) {
   els.gateSlider.disabled = isDisabled;
   els.deEssSlider.disabled = isDisabled;
   els.compSlider.disabled = isDisabled;
+  els.saturationSlider.disabled = isDisabled;
   els.spaceSlider.disabled = isDisabled;
   els.delaySlider.disabled = isDisabled;
   els.reverbSlider.disabled = isDisabled;
@@ -4585,6 +4597,7 @@ function getTuneSettings() {
     gate: Number(els.gateSlider?.value) || 0,
     deEss: Number(els.deEssSlider?.value) || 0,
     comp: Number(els.compSlider?.value) || 0,
+    saturation: Number(els.saturationSlider?.value) || 0,
     space: Number(els.spaceSlider?.value) || 0,
     delay: Number(els.delaySlider?.value) || 0,
     reverb: Number(els.reverbSlider?.value) || 0,
@@ -4984,6 +4997,7 @@ function getTuneSignature(settings = {}) {
   const gate = Number(settings.gate ?? 0);
   const deEss = Number(settings.deEss ?? 0);
   const comp = Number(settings.comp ?? 0);
+  const saturation = Number(settings.saturation ?? 0);
   const space = Number(settings.space ?? 0);
   const delay = Number(settings.delay ?? 0);
   const reverb = Number(settings.reverb ?? 0);
@@ -4992,7 +5006,7 @@ function getTuneSignature(settings = {}) {
   const midEq = Number(settings.midEq ?? 0);
   const airEq = Number(settings.airEq ?? 0);
   const limiterCeiling = Number(settings.limiterCeiling ?? -3);
-  return `R${retuneSpeed} H${humanize} F${formatSigned(formant)} G${gate} D${deEss} C${comp} S${space} DL${delay} RV${reverb} W${width} EQ${formatDb(lowEq)}/${formatDb(midEq)}/${formatDb(airEq)} Lim${formatDb(limiterCeiling)}`;
+  return `R${retuneSpeed} H${humanize} F${formatSigned(formant)} G${gate} D${deEss} C${comp} Sat${saturation} S${space} DL${delay} RV${reverb} W${width} EQ${formatDb(lowEq)}/${formatDb(midEq)}/${formatDb(airEq)} Lim${formatDb(limiterCeiling)}`;
 }
 
 function escapeHtml(value) {
