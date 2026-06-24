@@ -132,6 +132,7 @@ node .\scripts\check.mjs
 - Project zip export containing the `.punchlab.json` bundle, manifest, README, beat asset, and take audio assets
 - Project zip manifests include WAV depth, normalize, loudness target, and recent analysis settings
 - Read-only `preview.html` inside project zip archives for extracted browser timeline playback review
+- Project zip preview take cards show region group/color, latency, trim, fade, and processed-chain context
 - Recording waveform capture with saved take waveform thumbnails
 - Export peak normalization to -1 dBFS
 - Optional export loudness normalization to -14 LUFS

@@ -136,6 +136,8 @@
 - project zip `preview.html` take 카드에 preset, tune, key/scale mode lineage 표시
 - Zip take timeline metadata preview 1차
 - project zip `preview.html` take 카드에 latency compensation, trim, fade metadata 표시
+- Zip take region metadata preview 1차
+- project zip `preview.html` take 카드에 region group/color metadata 표시
 - `.punchlab.json` 로컬 프로젝트 저장/복원
 - processed take `v1`, `v2` 버전 관리
 - processed take 버전/체인 정보 저장 포맷 포함

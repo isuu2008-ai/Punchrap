@@ -195,6 +195,14 @@ if (!appSource.includes("formatPreviewPreset") || !appSource.includes("formatPre
   console.error("Project zip preview must display processed take preset, tune, and key lineage.");
   failed = true;
 }
+if (!appSource.includes("regionColor: getTakeRegionColor(take)") || !appSource.includes("regionGroup: getTakeRegionGroup(take)") || !appSource.includes("fadeIn: getTakeFadeIn(take)") || !appSource.includes("fadeOut: getTakeFadeOut(take)")) {
+  console.error("Project zip manifest must preserve take region and fade metadata.");
+  failed = true;
+}
+if (!appSource.includes("formatPreviewRegion") || !appSource.includes("region-chip")) {
+  console.error("Project zip preview must display take region group and color metadata.");
+  failed = true;
+}
 if (!appSource.includes("formatPreviewLatency") || !appSource.includes("formatPreviewTrim") || !appSource.includes("formatPreviewFade")) {
   console.error("Project zip preview must display take latency, trim, and fade metadata.");
   failed = true;

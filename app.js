@@ -1326,6 +1326,7 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
               <div><dt>Preset</dt><dd>${escapeHtml(formatPreviewPreset(take))}</dd></div>
               <div><dt>Tune</dt><dd>${escapeHtml(formatPreviewTune(take))}</dd></div>
               <div><dt>Key</dt><dd>${escapeHtml(formatPreviewKeyMode(take))}</dd></div>
+              <div><dt>Region</dt><dd><span class="region-chip"><i style="background:${escapeHtml(getPreviewRegionColor(take))}"></i>${escapeHtml(formatPreviewRegion(take))}</span></dd></div>
               <div><dt>Gain</dt><dd>${escapeHtml(formatPreviewGain(take.volume, take.clipGain))}</dd></div>
               <div><dt>Latency</dt><dd>${escapeHtml(formatPreviewLatency(take.recordLatencyMs))}</dd></div>
               <div><dt>Trim</dt><dd>${escapeHtml(formatPreviewTrim(take))}</dd></div>
@@ -1379,6 +1380,8 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
       dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(78px, 1fr)); gap: 8px; margin: 0; }
       dt { color: var(--muted); font-size: 10px; text-transform: uppercase; }
       dd { margin: 3px 0 0; font-size: 13px; font-weight: 800; }
+      .region-chip { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+      .region-chip i { width: 10px; height: 10px; border: 1px solid rgba(255,255,255,.28); border-radius: 999px; flex: 0 0 auto; }
       table { width: 100%; border-collapse: collapse; }
       th, td { padding: 8px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
       th { color: var(--muted); font-size: 11px; text-transform: uppercase; }
@@ -1541,6 +1544,14 @@ function formatFileSize(bytes) {
 function formatPreviewGain(volume, clipGain) {
   const gain = Math.max(0, Number(volume || 0) * Number(clipGain || 1));
   return `${Math.round(gain * 100)}%`;
+}
+
+function getPreviewRegionColor(take) {
+  return normalizeRegionColor(take?.regionColor) || "#c8ff4d";
+}
+
+function formatPreviewRegion(take) {
+  return `${getRegionGroupLabel(take?.regionGroup)} / ${getPreviewRegionColor(take).toUpperCase()}`;
 }
 
 function formatPreviewLatency(recordLatencyMs) {
