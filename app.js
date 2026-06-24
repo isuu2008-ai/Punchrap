@@ -182,6 +182,7 @@ function init() {
   updateTimer();
 
   window.addEventListener("resize", drawIdleWave);
+  window.addEventListener("keydown", handleGlobalShortcut);
   window.addEventListener("load", () => {
     if (window.lucide) {
       window.lucide.createIcons();
@@ -241,6 +242,50 @@ function bindEvents() {
   els.exportStemsButton.addEventListener("click", exportTrackStems);
   els.exportDryVocalsButton.addEventListener("click", exportDryVocals);
   els.exportTunedVocalsButton.addEventListener("click", exportTunedVocals);
+}
+
+function handleGlobalShortcut(event) {
+  if (event.ctrlKey || event.metaKey || event.altKey || isTypingTarget(event.target) || isTypingTarget(document.activeElement)) {
+    return;
+  }
+
+  if (event.code === "Space") {
+    event.preventDefault();
+    toggleSessionPlayback();
+    return;
+  }
+
+  if (event.code === "KeyR") {
+    event.preventDefault();
+    toggleRecord();
+    return;
+  }
+
+  if (event.code === "KeyS") {
+    event.preventDefault();
+    stopAll();
+    return;
+  }
+
+  if (event.code === "KeyM") {
+    event.preventDefault();
+    toggleMetronome();
+    return;
+  }
+
+  if (/^Digit[1-7]$/.test(event.code)) {
+    const index = Number(event.code.replace("Digit", "")) - 1;
+    const tab = Array.from(els.viewTabs)[index];
+    if (tab) {
+      event.preventDefault();
+      setActiveView(tab.dataset.view);
+    }
+  }
+}
+
+function isTypingTarget(target) {
+  const tag = target?.tagName?.toLowerCase();
+  return tag === "input" || tag === "select" || tag === "textarea" || target?.isContentEditable;
 }
 
 function setActiveView(view) {

@@ -33,6 +33,7 @@ Then open `http://localhost:4173`.
 - Export tab for track stems, dry vocals, and tuned vocals
 - IndexedDB autosave with project recovery
 - BPM-based metronome toggle for recording and session playback
+- Global shortcuts for transport, metronome, stop, and tab switching outside text inputs
 
 ## Planning
 

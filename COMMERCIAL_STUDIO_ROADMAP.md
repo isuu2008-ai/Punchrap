@@ -28,6 +28,8 @@
 - Storage Layer `src/storage.js` 분리
 - BPM 기반 metronome toggle
 - recording/session playback 중 metronome tick
+- Keyboard shortcuts: Space 재생, R 녹음, S 정지, M metronome, 1-7 탭 이동
+- 입력칸 포커스 중 shortcut 비활성화
 
 ## 결론부터
 
