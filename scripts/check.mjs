@@ -173,6 +173,10 @@ if (!tauriLibSource.includes("get_capabilities") || !tauriLibSource.includes("ge
   console.error("Tauri Rust shell must expose getCapabilities/getDevices scaffold commands.");
   failed = true;
 }
+if (!tauriLibSource.includes("render_mix") || !tauriLibSource.includes("render_vocal") || !tauriLibSource.includes("start_input_monitor") || !tauriLibSource.includes("stop_input_monitor") || !tauriLibSource.includes("UnsupportedNativeCommandResult")) {
+  console.error("Tauri Rust shell must expose required native render/monitor command stubs while keeping the native engine gated.");
+  failed = true;
+}
 if (!tauriLibSource.includes("open_project_file") || !tauriLibSource.includes("save_project_file") || !tauriLibSource.includes("ProjectFileResult")) {
   console.error("Tauri Rust shell must expose native project open/save handoff commands.");
   failed = true;
@@ -429,6 +433,10 @@ if (!readFileSync("src/desktop.js", "utf8").includes("runtimeRoundTripLatencyMs"
 }
 if (!readFileSync("src/desktop.js", "utf8").includes("methodAvailable: hasLatencyMethods") || !readFileSync("src/desktop.js", "utf8").includes("statsAvailable: latencyStatsAvailable") || !readFileSync("src/desktop.js", "utf8").includes("hasMeasuredLatencyStats")) {
   console.error("Desktop readiness must separate latency method availability from measured latency stats.");
+  failed = true;
+}
+if (!readFileSync("src/desktop.js", "utf8").includes("getNativeBridgeDetail") || !readFileSync("src/desktop.js", "utf8").includes("full audio engine waits for nativeBridgeReady")) {
+  console.error("Desktop readiness must explain nativeBridgeReady pending state separately from missing native methods.");
   failed = true;
 }
 if (!readFileSync("src/desktop.js", "utf8").includes("methodAvailable: hasOutputRoutingMethod") || !readFileSync("src/desktop.js", "utf8").includes("capabilityReady: capabilities.audioOutputRouting === true") || !readFileSync("src/engine-contract.js", "utf8").includes("\"audioOutputRouting\"")) {

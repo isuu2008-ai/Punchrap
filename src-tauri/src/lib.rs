@@ -20,9 +20,13 @@ const PLANNED_NATIVE_METHODS: [&str; 13] = [
     "scanPluginHosts",
 ];
 
-const IMPLEMENTED_NATIVE_METHODS: [&str; 9] = [
+const IMPLEMENTED_NATIVE_METHODS: [&str; 13] = [
     "getCapabilities",
     "getDevices",
+    "renderMix",
+    "renderVocal",
+    "startInputMonitor",
+    "stopInputMonitor",
     "getLatencyStats",
     "setOutputDevice",
     "setBufferSize",
@@ -132,6 +136,25 @@ struct PunchLabDevice {
 struct PunchLabDevices {
     audio_input: Vec<PunchLabDevice>,
     audio_output: Vec<PunchLabDevice>,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct NativeRenderPayload {}
+
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct NativeMonitorPayload {}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct UnsupportedNativeCommandResult {
+    active: bool,
+    method: &'static str,
+    native_audio_engine_ready: bool,
+    supported: bool,
+    unsupported: bool,
+    source: &'static str,
 }
 
 #[derive(Deserialize)]
@@ -287,6 +310,26 @@ fn get_devices() -> PunchLabDevices {
         audio_input: Vec::new(),
         audio_output: Vec::new(),
     }
+}
+
+#[tauri::command]
+fn render_mix(_payload: Option<NativeRenderPayload>) -> UnsupportedNativeCommandResult {
+    unsupported_native_command("renderMix", false)
+}
+
+#[tauri::command]
+fn render_vocal(_payload: Option<NativeRenderPayload>) -> UnsupportedNativeCommandResult {
+    unsupported_native_command("renderVocal", false)
+}
+
+#[tauri::command]
+fn start_input_monitor(_payload: Option<NativeMonitorPayload>) -> UnsupportedNativeCommandResult {
+    unsupported_native_command("startInputMonitor", false)
+}
+
+#[tauri::command]
+fn stop_input_monitor(_payload: Option<NativeMonitorPayload>) -> UnsupportedNativeCommandResult {
+    unsupported_native_command("stopInputMonitor", false)
 }
 
 #[tauri::command]
@@ -505,6 +548,17 @@ fn normalize_plugin_scan_formats(formats: Vec<String>) -> Vec<String> {
     normalized
 }
 
+fn unsupported_native_command(method: &'static str, active: bool) -> UnsupportedNativeCommandResult {
+    UnsupportedNativeCommandResult {
+        active,
+        method,
+        native_audio_engine_ready: false,
+        supported: false,
+        unsupported: true,
+        source: "tauri-shell",
+    }
+}
+
 fn make_latency_stats(state: &NativeAudioState) -> PunchLabLatencyStats {
     PunchLabLatencyStats {
         input_latency_ms: None,
@@ -527,6 +581,10 @@ pub fn run() {
             get_punchlab_bridge_status,
             get_capabilities,
             get_devices,
+            render_mix,
+            render_vocal,
+            start_input_monitor,
+            stop_input_monitor,
             get_latency_stats,
             set_output_device,
             set_buffer_size,

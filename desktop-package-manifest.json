@@ -53,6 +53,10 @@
     "implementedMethods": [
       "getCapabilities",
       "getDevices",
+      "renderMix",
+      "renderVocal",
+      "startInputMonitor",
+      "stopInputMonitor",
       "getLatencyStats",
       "setOutputDevice",
       "setBufferSize",

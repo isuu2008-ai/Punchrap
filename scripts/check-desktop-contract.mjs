@@ -116,9 +116,23 @@ if (wrapper.tauriBridge?.activatesNativeBridgeWhen !== "nativeBridgeReady") {
   fail("Tauri bridge must only activate the native bridge when nativeBridgeReady is true.");
 }
 if (wrapper.tauriBridge?.nativeBridgeReady !== false || packageManifest.tauriBridge?.nativeBridgeReady !== false) {
-  fail("Tauri bridge manifests must keep nativeBridgeReady false until render and monitoring commands exist.");
+  fail("Tauri bridge manifests must keep nativeBridgeReady false until the native audio engine is ready.");
 }
-for (const method of ["getCapabilities", "getDevices", "getLatencyStats", "setOutputDevice", "setBufferSize", "openProjectFile", "saveProjectFile", "exportCompressedAudio", "scanPluginHosts"]) {
+for (const method of [
+  "getCapabilities",
+  "getDevices",
+  "renderMix",
+  "renderVocal",
+  "startInputMonitor",
+  "stopInputMonitor",
+  "getLatencyStats",
+  "setOutputDevice",
+  "setBufferSize",
+  "openProjectFile",
+  "saveProjectFile",
+  "exportCompressedAudio",
+  "scanPluginHosts",
+]) {
   if (!wrapper.tauriBridge?.implementedMethods?.includes(method) || !packageManifest.tauriBridge?.implementedMethods?.includes(method)) {
     fail(`Tauri bridge manifests must list implemented method ${method}.`);
   }
@@ -269,6 +283,9 @@ if (!desktopSource.includes("methodAvailable: hasLatencyMethods") || !desktopSou
 if (!desktopSource.includes("methodAvailable: hasOutputRoutingMethod") || !desktopSource.includes("capabilityReady: capabilities.audioOutputRouting === true") || !desktopSource.includes("nativeOutputRoutingReady")) {
   fail("Desktop readiness must separate output-routing method availability from audioOutputRouting capability.");
 }
+if (!desktopSource.includes("getNativeBridgeDetail") || !desktopSource.includes("full audio engine waits for nativeBridgeReady")) {
+  fail("Desktop readiness must explain nativeBridgeReady pending state separately from missing native methods.");
+}
 if (!desktopSource.includes("const compressedExportReady = hasCompressedExportMethod && capabilities.compressedAudioExport === true") || !desktopSource.includes("ready: compressedExportReady")) {
   fail("Desktop readiness must separate compressed export method availability from compressedAudioExport capability.");
 }
@@ -362,6 +379,10 @@ for (const requiredSnippet of [
   "get_punchlab_bridge_status",
   "get_capabilities",
   "get_devices",
+  "render_mix",
+  "render_vocal",
+  "start_input_monitor",
+  "stop_input_monitor",
   "get_latency_stats",
   "set_output_device",
   "set_buffer_size",
@@ -372,6 +393,7 @@ for (const requiredSnippet of [
   "PunchLabBridgeStatus",
   "PunchLabCapabilities",
   "PunchLabDevices",
+  "UnsupportedNativeCommandResult",
   "OutputDeviceResult",
   "CompressedAudioExportResult",
   "PluginScanResult",
@@ -383,6 +405,10 @@ for (const requiredSnippet of [
   "SaveProjectFilePayload",
   "native_bridge_ready: false",
   "IMPLEMENTED_NATIVE_METHODS",
+  "renderMix",
+  "renderVocal",
+  "startInputMonitor",
+  "stopInputMonitor",
   "getLatencyStats",
   "setOutputDevice",
   "setBufferSize",
@@ -404,6 +430,7 @@ for (const requiredSnippet of [
   "plugin_host_ready: false",
   "plugin_host: false",
   "default_plugin_scan_formats",
+  "unsupported_native_command",
   "SUPPORTED_BUFFER_SIZES",
   "audio_input: Vec::new()",
   "audio_output: Vec::new()",
@@ -416,6 +443,10 @@ for (const requiredSnippet of [
   "PLANNED_NATIVE_METHODS",
   "get_capabilities,",
   "get_devices",
+  "render_mix,",
+  "render_vocal,",
+  "start_input_monitor,",
+  "stop_input_monitor,",
   "get_latency_stats,",
   "set_output_device,",
   "set_buffer_size,",

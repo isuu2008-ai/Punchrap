@@ -88,6 +88,8 @@
 - `src/tauri-bridge.js`가 `window.__TAURI__.core.invoke`의 status command를 probe하고 partial `__PUNCHLAB_NATIVE__` host를 설치하되 full native engine은 `nativeBridgeReady`로 gate
 - Tauri native introspection commands 1차
 - Rust Tauri shell에 `get_capabilities`, `get_devices` command를 추가하되 render/monitoring 미구현 상태에서는 `nativeBridgeReady=false`를 유지
+- Tauri required native command stubs 1차
+- Rust Tauri shell에 `render_mix`, `render_vocal`, `start_input_monitor`, `stop_input_monitor` command stub을 추가하되 `unsupported=true`와 `nativeBridgeReady=false`로 full native engine 전환을 차단
 - Tauri project file handoff commands 1차
 - Rust Tauri shell에 `open_project_file`, `save_project_file` command를 추가하고 `.punchlab.json`을 data URL 기반으로 JS project loader와 연결
 - Tauri latency/buffer shell commands 1차

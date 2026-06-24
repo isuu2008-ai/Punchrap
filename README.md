@@ -81,6 +81,7 @@ node .\scripts\check.mjs
 - Tauri Rust/Cargo scaffold at `src-tauri/Cargo.toml`, `src-tauri/src/main.rs`, and `src-tauri/src/lib.rs`
 - Tauri invoke bridge adapter at `src/tauri-bridge.js` for the future native host handoff
 - Tauri shell command scaffold for native `getCapabilities` and `getDevices`
+- Tauri native render/monitor command stubs for `renderMix`, `renderVocal`, `startInputMonitor`, and `stopInputMonitor`, kept unsupported behind `nativeBridgeReady`
 - Tauri native project open/save handoff commands for `.punchlab.json`
 - Tauri native latency/buffer preference commands for `getLatencyStats` and `setBufferSize`
 - Tauri native output-device handoff command for `setOutputDevice`, kept unsupported until the native audio engine can route audio

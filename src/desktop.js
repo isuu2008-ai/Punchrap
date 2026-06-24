@@ -102,6 +102,10 @@
           implementedMethods: [
             "getCapabilities",
             "getDevices",
+            "renderMix",
+            "renderVocal",
+            "startInputMonitor",
+            "stopInputMonitor",
             "getLatencyStats",
             "setOutputDevice",
             "setBufferSize",
@@ -202,10 +206,8 @@
       makeCheck(
         "native-bridge",
         "Native bridge",
-        bridgeStatus?.available ? "ready" : "fallback",
-        bridgeStatus?.available
-          ? "Native host contract satisfied."
-          : `Web Audio fallback active; missing ${bridgeStatus?.missingMethods?.length || getManifest().requiredNativeMethods.length} method(s).`,
+        bridgeStatus?.available ? "ready" : bridgeStatus?.nativeHostAvailable ? "pending" : "fallback",
+        getNativeBridgeDetail(bridgeStatus),
       ),
       makeCheck(
         "engine-capabilities",
@@ -341,6 +343,19 @@
       return "Offline shell cache registered.";
     }
     return serviceWorker.error || "Registration pending.";
+  }
+
+  function getNativeBridgeDetail(bridgeStatus) {
+    if (bridgeStatus?.available) {
+      return "Native host contract satisfied.";
+    }
+    if (bridgeStatus?.nativeHostAvailable && bridgeStatus?.nativeBridgeReady === false) {
+      return "Native host present; full audio engine waits for nativeBridgeReady.";
+    }
+    const missingCount = Array.isArray(bridgeStatus?.missingMethods)
+      ? bridgeStatus.missingMethods.length
+      : getManifest().requiredNativeMethods.length;
+    return `Web Audio fallback active; missing ${missingCount} method(s).`;
   }
 
   function makeCheck(id, label, status, detail) {
