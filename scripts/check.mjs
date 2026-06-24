@@ -399,6 +399,10 @@ if (!readFileSync("src/desktop.js", "utf8").includes("runtimeRoundTripLatencyMs"
   console.error("Desktop readiness must expose runtime round-trip latency.");
   failed = true;
 }
+if (!readFileSync("src/desktop.js", "utf8").includes("methodAvailable: hasLatencyMethods") || !readFileSync("src/desktop.js", "utf8").includes("statsAvailable: latencyStatsAvailable") || !readFileSync("src/desktop.js", "utf8").includes("hasMeasuredLatencyStats")) {
+  console.error("Desktop readiness must separate latency method availability from measured latency stats.");
+  failed = true;
+}
 if (!readFileSync("src/desktop.js", "utf8").includes("fixture: Boolean(capabilities.nativeFixture)") || !appSource.includes("Native fixture")) {
   console.error("Desktop readiness and UI must identify native fixture mode explicitly.");
   failed = true;

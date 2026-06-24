@@ -108,6 +108,8 @@
 - `nativeHostAvailable`과 full native engine `available`을 분리해 project file handoff가 native audio 완성 전에도 동작하도록 검증
 - Tauri latency/buffer shell contract check 1차
 - shell-level buffer preference와 native audio latency readiness가 분리되어 있는지 검증
+- Latency readiness split 1차
+- `getLatencyStats/setBufferSize` method availability와 실제 measured latency stats readiness를 desktop readiness에서 분리
 - Tauri capability contract check 1차
 - `tauri.conf.json` security.capabilities, capability permissions, package/wrapper manifest 정합성을 검증
 - Tauri file association scaffold 1차

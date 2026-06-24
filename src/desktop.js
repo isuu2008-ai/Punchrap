@@ -139,7 +139,7 @@
     const requiredCapabilities = window.PunchLabEngineContract?.getRequiredEngineCapabilities?.() || [];
     const missingCapabilities = window.PunchLabEngineContract?.getMissingCapabilities?.(capabilities, requiredCapabilities) || [];
     const missingLatencyMethods = getMissingOptionalMethods(bridgeStatus, ["getLatencyStats", "setBufferSize"]);
-    const hasLatencyControl = missingLatencyMethods.length === 0;
+    const hasLatencyMethods = missingLatencyMethods.length === 0;
     const missingOutputMethods = getMissingOptionalMethods(bridgeStatus, ["setOutputDevice"]);
     const hasNativeOutputRouting = missingOutputMethods.length === 0;
     const missingProjectFileMethods = getMissingOptionalMethods(bridgeStatus, ["openProjectFile", "saveProjectFile"]);
@@ -150,6 +150,8 @@
     const hasPluginScan = missingPluginMethods.length === 0;
     const nativeAudioContract = getNativeAudioContractStatus(capabilities);
     const latencyStats = normalizeLatencyStats(platform.latencyStats);
+    const latencyStatsAvailable = hasMeasuredLatencyStats(latencyStats);
+    const latencyControlReady = hasLatencyMethods && latencyStatsAvailable;
     const handoffStages = getWrapperHandoffStages(bridgeStatus, capabilities);
     const serviceWorker = platform.serviceWorker || {};
     const checks = [
@@ -208,10 +210,12 @@
       makeCheck(
         "latency-buffer-control",
         "Latency/buffer control",
-        hasLatencyControl ? "ready" : "fallback",
-        hasLatencyControl
-          ? "Native host can report latency and change buffer size."
-          : "Browser fallback active; native host needs getLatencyStats and setBufferSize for low-latency tuning.",
+        latencyControlReady ? "ready" : hasLatencyMethods ? "pending" : "fallback",
+        latencyControlReady
+          ? "Native host reports measured latency and can change buffer size."
+          : hasLatencyMethods
+            ? "Native shell can store buffer preference; measured audio latency is pending."
+            : "Browser fallback active; native host needs getLatencyStats and setBufferSize for low-latency tuning.",
       ),
       makeCheck(
         "native-audio-performance",
@@ -243,7 +247,10 @@
       displayMode: platform.displayMode || "browser",
       bridgeStatus,
       latencyControl: {
-        available: hasLatencyControl,
+        available: hasLatencyMethods,
+        methodAvailable: hasLatencyMethods,
+        ready: latencyControlReady,
+        statsAvailable: latencyStatsAvailable,
         missingMethods: missingLatencyMethods,
         preferredBufferSize: preferredNativeBufferSize,
         stats: latencyStats,
@@ -253,6 +260,7 @@
         ...nativeAudioContract,
         fixture: Boolean(capabilities.nativeFixture),
         runtimeRoundTripLatencyMs: latencyStats?.roundTripLatencyMs ?? nativeAudioContract.roundTripLatencyMs,
+        runtimeLatencyReady: latencyStatsAvailable || Number.isFinite(nativeAudioContract.roundTripLatencyMs),
         preferredRuntimeBufferSize: preferredNativeBufferSize,
       },
       outputRouting: {
@@ -414,6 +422,14 @@
       bufferSize: finiteOrNull(stats.bufferSize),
       sampleRate: finiteOrNull(stats.sampleRate),
     };
+  }
+
+  function hasMeasuredLatencyStats(stats) {
+    return Boolean(stats && [
+      stats.inputLatencyMs,
+      stats.outputLatencyMs,
+      stats.roundTripLatencyMs,
+    ].some((value) => Number.isFinite(value)));
   }
 
   function finiteOrNull(value) {

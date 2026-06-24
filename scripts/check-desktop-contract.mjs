@@ -260,6 +260,9 @@ if (nativeAudioEngine.requiresExclusiveAudioThread !== true) {
 if (!desktopSource.includes("nativeAudioEngine") || !desktopSource.includes("getNativeAudioContractStatus")) {
   fail("Desktop readiness must expose native audio engine performance contract status.");
 }
+if (!desktopSource.includes("methodAvailable: hasLatencyMethods") || !desktopSource.includes("statsAvailable: latencyStatsAvailable") || !desktopSource.includes("hasMeasuredLatencyStats")) {
+  fail("Desktop readiness must separate latency method availability from measured latency stats.");
+}
 if (!desktopSource.includes("packageManifestPath")) {
   fail("Desktop runtime manifest must expose the desktop package manifest path.");
 }

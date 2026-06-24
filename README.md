@@ -91,6 +91,7 @@ node .\scripts\check.mjs
 - Desktop contract check validates that native render/monitoring stays gated while only capabilities/devices commands exist
 - Desktop contract check validates partial native host file handoff separately from full native audio readiness
 - Desktop contract check validates Tauri shell buffer preference handoff while native audio latency remains gated
+- Desktop readiness separates latency method availability from measured native latency readiness
 - Desktop contract check validates selected Tauri capabilities and local-only main-window permissions
 - Desktop contract check verifies HTML manifest meta tags and host contract file paths
 - Tauri file associations register `.punchlab.json` projects and `.punchlab.zip` archives as PunchLab-owned editor types
