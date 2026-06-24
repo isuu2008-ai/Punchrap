@@ -66,7 +66,7 @@ node .\scripts\check.mjs
 - WAV export metadata for artist, title, BPM, key, and software
 - Export preview playback from completed queue jobs
 - Project zip export containing the `.punchlab.json` bundle, manifest, README, beat asset, and take audio assets
-- Read-only `preview.html` inside project zip archives for extracted browser review
+- Read-only `preview.html` inside project zip archives for extracted browser timeline playback review
 - Recording waveform capture with saved take waveform thumbnails
 - Export peak normalization to -1 dBFS
 - Optional export loudness normalization to -14 LUFS

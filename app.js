@@ -979,6 +979,7 @@ async function buildProjectZipFiles(bundle, projectFilename) {
     const takePath = reserveZipPath(usedPaths, `assets/takes/${baseName}.${extension}`);
     const data = await take.blob.arrayBuffer();
     files[takePath] = data;
+    const track = findTrack(take.trackId);
     manifest.takes.push({
       id: take.id,
       path: takePath,
@@ -992,6 +993,9 @@ async function buildProjectZipFiles(bundle, projectFilename) {
       bestTake: Boolean(take.bestTake),
       regionColor: getTakeRegionColor(take),
       regionGroup: getTakeRegionGroup(take),
+      volume: getTrackOutputVolume(track),
+      pan: Number(track?.pan || 0),
+      clipGain: getTakeClipGain(take),
       startTime: take.startTime || 0,
       duration: getTakeVisibleDuration(take),
       sourceOffset: getTakeSourceOffset(take),
@@ -1034,6 +1038,19 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
   const compTakes = takes
     .filter((take) => take.compSelected)
     .sort((left, right) => (left.compOrder || 0) - (right.compOrder || 0));
+  const playbackData = JSON.stringify({
+    beat: manifest.beat ? { path: manifest.beat.path } : null,
+    takes: takes
+      .filter((take) => Number(take.volume) > 0)
+      .map((take) => ({
+        path: take.path,
+        startTime: take.startTime || 0,
+        sourceOffset: take.sourceOffset || 0,
+        duration: take.duration || 0,
+        volume: Math.min(1, Math.max(0, Number(take.volume || 0) * Number(take.clipGain || 1))),
+        pan: Math.max(-1, Math.min(1, Number(take.pan || 0))),
+      })),
+  });
 
   const beatSection = manifest.beat
     ? `
@@ -1074,7 +1091,7 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
             <dl>
               <div><dt>Start</dt><dd>${escapeHtml(formatDuration(take.startTime))}</dd></div>
               <div><dt>Length</dt><dd>${escapeHtml(formatDuration(take.duration))}</dd></div>
-              <div><dt>Size</dt><dd>${escapeHtml(formatFileSize(take.bytes))}</dd></div>
+              <div><dt>Gain</dt><dd>${escapeHtml(formatPreviewGain(take.volume, take.clipGain))}</dd></div>
             </dl>
             <audio controls src="${escapeHtml(take.path)}"></audio>
           </article>`,
@@ -1108,6 +1125,10 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
       .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
       .asset-card { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: #0b0f0d; }
       .asset-heading { display: flex; align-items: start; justify-content: space-between; gap: 10px; }
+      .preview-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 16px; }
+      .preview-controls button { min-height: 38px; padding: 0 14px; color: #050706; background: var(--lime); border: 1px solid var(--lime); border-radius: 6px; font-weight: 900; cursor: pointer; }
+      .preview-controls button.secondary { color: var(--text); background: #0b0f0d; border-color: var(--line); }
+      #previewStatus { color: var(--cyan); font-size: 13px; font-weight: 800; }
       audio { width: 100%; }
       dl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0; }
       dt { color: var(--muted); font-size: 10px; text-transform: uppercase; }
@@ -1134,6 +1155,11 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
           <span>${manifest.markers.length} markers</span>
         </div>
         <p>Open <code>${escapeHtml(projectFilename)}</code> in PunchLab to edit the full session.</p>
+        <div class="preview-controls">
+          <button id="playPreviewButton" type="button">Play timeline</button>
+          <button id="stopPreviewButton" class="secondary" type="button">Stop</button>
+          <span id="previewStatus">Ready</span>
+        </div>
       </header>
       ${beatSection}
       <section>
@@ -1152,6 +1178,87 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
         <div class="grid">${takeRows}</div>
       </section>
     </main>
+    <script type="application/json" id="previewData">${escapeScriptJson(playbackData)}</script>
+    <script>
+      (() => {
+        const data = JSON.parse(document.querySelector("#previewData").textContent);
+        const status = document.querySelector("#previewStatus");
+        let audioContext = null;
+        let players = [];
+        let timers = [];
+
+        function stopPreview(message = "Stopped") {
+          timers.forEach((timer) => clearTimeout(timer));
+          timers = [];
+          players.forEach((player) => {
+            try {
+              player.pause?.();
+              player.currentTime = 0;
+              player.stop?.();
+              player.disconnect?.();
+            } catch {}
+          });
+          players = [];
+          status.textContent = message;
+        }
+
+        async function playPreview() {
+          stopPreview("Preparing");
+          audioContext ||= new AudioContext();
+          if (audioContext.state === "suspended") {
+            await audioContext.resume();
+          }
+          const startedAt = performance.now();
+          if (data.beat?.path) {
+            const beat = new Audio(data.beat.path);
+            beat.volume = 1;
+            players.push(beat);
+            beat.play().catch(() => {
+              status.textContent = "Playback blocked";
+            });
+          }
+          data.takes.forEach((take) => {
+            const delayMs = Math.max(0, Number(take.startTime || 0) * 1000);
+            const timer = setTimeout(() => {
+              const audio = new Audio(take.path);
+              audio.currentTime = Math.max(0, Number(take.sourceOffset || 0));
+              const source = audioContext.createMediaElementSource(audio);
+              const gain = audioContext.createGain();
+              gain.gain.value = Math.max(0, Math.min(1, Number(take.volume || 0)));
+              const panner = audioContext.createStereoPanner ? audioContext.createStereoPanner() : null;
+              source.connect(gain);
+              if (panner) {
+                panner.pan.value = Math.max(-1, Math.min(1, Number(take.pan || 0)));
+                gain.connect(panner).connect(audioContext.destination);
+              } else {
+                gain.connect(audioContext.destination);
+              }
+              players.push(audio, source, gain, panner);
+              const stopMs = Math.max(50, Number(take.duration || 0) * 1000);
+              const stopTimer = setTimeout(() => {
+                audio.pause();
+                audio.currentTime = 0;
+              }, stopMs);
+              timers.push(stopTimer);
+              audio.play().catch(() => {
+                status.textContent = "Playback blocked";
+              });
+            }, delayMs);
+            timers.push(timer);
+          });
+          status.textContent = "Playing timeline";
+          const endAt = Math.max(0, ...data.takes.map((take) => Number(take.startTime || 0) + Number(take.duration || 0))) * 1000 + 300;
+          const doneTimer = setTimeout(() => {
+            const elapsed = Math.round((performance.now() - startedAt) / 1000);
+            stopPreview("Done " + elapsed + "s");
+          }, endAt);
+          timers.push(doneTimer);
+        }
+
+        document.querySelector("#playPreviewButton").addEventListener("click", playPreview);
+        document.querySelector("#stopPreviewButton").addEventListener("click", () => stopPreview());
+      })();
+    </script>
   </body>
 </html>`;
 }
@@ -1165,6 +1272,20 @@ function formatFileSize(bytes) {
     return `${(safeBytes / 1024).toFixed(1)} KB`;
   }
   return `${(safeBytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function formatPreviewGain(volume, clipGain) {
+  const gain = Math.max(0, Number(volume || 0) * Number(clipGain || 1));
+  return `${Math.round(gain * 100)}%`;
+}
+
+function escapeScriptJson(value) {
+  return String(value ?? "")
+    .replace(/</g, "\\u003c")
+    .replace(/>/g, "\\u003e")
+    .replace(/&/g, "\\u0026")
+    .replace(/\u2028/g, "\\u2028")
+    .replace(/\u2029/g, "\\u2029");
 }
 
 function reserveZipPath(usedPaths, requestedPath) {
