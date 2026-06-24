@@ -3853,6 +3853,7 @@ function renderVersionPanel(take) {
       .map((versionTake) => {
         const isSelected = versionTake.id === state.selectedVocalTakeId;
         const isPlaying = versionTake.id === state.currentTakeId || state.sessionPlayingTakeIds.has(versionTake.id);
+        const isBest = Boolean(versionTake.bestTake);
         return `
           <div class="version-row ${isSelected ? "selected" : ""} ${isPlaying ? "active" : ""}">
             <button class="version-main" type="button" data-select-version="${versionTake.id}" ${vocalBusy ? "disabled" : ""}>
@@ -3864,6 +3865,7 @@ function renderVersionPanel(take) {
               <button class="mini-button ${isPlaying ? "active" : ""}" type="button" data-play-version="${versionTake.id}" ${vocalBusy ? "disabled" : ""}>
                 ${isPlaying ? "Pause" : "Play"}
               </button>
+              <button class="mini-button ${isBest ? "active" : ""}" type="button" data-best-version="${versionTake.id}" ${vocalBusy ? "disabled" : ""}>Best</button>
               <a class="mini-button" href="${versionTake.url}" download="${makeTakeFilename(versionTake)}">Save</a>
               <button class="mini-button danger" type="button" data-delete-version="${versionTake.id}" ${vocalBusy ? "disabled" : ""}>Del</button>
             </div>
@@ -3878,6 +3880,9 @@ function renderVersionPanel(take) {
   });
   els.versionList.querySelectorAll("[data-play-version]").forEach((button) => {
     button.addEventListener("click", () => playVocalVersion(button.dataset.playVersion));
+  });
+  els.versionList.querySelectorAll("[data-best-version]").forEach((button) => {
+    button.addEventListener("click", () => toggleBestTake(button.dataset.bestVersion));
   });
   els.versionList.querySelectorAll("[data-delete-version]").forEach((button) => {
     button.addEventListener("click", () => deleteVocalVersion(button.dataset.deleteVersion));
@@ -6301,6 +6306,7 @@ function toggleBestTake(takeId) {
   take.bestTake = !take.bestTake;
   els.sessionState.textContent = take.bestTake ? "Marked best take" : "Unmarked best take";
   renderTakes();
+  renderVocalPanel();
   scheduleAutosave();
 }
 

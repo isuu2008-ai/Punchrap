@@ -373,7 +373,7 @@ if (!indexHtml.includes('id="markerCommentInput"') || !appSource.includes('marke
   console.error("Timeline markers must support comments from creation through editing and project zip manifest output.");
   failed = true;
 }
-if (!appSource.includes("data-play-version") || !appSource.includes("data-delete-version") || !appSource.includes('download="${makeTakeFilename(versionTake)}"') || !appSource.includes("selectVocalVersion") || !appSource.includes("playVocalVersion") || !appSource.includes("deleteVocalVersion") || !readFileSync("styles.css", "utf8").includes(".version-actions")) {
+if (!appSource.includes("data-play-version") || !appSource.includes("data-best-version") || !appSource.includes("data-delete-version") || !appSource.includes('download="${makeTakeFilename(versionTake)}"') || !appSource.includes("selectVocalVersion") || !appSource.includes("playVocalVersion") || !appSource.includes("deleteVocalVersion") || !readFileSync("styles.css", "utf8").includes(".version-actions")) {
   console.error("Vocal render version history must support separate select, audition, and delete actions.");
   failed = true;
 }
