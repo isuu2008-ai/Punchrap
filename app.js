@@ -167,6 +167,7 @@ const els = {
   quickTakeTitle: document.querySelector("#quickTakeTitle"),
   quickTakeMeta: document.querySelector("#quickTakeMeta"),
   playLatestTakeButton: document.querySelector("#playLatestTakeButton"),
+  sendLatestToVocalButton: document.querySelector("#sendLatestToVocalButton"),
   quickTakeList: document.querySelector("#quickTakeList"),
   trackList: document.querySelector("#trackList"),
   armTrackList: document.querySelector("#armTrackList"),
@@ -402,6 +403,7 @@ function bindEvents() {
   els.compBestButton.addEventListener("click", addBestTakesToComp);
   els.exportMixButton.addEventListener("click", exportFullMix);
   els.playLatestTakeButton.addEventListener("click", playLatestTake);
+  els.sendLatestToVocalButton.addEventListener("click", sendLatestTakeToVocal);
   els.downloadLatestButton.addEventListener("click", downloadLatestTake);
   els.retuneSpeedSlider.addEventListener("input", () => {
     updateTuneControls();
@@ -2197,6 +2199,20 @@ function playLatestTake() {
 
   state.latestTake = latestTake;
   playTake(latestTake.id);
+}
+
+function sendLatestTakeToVocal() {
+  const latestTake = state.latestTake || getAllTakes().at(-1);
+  if (!latestTake) {
+    els.sessionState.textContent = "No take";
+    return;
+  }
+
+  state.latestTake = latestTake;
+  state.selectedVocalTakeId = latestTake.id;
+  setActiveView("vocal");
+  renderVocalPanel();
+  els.sessionState.textContent = "Take sent to Vocal";
 }
 
 async function playTakeAudio(take, label) {
@@ -4140,6 +4156,9 @@ function renderQuickTakeReview(allTakes = getAllTakes()) {
   els.playLatestTakeButton.disabled = !latestTake || state.isRecording;
   els.playLatestTakeButton.textContent = latestIsPlaying ? "Pause latest" : "Play latest";
   els.playLatestTakeButton.classList.toggle("active", Boolean(latestIsPlaying));
+  if (els.sendLatestToVocalButton) {
+    els.sendLatestToVocalButton.disabled = !latestTake || state.isRecording;
+  }
   els.quickTakeList.innerHTML = recentTakes.length
     ? recentTakes
       .map((take) => {
