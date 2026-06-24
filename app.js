@@ -3527,6 +3527,11 @@ async function renderProcessedTake(sourceTake, preset, tuneSettings) {
     chainSnapshot: {
       preset: { ...rendered.renderPreset },
       tuneSettings: { ...tuneSettings },
+      automationState: window.PunchLabChainParams?.createAutomationState?.(tuneSettings, {
+        presetId: preset.id,
+        presetName: preset.name,
+        sourceTakeId: sourceTake.id,
+      }) || null,
       key: els.keySelect.value,
       scaleMode: els.scaleModeSelect.value,
       customScaleIntervals: [...state.customScaleIntervals],

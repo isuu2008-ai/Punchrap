@@ -72,6 +72,19 @@
     };
   }
 
+  function createAutomationState(settings = {}, metadata = {}) {
+    const coercedSettings = coerceSettings(settings);
+    return {
+      metadata: { ...metadata },
+      parameters: PARAMETERS.map((parameter) => ({
+        automationId: parameter.automationId,
+        id: parameter.id,
+        value: coercedSettings[parameter.id],
+      })),
+      version: 1,
+    };
+  }
+
   function cloneParameter(parameter) {
     return { ...parameter };
   }
@@ -79,6 +92,7 @@
   window.PunchLabChainParams = {
     coerceParameterValue,
     coerceSettings,
+    createAutomationState,
     getAutomationManifest,
     getParameter,
     getParameters,
