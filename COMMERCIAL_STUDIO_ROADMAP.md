@@ -82,6 +82,8 @@
 - 지원 브라우저에서는 Save/Open 버튼이 OS 파일 선택창을 사용하고, 미지원 환경에서는 기존 download/input으로 fallback
 - Project templates 1차
 - Trap, drill, rage hook, clean hook 세션 템플릿으로 BPM/key/track mix/marker/preset 빠른 세팅
+- Lyrics marker linking 1차
+- Timeline marker별 가사 섹션과 scratch pad를 project bundle에 저장/복원
 - Waveform recording view
 - 녹음 중 waveform peak trail 표시
 - take별 waveform thumbnail 저장/복원

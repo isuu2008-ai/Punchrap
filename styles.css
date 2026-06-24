@@ -1538,6 +1538,34 @@ textarea:focus {
   margin-top: 4px;
 }
 
+.lyric-section-list {
+  display: grid;
+  gap: 10px;
+}
+
+.lyric-section-card {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  background: #0f1411;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.lyric-section-card strong {
+  color: var(--text);
+}
+
+.lyric-section-card small {
+  color: var(--cyan);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.lyric-section-card textarea {
+  min-height: 118px;
+}
+
 .bottom-console {
   min-height: 112px;
   display: grid;

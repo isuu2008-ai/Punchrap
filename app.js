@@ -233,6 +233,8 @@ const els = {
   exportArtistInput: document.querySelector("#exportArtistInput"),
   exportTitleInput: document.querySelector("#exportTitleInput"),
   exportNormalizeInput: document.querySelector("#exportNormalizeInput"),
+  lyricsInput: document.querySelector("#lyricsInput"),
+  lyricSectionList: document.querySelector("#lyricSectionList"),
 };
 
 function init() {
@@ -245,6 +247,7 @@ function init() {
   renderExportPanel();
   renderPresets();
   renderProjectTemplates();
+  renderLyrics();
   applyPreset("trap-hard");
   updateTimelineHistoryButtons();
   updateInputGain();
@@ -383,6 +386,7 @@ function bindEvents() {
   els.exportArtistInput.addEventListener("input", updateExportMetadata);
   els.exportTitleInput.addEventListener("input", updateExportMetadata);
   els.exportNormalizeInput.addEventListener("change", updateExportMetadata);
+  els.lyricsInput.addEventListener("input", updateProjectLyrics);
   els.saveCustomPresetButton.addEventListener("click", saveCustomPreset);
 }
 
@@ -464,6 +468,9 @@ function setActiveView(view) {
   }
   if (view === "comp") {
     renderCompView();
+  }
+  if (view === "lyrics") {
+    renderLyrics();
   }
 }
 
@@ -944,6 +951,7 @@ function applyLoadedProject(project) {
   renderTakes();
   renderVocalPanel();
   renderTimeline();
+  renderLyrics();
   updateQueueButton();
   updateExportButtons();
   scheduleAutosave();
@@ -976,6 +984,7 @@ function getProjectSettings() {
     tune: getTuneSettings(),
     exportMetadata: getExportMetadata(),
     exportNormalize: els.exportNormalizeInput.checked,
+    lyrics: els.lyricsInput.value,
     punchEnabled: state.punchEnabled,
     loopEnabled: state.loopEnabled,
     metronomeEnabled: state.metronomeEnabled,
@@ -994,6 +1003,7 @@ function applyProjectSettings(settings = {}) {
   els.exportArtistInput.value = settings.exportMetadata?.artist || "";
   els.exportTitleInput.value = settings.exportMetadata?.title || "";
   els.exportNormalizeInput.checked = settings.exportNormalize !== false;
+  els.lyricsInput.value = settings.lyrics || "";
   els.inputGainSlider.value = settings.inputGain || 2;
   state.armedTrackId = tracks.some((track) => track.id === settings.armedTrackId)
     ? settings.armedTrackId
@@ -2209,6 +2219,7 @@ function applyProjectTemplate(template) {
   renderTracks();
   renderArmTracks();
   renderTimeline();
+  renderLyrics();
   renderVocalPanel();
   updateExportButtons();
   updateQueueButton();
@@ -3205,6 +3216,49 @@ function updateExportMetadata() {
   scheduleAutosave();
 }
 
+function updateProjectLyrics() {
+  scheduleAutosave();
+}
+
+function renderLyrics() {
+  if (!els.lyricSectionList) {
+    return;
+  }
+
+  const markers = normalizeMarkers(state.markers);
+  state.markers = markers;
+  els.lyricSectionList.innerHTML = markers.length
+    ? markers
+      .map(
+        (marker) => `
+          <label class="lyric-section-card">
+            <span class="label-row">
+              <strong>${escapeHtml(marker.type)}</strong>
+              <small>${formatDuration(marker.time)}</small>
+            </span>
+            <textarea spellcheck="false" data-marker-lyrics="${marker.id}" placeholder="${escapeHtml(marker.type)} lyrics...">${escapeHtml(marker.lyrics)}</textarea>
+          </label>
+        `,
+      )
+      .join("")
+    : `<span class="empty-takes">Add timeline markers to write section lyrics.</span>`;
+
+  els.lyricSectionList.querySelectorAll("[data-marker-lyrics]").forEach((textarea) => {
+    textarea.addEventListener("input", () => updateMarkerLyrics(textarea.dataset.markerLyrics, textarea.value));
+  });
+}
+
+function updateMarkerLyrics(markerId, value) {
+  const marker = state.markers.find((item) => item.id === markerId);
+  if (!marker) {
+    return;
+  }
+
+  marker.lyrics = value;
+  renderTimelineMarkerSummary();
+  scheduleAutosave();
+}
+
 function getExportMetadata() {
   return {
     artist: els.exportArtistInput?.value.trim() || "",
@@ -3291,21 +3345,7 @@ function renderTimeline() {
     .join("");
   els.timelineRegions.innerHTML = beatRegion + takeRegions;
 
-  els.markerList.innerHTML = markers.length
-    ? markers
-      .map(
-        (marker) => `
-          <div class="marker-row">
-            <header>
-              <strong>${escapeHtml(marker.type)}</strong>
-              <button class="mini-button danger" type="button" data-delete-marker="${marker.id}">Del</button>
-            </header>
-            <small>${formatDuration(marker.time)}</small>
-          </div>
-        `,
-      )
-      .join("")
-    : `<span class="empty-takes">No markers</span>`;
+  renderTimelineMarkerSummary(markers);
 
   els.regionList.innerHTML = takes.length
     ? takes
@@ -3342,9 +3382,6 @@ function renderTimeline() {
       .join("")
     : `<span class="empty-takes">No regions</span>`;
 
-  els.markerList.querySelectorAll("[data-delete-marker]").forEach((button) => {
-    button.addEventListener("click", () => deleteTimelineMarker(button.dataset.deleteMarker));
-  });
   els.regionList.querySelectorAll("[data-region-start]").forEach((input) => {
     input.addEventListener("change", () => setRegionStart(input.dataset.regionStart, input.value));
   });
@@ -3363,6 +3400,40 @@ function renderTimeline() {
   els.regionList.querySelectorAll("[data-nudge-region]").forEach((button) => {
     button.addEventListener("click", () => nudgeRegionStart(button.dataset.nudgeRegion, Number(button.dataset.delta)));
   });
+}
+
+function renderTimelineMarkerSummary(markers = normalizeMarkers(state.markers)) {
+  if (!els.markerList) {
+    return;
+  }
+
+  els.markerList.innerHTML = markers.length
+    ? markers
+      .map((marker) => {
+        const lyricLineCount = getLyricLineCount(marker.lyrics);
+        const lyricMeta = lyricLineCount ? ` / ${lyricLineCount} lines` : "";
+        return `
+          <div class="marker-row">
+            <header>
+              <strong>${escapeHtml(marker.type)}</strong>
+              <button class="mini-button danger" type="button" data-delete-marker="${marker.id}">Del</button>
+            </header>
+            <small>${formatDuration(marker.time)}${lyricMeta}</small>
+          </div>
+        `;
+      })
+      .join("")
+    : `<span class="empty-takes">No markers</span>`;
+
+  els.markerList.querySelectorAll("[data-delete-marker]").forEach((button) => {
+    button.addEventListener("click", () => deleteTimelineMarker(button.dataset.deleteMarker));
+  });
+}
+
+function getLyricLineCount(value) {
+  return String(value || "")
+    .split(/\r?\n/)
+    .filter((line) => line.trim()).length;
 }
 
 function recordTimelineHistory() {
@@ -3439,6 +3510,8 @@ function refreshTimelineEdit() {
   updateActiveSessionMix();
   renderTracks();
   renderTakes();
+  renderTimeline();
+  renderLyrics();
   updateExportButtons();
   updateTimelineHistoryButtons();
   scheduleAutosave();
@@ -3597,6 +3670,7 @@ function normalizeMarkers(markers = []) {
       id: marker.id || crypto.randomUUID(),
       type: marker.type || "Marker",
       time: Math.max(0, Number(marker.time) || 0),
+      lyrics: String(marker.lyrics || ""),
     }))
     .sort((a, b) => a.time - b.time);
 }

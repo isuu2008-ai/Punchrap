@@ -7,20 +7,20 @@
     <title>PunchLab</title>
     <link rel="icon" href="./assets/punchlab-icon.svg" type="image/svg+xml" />
     <link rel="manifest" href="./manifest.webmanifest" />
-    <link rel="stylesheet" href="./styles.css?v=20260624-40" />
+    <link rel="stylesheet" href="./styles.css?v=20260624-41" />
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
-    <script src="./src/dsp.js?v=20260624-40" defer></script>
-    <script src="./src/audio.js?v=20260624-40" defer></script>
-    <script src="./src/files.js?v=20260624-40" defer></script>
-    <script src="./src/templates.js?v=20260624-40" defer></script>
-    <script src="./src/mix.js?v=20260624-40" defer></script>
-    <script src="./src/vocal.js?v=20260624-40" defer></script>
-    <script src="./src/native-bridge.js?v=20260624-40" defer></script>
-    <script src="./src/engine.js?v=20260624-40" defer></script>
-    <script src="./src/project.js?v=20260624-40" defer></script>
-    <script src="./src/storage.js?v=20260624-40" defer></script>
-    <script src="./src/platform.js?v=20260624-40" defer></script>
-    <script src="./app.js?v=20260624-40" defer></script>
+    <script src="./src/dsp.js?v=20260624-41" defer></script>
+    <script src="./src/audio.js?v=20260624-41" defer></script>
+    <script src="./src/files.js?v=20260624-41" defer></script>
+    <script src="./src/templates.js?v=20260624-41" defer></script>
+    <script src="./src/mix.js?v=20260624-41" defer></script>
+    <script src="./src/vocal.js?v=20260624-41" defer></script>
+    <script src="./src/native-bridge.js?v=20260624-41" defer></script>
+    <script src="./src/engine.js?v=20260624-41" defer></script>
+    <script src="./src/project.js?v=20260624-41" defer></script>
+    <script src="./src/storage.js?v=20260624-41" defer></script>
+    <script src="./src/platform.js?v=20260624-41" defer></script>
+    <script src="./app.js?v=20260624-41" defer></script>
   </head>
   <body>
     <main class="studio-shell">
@@ -661,10 +661,18 @@
         </section>
 
         <section class="view-panel" data-view-panel="lyrics">
-          <section class="lyrics-grid solo">
+          <section class="lyrics-grid">
+            <aside class="panel">
+              <div class="panel-heading">
+                <span>Sections</span>
+                <span>Marker linked</span>
+              </div>
+              <div id="lyricSectionList" class="lyric-section-list"></div>
+            </aside>
+
             <aside class="panel">
               <label class="lyrics-pad">
-                Lyrics
+                Scratch pad
                 <textarea id="lyricsInput" spellcheck="false" placeholder="Paste verse here..."></textarea>
               </label>
             </aside>
