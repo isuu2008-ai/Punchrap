@@ -149,6 +149,7 @@
     const hasProjectFileHandoff = missingProjectFileMethods.length === 0;
     const missingCompressedExportMethods = getMissingOptionalMethods(bridgeStatus, ["exportCompressedAudio"]);
     const hasCompressedExportMethod = missingCompressedExportMethods.length === 0;
+    const compressedExportReady = hasCompressedExportMethod && capabilities.compressedAudioExport === true;
     const missingPluginMethods = getMissingOptionalMethods(bridgeStatus, ["scanPluginHosts"]);
     const hasPluginScan = missingPluginMethods.length === 0;
     const nativeAudioContract = getNativeAudioContractStatus(capabilities);
@@ -231,10 +232,12 @@
       makeCheck(
         "compressed-export-handoff",
         "Compressed export handoff",
-        hasCompressedExportMethod ? "ready" : "fallback",
-        hasCompressedExportMethod
-          ? "Native host can receive compressed MP3/M4A export requests."
-          : "MP3/M4A export waits for native exportCompressedAudio support.",
+        compressedExportReady ? "ready" : hasCompressedExportMethod ? "pending" : "fallback",
+        compressedExportReady
+          ? "Native host can encode compressed MP3/M4A export requests."
+          : hasCompressedExportMethod
+            ? "Native host can receive compressed export requests; encoder capability is pending."
+            : "MP3/M4A export waits for native exportCompressedAudio support.",
       ),
       makeCheck(
         "plugin-host-scan",
@@ -284,6 +287,7 @@
       },
       compressedExport: {
         methodAvailable: hasCompressedExportMethod,
+        ready: compressedExportReady,
         capabilityReady: capabilities.compressedAudioExport === true,
         missingMethods: missingCompressedExportMethods,
       },

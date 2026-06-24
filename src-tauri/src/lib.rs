@@ -20,7 +20,7 @@ const PLANNED_NATIVE_METHODS: [&str; 13] = [
     "scanPluginHosts",
 ];
 
-const IMPLEMENTED_NATIVE_METHODS: [&str; 7] = [
+const IMPLEMENTED_NATIVE_METHODS: [&str; 8] = [
     "getCapabilities",
     "getDevices",
     "getLatencyStats",
@@ -28,6 +28,7 @@ const IMPLEMENTED_NATIVE_METHODS: [&str; 7] = [
     "setBufferSize",
     "openProjectFile",
     "saveProjectFile",
+    "exportCompressedAudio",
 ];
 
 const SUPPORTED_BUFFER_SIZES: [u32; 5] = [64, 128, 256, 512, 1024];
@@ -156,6 +157,30 @@ struct OutputDeviceResult {
     source: &'static str,
 }
 
+#[derive(Default, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ExportCompressedAudioPayload {
+    data: Option<String>,
+    data_url: Option<String>,
+    wav_data_url: Option<String>,
+    file_name: Option<String>,
+    format: Option<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct CompressedAudioExportResult {
+    bytes: usize,
+    data_url: Option<String>,
+    file_name: String,
+    format: String,
+    mime_type: String,
+    native_audio_engine_ready: bool,
+    supported: bool,
+    unsupported: bool,
+    source: &'static str,
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct PunchLabLatencyStats {
@@ -278,6 +303,35 @@ fn set_buffer_size(
 }
 
 #[tauri::command]
+fn export_compressed_audio(
+    payload: Option<ExportCompressedAudioPayload>,
+) -> CompressedAudioExportResult {
+    let payload = payload.unwrap_or_default();
+    let format = normalize_compressed_format(payload.format.as_deref());
+    let file_name = payload
+        .file_name
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or_else(|| format!("punchlab-export.{}", format));
+    let source = payload
+        .wav_data_url
+        .or(payload.data_url)
+        .or(payload.data)
+        .unwrap_or_default();
+
+    CompressedAudioExportResult {
+        bytes: source.len(),
+        data_url: None,
+        file_name,
+        format: format.to_string(),
+        mime_type: compressed_mime_type(format).to_string(),
+        native_audio_engine_ready: false,
+        supported: false,
+        unsupported: true,
+        source: "tauri-shell",
+    }
+}
+
+#[tauri::command]
 async fn open_project_file(
     app: tauri::AppHandle,
     payload: Option<OpenProjectFilePayload>,
@@ -374,6 +428,20 @@ fn encode_data_url(file_type: &str, bytes: &[u8]) -> String {
     )
 }
 
+fn normalize_compressed_format(format: Option<&str>) -> &'static str {
+    match format.unwrap_or("mp3").trim().to_ascii_lowercase().as_str() {
+        "m4a" | "mp4" | "aac" => "m4a",
+        _ => "mp3",
+    }
+}
+
+fn compressed_mime_type(format: &str) -> &'static str {
+    match format {
+        "m4a" => "audio/mp4",
+        _ => "audio/mpeg",
+    }
+}
+
 fn make_latency_stats(state: &NativeAudioState) -> PunchLabLatencyStats {
     PunchLabLatencyStats {
         input_latency_ms: None,
@@ -399,6 +467,7 @@ pub fn run() {
             get_latency_stats,
             set_output_device,
             set_buffer_size,
+            export_compressed_audio,
             open_project_file,
             save_project_file
         ])

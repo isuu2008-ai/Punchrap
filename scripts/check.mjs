@@ -185,8 +185,16 @@ if (!tauriLibSource.includes("set_output_device") || !tauriLibSource.includes("O
   console.error("Tauri Rust shell must expose output-device handoff while keeping real routing unsupported.");
   failed = true;
 }
+if (!tauriLibSource.includes("export_compressed_audio") || !tauriLibSource.includes("CompressedAudioExportResult") || !tauriLibSource.includes("normalize_compressed_format")) {
+  console.error("Tauri Rust shell must expose compressed export handoff while keeping real encoding unsupported.");
+  failed = true;
+}
 if (!tauriLibSource.includes("round_trip_latency_ms: None") || !tauriLibSource.includes("source: \"tauri-shell\"")) {
   console.error("Tauri latency scaffold must keep actual native audio latency unset until the audio engine exists.");
+  failed = true;
+}
+if (!tauriLibSource.includes("compressed_audio_export: false")) {
+  console.error("Tauri compressed export scaffold must keep compressedAudioExport capability false until encoding exists.");
   failed = true;
 }
 if (!tauriLibSource.includes("native_bridge_ready: false") || !tauriLibSource.includes("native_audio_engine_ready: false")) {
@@ -413,6 +421,10 @@ if (!readFileSync("src/desktop.js", "utf8").includes("methodAvailable: hasLatenc
 }
 if (!readFileSync("src/desktop.js", "utf8").includes("methodAvailable: hasOutputRoutingMethod") || !readFileSync("src/desktop.js", "utf8").includes("capabilityReady: capabilities.audioOutputRouting === true") || !readFileSync("src/engine-contract.js", "utf8").includes("\"audioOutputRouting\"")) {
   console.error("Desktop readiness must separate output-routing method availability from audioOutputRouting capability.");
+  failed = true;
+}
+if (!readFileSync("src/desktop.js", "utf8").includes("const compressedExportReady = hasCompressedExportMethod && capabilities.compressedAudioExport === true") || !readFileSync("src/desktop.js", "utf8").includes("ready: compressedExportReady")) {
+  console.error("Desktop readiness must separate compressed export method availability from compressedAudioExport capability.");
   failed = true;
 }
 if (!readFileSync("src/desktop.js", "utf8").includes("fixture: Boolean(capabilities.nativeFixture)") || !appSource.includes("Native fixture")) {

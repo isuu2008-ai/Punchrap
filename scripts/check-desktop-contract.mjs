@@ -118,7 +118,7 @@ if (wrapper.tauriBridge?.activatesNativeBridgeWhen !== "nativeBridgeReady") {
 if (wrapper.tauriBridge?.nativeBridgeReady !== false || packageManifest.tauriBridge?.nativeBridgeReady !== false) {
   fail("Tauri bridge manifests must keep nativeBridgeReady false until render and monitoring commands exist.");
 }
-for (const method of ["getCapabilities", "getDevices", "getLatencyStats", "setOutputDevice", "setBufferSize", "openProjectFile", "saveProjectFile"]) {
+for (const method of ["getCapabilities", "getDevices", "getLatencyStats", "setOutputDevice", "setBufferSize", "openProjectFile", "saveProjectFile", "exportCompressedAudio"]) {
   if (!wrapper.tauriBridge?.implementedMethods?.includes(method) || !packageManifest.tauriBridge?.implementedMethods?.includes(method)) {
     fail(`Tauri bridge manifests must list implemented method ${method}.`);
   }
@@ -269,6 +269,9 @@ if (!desktopSource.includes("methodAvailable: hasLatencyMethods") || !desktopSou
 if (!desktopSource.includes("methodAvailable: hasOutputRoutingMethod") || !desktopSource.includes("capabilityReady: capabilities.audioOutputRouting === true") || !desktopSource.includes("nativeOutputRoutingReady")) {
   fail("Desktop readiness must separate output-routing method availability from audioOutputRouting capability.");
 }
+if (!desktopSource.includes("const compressedExportReady = hasCompressedExportMethod && capabilities.compressedAudioExport === true") || !desktopSource.includes("ready: compressedExportReady")) {
+  fail("Desktop readiness must separate compressed export method availability from compressedAudioExport capability.");
+}
 if (!desktopSource.includes("packageManifestPath")) {
   fail("Desktop runtime manifest must expose the desktop package manifest path.");
 }
@@ -356,12 +359,14 @@ for (const requiredSnippet of [
   "get_latency_stats",
   "set_output_device",
   "set_buffer_size",
+  "export_compressed_audio",
   "open_project_file",
   "save_project_file",
   "PunchLabBridgeStatus",
   "PunchLabCapabilities",
   "PunchLabDevices",
   "OutputDeviceResult",
+  "CompressedAudioExportResult",
   "NativeAudioState",
   "PunchLabLatencyStats",
   "SetBufferSizePayload",
@@ -375,6 +380,7 @@ for (const requiredSnippet of [
   "setBufferSize",
   "openProjectFile",
   "saveProjectFile",
+  "exportCompressedAudio",
   "implemented_methods: IMPLEMENTED_NATIVE_METHODS.to_vec()",
   "native_audio_engine_ready: false",
   "realtime_native_monitoring: false",
@@ -384,6 +390,8 @@ for (const requiredSnippet of [
   "unsupported: true",
   "state.set_output_device_id",
   "state.set_buffer_size(buffer_size)",
+  "normalize_compressed_format",
+  "compressed_audio_export: false",
   "SUPPORTED_BUFFER_SIZES",
   "audio_input: Vec::new()",
   "audio_output: Vec::new()",
@@ -399,6 +407,7 @@ for (const requiredSnippet of [
   "get_latency_stats,",
   "set_output_device,",
   "set_buffer_size,",
+  "export_compressed_audio,",
   "open_project_file,",
   "save_project_file",
   ".manage(NativeAudioState::default())",

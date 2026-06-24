@@ -84,6 +84,7 @@ node .\scripts\check.mjs
 - Tauri native project open/save handoff commands for `.punchlab.json`
 - Tauri native latency/buffer preference commands for `getLatencyStats` and `setBufferSize`
 - Tauri native output-device handoff command for `setOutputDevice`, kept unsupported until the native audio engine can route audio
+- Tauri compressed-export handoff command for `exportCompressedAudio`, kept unsupported until a native MP3/M4A encoder exists
 - Tauri main-window capability scaffold at `src-tauri/capabilities/main.json`
 - Desktop wrapper contract check for shell, permission, bridge, plugin, and handoff-stage requirements
 - Desktop contract check validates the Tauri app id, dev server, main window, and bundled manifest resources
@@ -94,6 +95,7 @@ node .\scripts\check.mjs
 - Desktop contract check validates Tauri shell buffer preference handoff while native audio latency remains gated
 - Desktop readiness separates latency method availability from measured native latency readiness
 - Desktop readiness separates native output-routing method availability from audioOutputRouting capability readiness
+- Desktop readiness separates compressed export method availability from compressedAudioExport capability readiness
 - Desktop contract check validates selected Tauri capabilities and local-only main-window permissions
 - Desktop contract check verifies HTML manifest meta tags and host contract file paths
 - Tauri file associations register `.punchlab.json` projects and `.punchlab.zip` archives as PunchLab-owned editor types

@@ -57,7 +57,8 @@
       "setOutputDevice",
       "setBufferSize",
       "openProjectFile",
-      "saveProjectFile"
+      "saveProjectFile",
+      "exportCompressedAudio"
     ],
     "nativeBridgeReady": false,
     "activatesNativeBridgeWhen": "nativeBridgeReady"

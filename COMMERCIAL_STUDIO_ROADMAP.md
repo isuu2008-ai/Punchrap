@@ -94,6 +94,8 @@
 - Rust Tauri shell에 `get_latency_stats`, `set_buffer_size` command를 추가하고 native audio engine 미준비 상태에서는 latency 값을 null로 유지
 - Tauri output-device shell command 1차
 - Rust Tauri shell에 `set_output_device` command를 추가하되 native audio engine 미준비 상태에서는 `unsupported=true`를 반환
+- Tauri compressed-export shell command 1차
+- Rust Tauri shell에 `export_compressed_audio` command를 추가하되 native MP3/M4A encoder 미준비 상태에서는 `unsupported=true`를 반환
 - Tauri main capability scaffold 1차
 - `src-tauri/capabilities/main.json`에 main window, core/dialog/fs 기본 permission 계약을 추가
 - Desktop wrapper contract check 1차
@@ -114,6 +116,8 @@
 - `getLatencyStats/setBufferSize` method availability와 실제 measured latency stats readiness를 desktop readiness에서 분리
 - Output routing readiness split 1차
 - `setOutputDevice` method availability와 실제 `audioOutputRouting` capability readiness를 desktop readiness에서 분리
+- Compressed export readiness split 보강
+- `exportCompressedAudio` method availability와 실제 `compressedAudioExport` capability readiness를 desktop readiness에서 분리
 - Tauri capability contract check 1차
 - `tauri.conf.json` security.capabilities, capability permissions, package/wrapper manifest 정합성을 검증
 - Tauri file association scaffold 1차
