@@ -1,5 +1,5 @@
 (() => {
-  const WEB_AUDIO_CAPABILITIES = {
+  const WEB_AUDIO_CAPABILITIES = window.PunchLabEngineContract?.getWebAudioCapabilities?.() || {
     offlineMixRender: true,
     vocalRender: true,
     pitchAnalysis: true,
@@ -16,7 +16,7 @@
       return {
         id: "native",
         name: "Native Audio Engine",
-        capabilities: {
+        capabilities: window.PunchLabEngineContract?.mergeNativeCapabilities?.(window.PunchLabNativeEngine.capabilities) || {
           ...WEB_AUDIO_CAPABILITIES,
           ...window.PunchLabNativeEngine.capabilities,
           realtimeNativeMonitoring: true,
@@ -29,7 +29,7 @@
       id: "web-audio",
       name: "Web Audio Engine",
       nativeBridge: bridgeStatus || null,
-      capabilities: { ...WEB_AUDIO_CAPABILITIES },
+      capabilities: window.PunchLabEngineContract?.getWebAudioCapabilities?.() || { ...WEB_AUDIO_CAPABILITIES },
       analyzeLoudness: window.PunchLabAudio.analyzeLoudness,
       applyTruePeakCeiling: window.PunchLabAudio.applyTruePeakCeiling,
       analyzeTakePitch: window.PunchLabVocal.analyzeTakePitch,

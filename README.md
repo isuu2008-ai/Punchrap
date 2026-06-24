@@ -47,6 +47,7 @@ node .\scripts\check.mjs
 - Project save/open as a local `.punchlab.json` bundle
 - File System Access project save/open when available, with browser download/input fallback
 - Separated DSP, audio utility, offline mix render, vocal render engine, swappable audio engine interface, and project storage modules under `src/`
+- Engine contract module for native bridge method requirements and shared driver capability defaults
 - Native bridge contract stub for future desktop/native audio integration
 - Audio engine status chip showing Web Audio fallback or future native engine activation
 - Node package scripts for local start and smoke checks

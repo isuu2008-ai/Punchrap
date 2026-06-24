@@ -327,15 +327,15 @@ function renderEngineStatus() {
 
   const driver = window.PunchLabEngine?.getDriver?.();
   const bridgeStatus = window.PunchLabNativeBridge?.getStatus?.();
-  const isNative = driver?.id === "native";
-  const missingCount = bridgeStatus?.missingMethods?.length || 0;
-  const driverName = driver?.name || "Web Audio Engine";
+  const descriptor = window.PunchLabEngineContract?.describeDriver?.(driver, bridgeStatus) || {
+    kind: driver?.id === "native" ? "native" : "web",
+    label: driver?.id === "native" ? "Native" : "Web Audio",
+    title: driver?.name || "Web Audio Engine",
+  };
 
-  els.engineStatus.dataset.engine = isNative ? "native" : "web";
-  els.engineStatusText.textContent = isNative ? "Native" : "Web Audio";
-  els.engineStatus.title = isNative
-    ? `${driverName} active`
-    : `Web Audio fallback${missingCount ? ` / native bridge missing ${missingCount}` : ""}`;
+  els.engineStatus.dataset.engine = descriptor.kind;
+  els.engineStatusText.textContent = descriptor.label;
+  els.engineStatus.title = descriptor.title;
 }
 
 function bindEvents() {

@@ -1,5 +1,5 @@
 (() => {
-  const REQUIRED_METHODS = [
+  const REQUIRED_METHODS = window.PunchLabEngineContract?.getRequiredNativeMethods?.() || [
     "getCapabilities",
     "getDevices",
     "renderMix",

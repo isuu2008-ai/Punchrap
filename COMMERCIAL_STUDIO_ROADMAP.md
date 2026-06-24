@@ -12,6 +12,8 @@
 - Vocal render/analyze 엔진을 `src/vocal.js`로 분리
 - Swappable audio engine interface `src/engine.js` 추가
 - Native bridge contract `src/native-bridge.js` 추가
+- Engine contract `src/engine-contract.js` 추가
+- native bridge required methods와 Web Audio/native capability 기본값을 한 곳에서 공유
 - Audio engine status 1차
 - 현재 Web Audio fallback인지 future native engine인지 상단 상태칩으로 표시
 - 프로젝트 저장/불러오기 계층을 `src/project.js`로 분리
