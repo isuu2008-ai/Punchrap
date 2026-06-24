@@ -195,6 +195,10 @@ if (!appSource.includes("formatPreviewPreset") || !appSource.includes("formatPre
   console.error("Project zip preview must display processed take preset, tune, and key lineage.");
   failed = true;
 }
+if (!appSource.includes("formatPreviewLatency") || !appSource.includes("formatPreviewTrim") || !appSource.includes("formatPreviewFade")) {
+  console.error("Project zip preview must display take latency, trim, and fade metadata.");
+  failed = true;
+}
 if (!appSource.includes("formatPreviewNativeAudio")) {
   console.error("Project zip preview must display the native audio environment summary.");
   failed = true;

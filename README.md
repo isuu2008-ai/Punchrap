@@ -40,6 +40,7 @@ node .\scripts\check.mjs
 - Project zip preview includes a vocal chain automation schema section for archived parameter review
 - Project zip preview uses the automation schema to summarize processed take chain values
 - Project zip preview shows processed take preset, tune, source, version, and key lineage
+- Project zip preview shows take latency compensation, source trim, and fade metadata
 - Project zip manifests include processed-take source, version, preset, tune, and automation summaries
 - Vocal screen render-version history for source take retunes
 - Pitch analysis against the selected minor key or chromatic mode

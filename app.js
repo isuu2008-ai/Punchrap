@@ -1217,6 +1217,8 @@ async function buildProjectZipFiles(bundle, projectFilename) {
       duration: getTakeVisibleDuration(take),
       sourceOffset: getTakeSourceOffset(take),
       sourceDuration: getTakeSourceDuration(take),
+      fadeIn: getTakeFadeIn(take),
+      fadeOut: getTakeFadeOut(take),
       automationState: processedChain?.automationState || summarizeAutomationState(take.chainSnapshot?.automationState),
       bytes: data.byteLength,
     });
@@ -1325,6 +1327,9 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
               <div><dt>Tune</dt><dd>${escapeHtml(formatPreviewTune(take))}</dd></div>
               <div><dt>Key</dt><dd>${escapeHtml(formatPreviewKeyMode(take))}</dd></div>
               <div><dt>Gain</dt><dd>${escapeHtml(formatPreviewGain(take.volume, take.clipGain))}</dd></div>
+              <div><dt>Latency</dt><dd>${escapeHtml(formatPreviewLatency(take.recordLatencyMs))}</dd></div>
+              <div><dt>Trim</dt><dd>${escapeHtml(formatPreviewTrim(take))}</dd></div>
+              <div><dt>Fade</dt><dd>${escapeHtml(formatPreviewFade(take))}</dd></div>
               <div><dt>Chain</dt><dd>${escapeHtml(formatAutomationStateSummary(take.automationState, automationManifest))}</dd></div>
             </dl>
             <audio controls src="${escapeHtml(take.path)}"></audio>
@@ -1536,6 +1541,25 @@ function formatFileSize(bytes) {
 function formatPreviewGain(volume, clipGain) {
   const gain = Math.max(0, Number(volume || 0) * Number(clipGain || 1));
   return `${Math.round(gain * 100)}%`;
+}
+
+function formatPreviewLatency(recordLatencyMs) {
+  const latencyMs = Number(recordLatencyMs || 0);
+  return latencyMs > 0 ? `-${Math.round(latencyMs)} ms` : "None";
+}
+
+function formatPreviewTrim(take) {
+  const sourceOffset = Number(take?.sourceOffset || 0);
+  const sourceDuration = Number(take?.sourceDuration || 0);
+  return sourceOffset > 0 || sourceDuration > Number(take?.duration || 0)
+    ? `${formatDuration(sourceOffset)} offset / ${formatDuration(sourceDuration)} source`
+    : "Full source";
+}
+
+function formatPreviewFade(take) {
+  const fadeIn = Number(take?.fadeIn || 0);
+  const fadeOut = Number(take?.fadeOut || 0);
+  return fadeIn > 0 || fadeOut > 0 ? `In ${formatDuration(fadeIn)} / Out ${formatDuration(fadeOut)}` : "None";
 }
 
 function formatPreviewExportSettings(settings) {
