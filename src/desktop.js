@@ -99,6 +99,8 @@
           global: "__TAURI__",
           adapter: "src/tauri-bridge.js",
           statusCommand: "get_punchlab_bridge_status",
+          implementedMethods: ["getCapabilities", "getDevices"],
+          nativeBridgeReady: false,
           activatesNativeBridgeWhen: "nativeBridgeReady",
         },
         fileAssociations: FILE_ASSOCIATIONS.map((association) => ({ ...association })),

@@ -168,6 +168,15 @@ if (!tauriBridgeSource.includes("window.__TAURI__?.core?.invoke") || !tauriBridg
   console.error("Tauri bridge adapter must probe Tauri invoke and gate native activation on nativeBridgeReady.");
   failed = true;
 }
+const tauriLibSource = readFileSync("src-tauri/src/lib.rs", "utf8");
+if (!tauriLibSource.includes("get_capabilities") || !tauriLibSource.includes("get_devices") || !tauriLibSource.includes("IMPLEMENTED_NATIVE_METHODS")) {
+  console.error("Tauri Rust shell must expose getCapabilities/getDevices scaffold commands.");
+  failed = true;
+}
+if (!tauriLibSource.includes("native_bridge_ready: false") || !tauriLibSource.includes("native_audio_engine_ready: false")) {
+  console.error("Tauri Rust shell must keep native audio activation gated until render and monitoring commands exist.");
+  failed = true;
+}
 if (!appSource.includes("nativeAudioEngine?.detail")) {
   console.error("app.js must surface native audio engine readiness detail in the engine status.");
   failed = true;

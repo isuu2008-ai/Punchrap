@@ -86,6 +86,8 @@
 - `src-tauri/Cargo.toml`, `src-tauri/build.rs`, `src-tauri/src/main.rs`, `src-tauri/src/lib.rs`로 Tauri desktop shell entry를 추가
 - Tauri invoke bridge adapter 1차
 - `src/tauri-bridge.js`가 `window.__TAURI__.core.invoke`의 status command를 probe하고 `nativeBridgeReady`일 때만 `__PUNCHLAB_NATIVE__`를 설치
+- Tauri native introspection commands 1차
+- Rust Tauri shell에 `get_capabilities`, `get_devices` command를 추가하되 render/monitoring 미구현 상태에서는 `nativeBridgeReady=false`를 유지
 - Tauri main capability scaffold 1차
 - `src-tauri/capabilities/main.json`에 main window, core/dialog/fs 기본 permission 계약을 추가
 - Desktop wrapper contract check 1차
@@ -96,6 +98,8 @@
 - Cargo package/lib, build.rs, main.rs, lib.rs plugin 초기화 계약을 `scripts/check-desktop-contract.mjs`에서 검증
 - Tauri invoke bridge contract check 1차
 - `withGlobalTauri`, `get_punchlab_bridge_status`, planned native method, fallback safety gate를 contract check에서 검증
+- Tauri native introspection contract check 1차
+- `getCapabilities/getDevices` 구현 목록과 native audio activation gate가 분리되어 있는지 검증
 - Tauri capability contract check 1차
 - `tauri.conf.json` security.capabilities, capability permissions, package/wrapper manifest 정합성을 검증
 - Tauri file association scaffold 1차

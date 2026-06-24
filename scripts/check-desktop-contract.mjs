@@ -115,6 +115,14 @@ if (wrapper.tauriBridge?.statusCommand !== "get_punchlab_bridge_status" || packa
 if (wrapper.tauriBridge?.activatesNativeBridgeWhen !== "nativeBridgeReady") {
   fail("Tauri bridge must only activate the native bridge when nativeBridgeReady is true.");
 }
+if (wrapper.tauriBridge?.nativeBridgeReady !== false || packageManifest.tauriBridge?.nativeBridgeReady !== false) {
+  fail("Tauri bridge manifests must keep nativeBridgeReady false until render and monitoring commands exist.");
+}
+for (const method of ["getCapabilities", "getDevices"]) {
+  if (!wrapper.tauriBridge?.implementedMethods?.includes(method) || !packageManifest.tauriBridge?.implementedMethods?.includes(method)) {
+    fail(`Tauri bridge manifests must list implemented method ${method}.`);
+  }
+}
 if (host.packageManifest !== "desktop-package-manifest.json" || wrapper.packageManifest !== host.packageManifest) {
   fail("Desktop host and wrapper manifests must reference desktop-package-manifest.json.");
 }
@@ -278,6 +286,9 @@ for (const requiredSnippet of ["nativeBridgeReady", "implementedMethods", "missi
     fail(`Tauri bridge adapter missing ${requiredSnippet}.`);
   }
 }
+if (!tauriBridgeSource.includes("payload === null ? invoke(command) : invoke(command, { payload })")) {
+  fail("Tauri bridge adapter must omit payload args for no-argument commands.");
+}
 
 if (tauriConfig.$schema !== "https://schema.tauri.app/config/2") {
   fail("Tauri config must use the Tauri v2 schema.");
@@ -327,11 +338,22 @@ if (!tauriMainSource.includes("windows_subsystem = \"windows\"") || !tauriMainSo
 for (const requiredSnippet of [
   "#[tauri::command]",
   "get_punchlab_bridge_status",
+  "get_capabilities",
+  "get_devices",
   "PunchLabBridgeStatus",
+  "PunchLabCapabilities",
+  "PunchLabDevices",
   "native_bridge_ready: false",
-  "implemented_methods: Vec::new()",
+  "IMPLEMENTED_NATIVE_METHODS",
+  'const IMPLEMENTED_NATIVE_METHODS: [&str; 2] = ["getCapabilities", "getDevices"]',
+  "implemented_methods: IMPLEMENTED_NATIVE_METHODS.to_vec()",
+  "native_audio_engine_ready: false",
+  "realtime_native_monitoring: false",
+  "audio_input: Vec::new()",
+  "audio_output: Vec::new()",
   "PLANNED_NATIVE_METHODS",
-  "invoke_handler(tauri::generate_handler![get_punchlab_bridge_status])",
+  "get_capabilities,",
+  "get_devices",
   "tauri::Builder::default()",
   "tauri_plugin_dialog::init()",
   "tauri_plugin_fs::init()",

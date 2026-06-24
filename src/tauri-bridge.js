@@ -112,7 +112,7 @@
       if (!command || !implemented.has(method)) {
         continue;
       }
-      host[method] = (payload = null) => invoke(command, { payload });
+      host[method] = (payload = null) => (payload === null ? invoke(command) : invoke(command, { payload }));
     }
 
     window.__PUNCHLAB_NATIVE__ = host;
