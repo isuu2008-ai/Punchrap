@@ -4592,6 +4592,7 @@ function renderExportPanel() {
   }
 
   const metadata = getExportMetadata();
+  const compressedReady = canExportCompressedAudio();
   const rows = [
     { label: "Full mix", count: getAudibleTakes().length + (state.beatArrayBuffer ? 1 : 0), unit: "source" },
     { label: "Track stems", count: getStemExportGroups().length, unit: "source" },
@@ -4625,12 +4626,14 @@ function renderExportPanel() {
           <div class="export-row export-job-row ${job.status}">
             <div>
               <strong>${escapeHtml(job.label)}</strong>
-              <small>${escapeHtml(job.previewName || job.detail || getExportJobStatusLabel(job.status))}</small>
+              <small>${escapeHtml(formatExportJobDetail(job))}</small>
             </div>
             <div class="export-job-actions">
               <span>${getExportJobStatusLabel(job.status)}</span>
               ${job.previewUrl ? `<button class="mini-button" type="button" data-preview-export="${job.id}">Preview</button>` : ""}
               ${job.status === "done" && job.previewBlob ? `<button class="mini-button" type="button" data-download-export="${job.id}">Download</button>` : ""}
+              ${job.status === "done" && job.previewBlob && compressedReady ? `<button class="mini-button" type="button" data-compress-export="${job.id}" data-compress-format="mp3">MP3</button>` : ""}
+              ${job.status === "done" && job.previewBlob && compressedReady ? `<button class="mini-button" type="button" data-compress-export="${job.id}" data-compress-format="m4a">M4A</button>` : ""}
               ${job.status === "failed" ? `<button class="mini-button" type="button" data-retry-export="${job.id}">Retry</button>` : ""}
               ${job.status === "done" || job.status === "failed" ? `<button class="mini-button danger" type="button" data-remove-export="${job.id}">Remove</button>` : ""}
             </div>
@@ -4657,6 +4660,9 @@ function renderExportPanel() {
   });
   els.exportList.querySelectorAll("[data-download-export]").forEach((button) => {
     button.addEventListener("click", () => downloadExportJob(button.dataset.downloadExport));
+  });
+  els.exportList.querySelectorAll("[data-compress-export]").forEach((button) => {
+    button.addEventListener("click", () => exportCompressedJob(button.dataset.compressExport, button.dataset.compressFormat));
   });
   els.exportList.querySelectorAll("[data-retry-export]").forEach((button) => {
     button.addEventListener("click", () => retryExportJob(button.dataset.retryExport));
@@ -4737,8 +4743,43 @@ function formatExportRowCount(row) {
 }
 
 function getCompressedExportStatus() {
+  return canExportCompressedAudio() ? "Native MP3/M4A ready" : "Native required";
+}
+
+function canExportCompressedAudio() {
+  const readiness = window.PunchLabDesktop?.getReadiness?.()?.compressedExport;
   const driver = window.PunchLabEngine?.getDriver?.();
-  return driver?.capabilities?.compressedAudioExport ? "Native MP3/M4A ready" : "Native required";
+  return Boolean(
+    typeof window.PunchLabEngine?.exportCompressedAudio === "function" &&
+    (readiness?.ready || driver?.capabilities?.compressedAudioExport === true),
+  );
+}
+
+function normalizeCompressedFormat(format) {
+  return String(format || "").toLowerCase() === "m4a" ? "m4a" : "mp3";
+}
+
+function replaceAudioExtension(fileName, extension) {
+  const base = String(fileName || "punchlab-export.wav").replace(/\.[a-z0-9]+$/i, "");
+  return `${base}.${normalizeCompressedFormat(extension)}`;
+}
+
+function blobToDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener("load", () => resolve(String(reader.result || "")));
+    reader.addEventListener("error", () => reject(reader.error));
+    reader.readAsDataURL(blob);
+  });
+}
+
+function downloadDataUrl(dataUrl, filename) {
+  const link = document.createElement("a");
+  link.href = dataUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
 }
 
 function updateExportMetadata() {
@@ -5829,6 +5870,61 @@ function downloadExportJob(jobId) {
   els.sessionState.textContent = `Downloaded ${filename}`;
 }
 
+async function exportCompressedJob(jobId, format = "mp3") {
+  const job = state.exportQueue.find((item) => item.id === jobId);
+  const safeFormat = normalizeCompressedFormat(format);
+  if (!job?.previewBlob) {
+    els.sessionState.textContent = "No WAV source";
+    return;
+  }
+  if (!canExportCompressedAudio()) {
+    els.sessionState.textContent = "Native compressed export unavailable";
+    return;
+  }
+
+  const fileName = replaceAudioExtension(job.previewName || `${slugify(job.label || "export")}.wav`, safeFormat);
+  try {
+    job.compressedStatus = `${safeFormat.toUpperCase()} encoding`;
+    els.exportStatusText.textContent = job.compressedStatus;
+    renderExportPanel();
+
+    const wavDataUrl = await blobToDataUrl(job.previewBlob);
+    const result = await window.PunchLabEngine.exportCompressedAudio({
+      dataUrl: wavDataUrl,
+      fileName,
+      format: safeFormat,
+      mimeType: job.previewBlob.type || "audio/wav",
+      sourceFileName: job.previewName || "",
+      wavDataUrl,
+    });
+    if (!result || result.unsupported || result.supported === false) {
+      throw new Error("Native compressed export unsupported.");
+    }
+
+    const outputName = result.fileName || fileName;
+    if (result.blob instanceof Blob) {
+      downloadBlob(result.blob, outputName);
+    } else {
+      const dataUrl = result.dataUrl || result.data || result.wavDataUrl;
+      if (!dataUrl) {
+        throw new Error("Native compressed export returned no file data.");
+      }
+      downloadDataUrl(dataUrl, outputName);
+    }
+
+    job.compressedStatus = `${safeFormat.toUpperCase()} downloaded`;
+    els.sessionState.textContent = `Downloaded ${outputName}`;
+    els.exportStatusText.textContent = "Compressed done";
+  } catch (error) {
+    job.compressedStatus = `${safeFormat.toUpperCase()} failed`;
+    els.sessionState.textContent = "Compressed export failed";
+    els.exportStatusText.textContent = "Compressed failed";
+    console.error(error);
+  } finally {
+    renderExportPanel();
+  }
+}
+
 async function playExportPreview(jobId) {
   const job = state.exportQueue.find((item) => item.id === jobId);
   if (!job?.previewUrl) {
@@ -5954,6 +6050,11 @@ function getExportJobStatusLabel(status) {
     done: "Done",
     failed: "Failed",
   }[status] || "Idle";
+}
+
+function formatExportJobDetail(job = {}) {
+  const detail = job.previewName || job.detail || getExportJobStatusLabel(job.status);
+  return [detail, job.compressedStatus].filter(Boolean).join(" / ");
 }
 
 async function renderTakeMixBlob(takes, includeBeat = false) {

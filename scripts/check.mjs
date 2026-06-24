@@ -262,6 +262,10 @@ if (!exportMasteringSource.includes("window.PunchLabExportMastering") || !export
   console.error("Export mastering must be separated from the app controller.");
   failed = true;
 }
+if (!appSource.includes("data-compress-export") || !appSource.includes("exportCompressedJob") || !appSource.includes("PunchLabEngine.exportCompressedAudio")) {
+  console.error("Completed export jobs must expose native compressed MP3/M4A handoff when supported.");
+  failed = true;
+}
 if (!indexHtml.includes("quickTakeList") || !appSource.includes("data-quick-play-take") || !appSource.includes("data-quick-vocal-take") || !appSource.includes("sendTakeToVocal")) {
   console.error("Record view must support immediate recent-take audition and Vocal handoff.");
   failed = true;
