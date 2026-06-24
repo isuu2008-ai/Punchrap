@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PunchLab</title>
     <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="./styles.css?v=20260624-19" />
+    <link rel="stylesheet" href="./styles.css?v=20260624-20" />
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
-    <script src="./src/dsp.js?v=20260624-19" defer></script>
-    <script src="./src/audio.js?v=20260624-19" defer></script>
-    <script src="./src/project.js?v=20260624-19" defer></script>
-    <script src="./src/storage.js?v=20260624-19" defer></script>
-    <script src="./app.js?v=20260624-19" defer></script>
+    <script src="./src/dsp.js?v=20260624-20" defer></script>
+    <script src="./src/audio.js?v=20260624-20" defer></script>
+    <script src="./src/project.js?v=20260624-20" defer></script>
+    <script src="./src/storage.js?v=20260624-20" defer></script>
+    <script src="./app.js?v=20260624-20" defer></script>
   </head>
   <body>
     <main class="studio-shell">
@@ -316,6 +316,16 @@
               <div class="panel-heading">
                 <span>Render</span>
                 <span>WAV</span>
+              </div>
+              <div class="export-metadata">
+                <label>
+                  Artist
+                  <input id="exportArtistInput" type="text" maxlength="64" placeholder="Artist" />
+                </label>
+                <label>
+                  Title
+                  <input id="exportTitleInput" type="text" maxlength="64" placeholder="Song title" />
+                </label>
               </div>
               <div class="export-actions">
                 <button id="exportStemsButton" class="icon-button wide" type="button" disabled>

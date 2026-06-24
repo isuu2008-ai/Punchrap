@@ -194,6 +194,8 @@ const els = {
   exportTunedVocalsButton: document.querySelector("#exportTunedVocalsButton"),
   exportStatusText: document.querySelector("#exportStatusText"),
   exportList: document.querySelector("#exportList"),
+  exportArtistInput: document.querySelector("#exportArtistInput"),
+  exportTitleInput: document.querySelector("#exportTitleInput"),
 };
 
 function init() {
@@ -297,6 +299,8 @@ function bindEvents() {
   els.exportStemsButton.addEventListener("click", exportTrackStems);
   els.exportDryVocalsButton.addEventListener("click", exportDryVocals);
   els.exportTunedVocalsButton.addEventListener("click", exportTunedVocals);
+  els.exportArtistInput.addEventListener("input", updateExportMetadata);
+  els.exportTitleInput.addEventListener("input", updateExportMetadata);
   els.saveCustomPresetButton.addEventListener("click", saveCustomPreset);
 }
 
@@ -708,6 +712,7 @@ function getProjectSettings() {
     armedTrackId: state.armedTrackId,
     selectedPresetId: state.selectedPresetId,
     tune: getTuneSettings(),
+    exportMetadata: getExportMetadata(),
     punchEnabled: state.punchEnabled,
     loopEnabled: state.loopEnabled,
     metronomeEnabled: state.metronomeEnabled,
@@ -723,6 +728,8 @@ function applyProjectSettings(settings = {}) {
   els.keySelect.value = settings.key || "C minor";
   els.scaleModeSelect.value = settings.scaleMode || "minor";
   state.customScaleIntervals = normalizeScaleIntervals(settings.customScaleIntervals);
+  els.exportArtistInput.value = settings.exportMetadata?.artist || "";
+  els.exportTitleInput.value = settings.exportMetadata?.title || "";
   els.inputGainSlider.value = settings.inputGain || 2;
   state.armedTrackId = tracks.some((track) => track.id === settings.armedTrackId)
     ? settings.armedTrackId
@@ -2494,11 +2501,13 @@ function renderExportPanel() {
     return;
   }
 
+  const metadata = getExportMetadata();
   const rows = [
-    { label: "Full mix", count: getAudibleTakes().length + (state.beatArrayBuffer ? 1 : 0) },
-    { label: "Track stems", count: getStemExportGroups().length },
-    { label: "Dry vocals", count: getAllTakes().filter((take) => !take.processed).length },
-    { label: "Tuned vocals", count: getAllTakes().filter((take) => take.processed).length },
+    { label: "Full mix", count: getAudibleTakes().length + (state.beatArrayBuffer ? 1 : 0), unit: "source" },
+    { label: "Track stems", count: getStemExportGroups().length, unit: "source" },
+    { label: "Dry vocals", count: getAllTakes().filter((take) => !take.processed).length, unit: "source" },
+    { label: "Tuned vocals", count: getAllTakes().filter((take) => take.processed).length, unit: "source" },
+    { label: "Metadata", count: [metadata.artist, metadata.title, metadata.bpm, metadata.key].filter(Boolean).length, unit: "field" },
   ];
   const jobs = state.exportQueue.slice(-8).reverse();
 
@@ -2507,7 +2516,7 @@ function renderExportPanel() {
       (row) => `
         <div class="export-row">
           <strong>${row.label}</strong>
-          <small>${row.count} source${row.count === 1 ? "" : "s"}</small>
+          <small>${row.count} ${row.unit}${row.count === 1 ? "" : "s"}</small>
         </div>
       `,
     )
@@ -2534,6 +2543,21 @@ function renderExportPanel() {
     <div class="export-section-heading">Queue</div>
     ${queueRows}
   `;
+}
+
+function updateExportMetadata() {
+  renderExportPanel();
+  scheduleAutosave();
+}
+
+function getExportMetadata() {
+  return {
+    artist: els.exportArtistInput?.value.trim() || "",
+    title: els.exportTitleInput?.value.trim() || "",
+    bpm: String(Number(els.bpmInput.value) || 140),
+    key: getPitchModeLabel(),
+    software: "PunchLab",
+  };
 }
 
 function renderTimeline() {
@@ -2957,7 +2981,7 @@ async function renderFullMixBlob() {
     scheduleBuffer(renderContext, buffer, take.startTime || 0, getTrackOutputVolume(track), track.pan, take);
   });
 
-  return encodeWav(await renderContext.startRendering());
+  return encodeWav(await renderContext.startRendering(), getExportMetadata());
 }
 
 async function exportTrackStems() {
@@ -3144,7 +3168,7 @@ async function renderTakeMixBlob(takes, includeBeat = false) {
     scheduleBuffer(renderContext, buffer, take.startTime || 0, getTrackOutputVolume(track), track.pan, take);
   });
 
-  return encodeWav(await renderContext.startRendering());
+  return encodeWav(await renderContext.startRendering(), getExportMetadata());
 }
 
 function getStemExportGroups() {
@@ -3198,8 +3222,8 @@ function scheduleBuffer(context, buffer, startTime, volume, pan, take = null) {
   source.start(Math.max(0, startTime));
 }
 
-function encodeWav(audioBuffer) {
-  return window.PunchLabAudio.encodeWav(audioBuffer);
+function encodeWav(audioBuffer, metadata = null) {
+  return window.PunchLabAudio.encodeWav(audioBuffer, metadata);
 }
 
 function downloadBlob(blob, filename) {
@@ -3558,7 +3582,8 @@ function makeMixFilename() {
 }
 
 function makeExportBaseSlug() {
-  const source = state.beatFileName || "session";
+  const metadata = getExportMetadata();
+  const source = [metadata.artist, metadata.title].filter(Boolean).join("-") || state.beatFileName || "session";
   return `punchlab-${slugify(source.replace(/\.[^.]+$/, "")) || "session"}`;
 }
 

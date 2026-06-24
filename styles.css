@@ -437,9 +437,14 @@ h1 {
 }
 
 .export-actions,
+.export-metadata,
 .export-list {
   display: grid;
   gap: 10px;
+}
+
+.export-metadata {
+  margin: 12px 0;
 }
 
 .export-panel {
