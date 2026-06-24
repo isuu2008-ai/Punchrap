@@ -357,7 +357,7 @@
     };
   }
 
-  function getPitchPlan(analysis, keyValue = "C minor", scaleMode = "minor", customScale = MINOR_SCALE) {
+  function getPitchPlan(analysis, keyValue = "C minor", scaleMode = "minor", customScale = MINOR_SCALE, targetMidiValue = null) {
     if (!analysis || analysis.detectedMidi === null) {
       return {
         detectedLabel: "--",
@@ -371,11 +371,13 @@
 
     const key = parseKey(keyValue);
     const scale = getTargetScale(scaleMode, customScale);
-    const targetMidi = getNearestTargetMidi(analysis.detectedMidi, key.root, scaleMode, scale);
+    const fixedTargetMidi = normalizeTargetMidi(targetMidiValue);
+    const hasFixedTarget = fixedTargetMidi !== null;
+    const targetMidi = hasFixedTarget ? fixedTargetMidi : getNearestTargetMidi(analysis.detectedMidi, key.root, scaleMode, scale);
     const correctionSemitones = targetMidi - analysis.detectedMidi;
     const scaleFit = scaleMode === "chromatic" ? 1 : getScaleFit(analysis.noteClassCounts, key.root, scale);
     const frames = (analysis.frames || []).map((frame) => {
-      const frameTargetMidi = getNearestTargetMidi(frame.midi, key.root, scaleMode, scale);
+      const frameTargetMidi = hasFixedTarget ? fixedTargetMidi : getNearestTargetMidi(frame.midi, key.root, scaleMode, scale);
       return {
         ...frame,
         targetMidi: frameTargetMidi,
@@ -387,13 +389,23 @@
       detectedLabel: formatMidiNote(analysis.detectedMidi),
       targetLabel: formatMidiNote(targetMidi),
       correctionLabel: `${correctionSemitones >= 0 ? "+" : ""}${correctionSemitones.toFixed(1)} st`,
-      keyFitLabel: scaleMode === "chromatic" ? "Chromatic" : `${Math.round(scaleFit * 100)}%`,
+      keyFitLabel: hasFixedTarget ? "MIDI" : scaleMode === "chromatic" ? "Chromatic" : `${Math.round(scaleFit * 100)}%`,
       correctionSemitones,
       targetMidi,
       detectedMidi: analysis.detectedMidi,
-      scaleMode,
+      scaleMode: hasFixedTarget ? "midi" : scaleMode,
+      targetMode: hasFixedTarget ? "midi" : "scale",
       frames,
     };
+  }
+
+  function normalizeTargetMidi(value) {
+    if (value === null || value === undefined || value === "") {
+      return null;
+    }
+
+    const midi = Math.round(Number(value));
+    return Number.isFinite(midi) ? clamp(midi, 0, 127) : null;
   }
 
   function connectDelayTap(context, source, destination, delayTime, pan, gainValue) {

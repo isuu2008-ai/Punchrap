@@ -114,6 +114,7 @@ const els = {
   countInSelect: document.querySelector("#countInSelect"),
   keySelect: document.querySelector("#keySelect"),
   scaleModeSelect: document.querySelector("#scaleModeSelect"),
+  targetMidiSelect: document.querySelector("#targetMidiSelect"),
   inputGainSlider: document.querySelector("#inputGainSlider"),
   inputGainText: document.querySelector("#inputGainText"),
   micButton: document.querySelector("#micButton"),
@@ -257,6 +258,7 @@ const els = {
 
 function init() {
   state.mimeType = getBestMimeType();
+  renderTargetMidiOptions();
   bindEvents();
   renderTracks();
   renderArmTracks();
@@ -309,6 +311,10 @@ function bindEvents() {
     scheduleAutosave();
   });
   els.scaleModeSelect.addEventListener("change", () => {
+    renderVocalPanel();
+    scheduleAutosave();
+  });
+  els.targetMidiSelect.addEventListener("change", () => {
     renderVocalPanel();
     scheduleAutosave();
   });
@@ -1030,6 +1036,7 @@ function getProjectSettings() {
     countIn: els.countInSelect.value,
     key: els.keySelect.value,
     scaleMode: els.scaleModeSelect.value,
+    targetMidi: getTargetMidiValue(),
     customScaleIntervals: [...state.customScaleIntervals],
     inputGain: state.inputGain,
     armedTrackId: state.armedTrackId,
@@ -1054,6 +1061,7 @@ function applyProjectSettings(settings = {}) {
   els.countInSelect.value = settings.countIn || "0";
   els.keySelect.value = settings.key || "C minor";
   els.scaleModeSelect.value = settings.scaleMode || "minor";
+  els.targetMidiSelect.value = settings.targetMidi == null ? "" : String(settings.targetMidi);
   state.customScaleIntervals = normalizeScaleIntervals(settings.customScaleIntervals);
   els.exportArtistInput.value = settings.exportMetadata?.artist || "";
   els.exportTitleInput.value = settings.exportMetadata?.title || "";
@@ -2289,6 +2297,7 @@ function applyProjectTemplate(template) {
   els.countInSelect.value = template.countIn || "0";
   els.keySelect.value = template.key || "C minor";
   els.scaleModeSelect.value = template.scaleMode || "minor";
+  els.targetMidiSelect.value = template.targetMidi == null ? "" : String(template.targetMidi);
   state.armedTrackId = tracks.some((track) => track.id === template.armedTrackId)
     ? template.armedTrackId
     : tracks[0]?.id || "main";
@@ -2908,7 +2917,31 @@ function getKeyRootClass(keyValue) {
   return root >= 0 ? root : 0;
 }
 
+function renderTargetMidiOptions() {
+  const noteOptions = [];
+  for (let midi = 36; midi <= 84; midi += 1) {
+    noteOptions.push(`<option value="${midi}">${formatPitchNote(midi)}</option>`);
+  }
+
+  els.targetMidiSelect.innerHTML = `<option value="">Off / scale nearest</option>${noteOptions.join("")}`;
+}
+
+function getTargetMidiValue() {
+  const rawValue = els.targetMidiSelect?.value;
+  if (rawValue === "") {
+    return null;
+  }
+
+  const value = Number(rawValue);
+  return Number.isFinite(value) ? value : null;
+}
+
 function getPitchModeLabel() {
+  const targetMidi = getTargetMidiValue();
+  if (targetMidi !== null) {
+    return `MIDI ${formatPitchNote(targetMidi)}`;
+  }
+
   if (els.scaleModeSelect.value === "chromatic") {
     return "Chromatic";
   }
@@ -2947,6 +2980,7 @@ function getBasePitchPlan(analysis) {
     els.keySelect.value,
     els.scaleModeSelect.value,
     state.customScaleIntervals,
+    getTargetMidiValue(),
   );
 }
 

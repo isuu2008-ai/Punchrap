@@ -70,6 +70,7 @@ node .\scripts\check.mjs
 - Custom vocal preset saving and project restore
 - Vocal gate and de-ess controls in the offline render chain
 - Chromatic pitch-correction mode for rap-style hard tune without key locking
+- Fixed MIDI target-note mode for robotic hard-tune effects
 - Manual pitch lane edits for analyzed vocal frames, persisted in project files
 - Custom scale editor with 12 pitch-class toggles
 - Take comp selection with a dedicated comp playlist review button
