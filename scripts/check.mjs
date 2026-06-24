@@ -147,6 +147,10 @@ if (!appSource.includes("summarizeNativeAudioEnvironment") || !appSource.include
   console.error("Project zip manifest must include native audio environment summary.");
   failed = true;
 }
+if (!appSource.includes("environment: getProjectEnvironment()") || !readFileSync("src/project.js", "utf8").includes("sanitizeEnvironment")) {
+  console.error("Project bundle must include native audio environment summary.");
+  failed = true;
+}
 if (!appSource.includes("manifest.json includes nativeAudio")) {
   console.error("Project zip README must describe the native audio manifest summary.");
   failed = true;

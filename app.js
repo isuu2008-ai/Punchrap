@@ -972,6 +972,7 @@ async function saveProject() {
       tracks,
       presets,
       settings: getProjectSettings(),
+      environment: getProjectEnvironment(),
     });
     const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: "application/json" });
     const result = await saveBlobWithPlatform(blob, window.PunchLabProject.makeProjectFilename(state.beatFileName), {
@@ -1009,6 +1010,7 @@ async function saveProjectZip() {
       tracks,
       presets,
       settings: getProjectSettings(),
+      environment: getProjectEnvironment(),
     });
     const projectFilename = window.PunchLabProject.makeProjectFilename(state.beatFileName);
     const files = await buildProjectZipFiles(bundle, projectFilename);
@@ -1485,6 +1487,12 @@ function summarizeNativeAudioEnvironment() {
         sampleRate: latencyStats.sampleRate,
       }
       : null,
+  };
+}
+
+function getProjectEnvironment() {
+  return {
+    nativeAudio: summarizeNativeAudioEnvironment(),
   };
 }
 

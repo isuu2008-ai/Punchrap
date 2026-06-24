@@ -1,12 +1,13 @@
 (() => {
   const PROJECT_VERSION = 1;
 
-  async function buildProjectBundle({ state, tracks, presets, settings }) {
+  async function buildProjectBundle({ state, tracks, presets, settings, environment = {} }) {
     return {
       app: "PunchLab",
       version: PROJECT_VERSION,
       savedAt: new Date().toISOString(),
       settings,
+      environment: sanitizeEnvironment(environment),
       markers: (state.markers || []).map((marker) => ({ ...marker })),
       presets: presets.map((preset) => ({ ...preset })),
       beat: state.beatArrayBuffer
@@ -68,6 +69,12 @@
         type: take.blob?.type || "audio/wav",
         dataUrl: await blobToDataUrl(take.blob),
       },
+    };
+  }
+
+  function sanitizeEnvironment(environment = {}) {
+    return {
+      nativeAudio: environment.nativeAudio || null,
     };
   }
 
