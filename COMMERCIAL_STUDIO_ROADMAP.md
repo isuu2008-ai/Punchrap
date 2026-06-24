@@ -138,6 +138,8 @@
 - project zip `preview.html` take 카드에 latency compensation, trim, fade metadata 표시
 - Zip take region metadata preview 1차
 - project zip `preview.html` take 카드에 region group/color metadata 표시
+- Recording quick take handoff 1차
+- 녹음 화면 최근 take 리스트에서 바로 듣기와 Vocal 탭 전송 제공
 - `.punchlab.json` 로컬 프로젝트 저장/복원
 - processed take `v1`, `v2` 버전 관리
 - processed take 버전/체인 정보 저장 포맷 포함

@@ -151,6 +151,10 @@ if (!appSource.includes("getDisplaySampleRate") || !appSource.includes("loadedPr
   console.error("Engine status must surface sample rate from runtime or loaded project environment.");
   failed = true;
 }
+if (!indexHtml.includes("quickTakeList") || !appSource.includes("data-quick-play-take") || !appSource.includes("data-quick-vocal-take") || !appSource.includes("sendTakeToVocal")) {
+  console.error("Record view must support immediate recent-take audition and Vocal handoff.");
+  failed = true;
+}
 if (!appSource.includes("summarizeNativeAudioEnvironment") || !appSource.includes("nativeAudio: summarizeNativeAudioEnvironment()")) {
   console.error("Project zip manifest must include native audio environment summary.");
   failed = true;

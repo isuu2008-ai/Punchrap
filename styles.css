@@ -1247,8 +1247,15 @@ textarea:focus {
   padding-bottom: 1px;
 }
 
+.quick-take-card {
+  min-width: 214px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+}
+
 .quick-take-button {
-  min-width: 150px;
+  min-width: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
@@ -1259,6 +1266,11 @@ textarea:focus {
   border: 1px solid var(--line);
   border-radius: 7px;
   text-align: left;
+}
+
+.quick-take-vocal {
+  align-self: stretch;
+  padding-inline: 9px;
 }
 
 .quick-take-button strong {

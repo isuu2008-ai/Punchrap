@@ -2740,8 +2740,18 @@ function sendLatestTakeToVocal() {
     return;
   }
 
-  state.latestTake = latestTake;
-  state.selectedVocalTakeId = latestTake.id;
+  sendTakeToVocal(latestTake.id);
+}
+
+function sendTakeToVocal(takeId) {
+  const take = findTake(takeId);
+  if (!take) {
+    els.sessionState.textContent = "Take not found";
+    return;
+  }
+
+  state.latestTake = take;
+  state.selectedVocalTakeId = take.id;
   setActiveView("vocal");
   renderVocalPanel();
   els.sessionState.textContent = "Take sent to Vocal";
@@ -4695,11 +4705,15 @@ function renderQuickTakeReview(allTakes = getAllTakes()) {
     ? recentTakes
       .map((take) => {
         const isPlaying = take.id === state.currentTakeId || state.sessionPlayingTakeIds.has(take.id);
+        const disabled = state.isRecording ? "disabled" : "";
         return `
-          <button class="quick-take-button ${isPlaying ? "active" : ""}" type="button" data-quick-play-take="${take.id}">
-            <strong>${escapeHtml(getTakeShortName(take))}</strong>
-            <span>${escapeHtml(formatDuration(take.duration))}</span>
-          </button>
+          <article class="quick-take-card">
+            <button class="quick-take-button ${isPlaying ? "active" : ""}" type="button" data-quick-play-take="${take.id}" ${disabled}>
+              <strong>${escapeHtml(getTakeShortName(take))}</strong>
+              <span>${escapeHtml(formatDuration(take.duration))}</span>
+            </button>
+            <button class="mini-button quick-take-vocal" type="button" data-quick-vocal-take="${take.id}" ${disabled}>Vocal</button>
+          </article>
         `;
       })
       .join("")
@@ -4713,6 +4727,9 @@ function renderQuickTakeReview(allTakes = getAllTakes()) {
       }
       playTake(button.dataset.quickPlayTake);
     });
+  });
+  els.quickTakeList.querySelectorAll("[data-quick-vocal-take]").forEach((button) => {
+    button.addEventListener("click", () => sendTakeToVocal(button.dataset.quickVocalTake));
   });
 }
 
