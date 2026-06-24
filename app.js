@@ -6044,50 +6044,17 @@ function applyExportNormalize(audioBuffer) {
 }
 
 function applyExportFinalize(audioBuffer) {
-  const loudnessAdjusted = applyLoudnessNormalize(audioBuffer);
-  return applyTruePeakCeiling(applyExportNormalize(loudnessAdjusted), -1);
-}
-
-function applyLoudnessNormalize(audioBuffer) {
-  if (!els.exportLoudnessNormalizeInput.checked || !window.PunchLabEngine?.analyzeLoudness) {
-    state.lastExportLoudnessGain = 1;
-    return audioBuffer;
-  }
-
-  const report = window.PunchLabEngine.analyzeLoudness(audioBuffer);
-  const gainDb = Number.isFinite(report.recommendedGainDb)
-    ? Math.max(-18, Math.min(18, report.recommendedGainDb))
-    : 0;
-  const gain = Math.pow(10, gainDb / 20);
-  state.lastExportLoudnessGain = gain;
-  return applyBufferGain(audioBuffer, gain);
-}
-
-function applyTruePeakCeiling(audioBuffer, ceilingDb) {
-  return window.PunchLabAudio?.applyTruePeakCeiling
-    ? window.PunchLabAudio.applyTruePeakCeiling(audioBuffer, ceilingDb)
-    : audioBuffer;
-}
-
-function applyBufferGain(audioBuffer, gain) {
-  for (let channel = 0; channel < audioBuffer.numberOfChannels; channel += 1) {
-    const data = audioBuffer.getChannelData(channel);
-    for (let index = 0; index < data.length; index += 1) {
-      data[index] *= gain;
-    }
-  }
-  return audioBuffer;
-}
-
-function getAudioBufferPeak(audioBuffer) {
-  let peak = 0;
-  for (let channel = 0; channel < audioBuffer.numberOfChannels; channel += 1) {
-    const data = audioBuffer.getChannelData(channel);
-    for (let index = 0; index < data.length; index += 1) {
-      peak = Math.max(peak, Math.abs(data[index]));
-    }
-  }
-  return peak;
+  const result = window.PunchLabExportMastering.finalizeAudio(audioBuffer, {
+    analyzer: window.PunchLabEngine?.analyzeLoudness,
+    ceilingDb: -1,
+    loudnessNormalize: els.exportLoudnessNormalizeInput.checked,
+    peakNormalize: els.exportNormalizeInput.checked,
+    targetLufs: -14,
+    truePeakLimiter: window.PunchLabEngine?.applyTruePeakCeiling || window.PunchLabAudio?.applyTruePeakCeiling,
+  });
+  state.lastExportLoudnessGain = result.loudnessGain;
+  state.lastExportNormalizeGain = result.normalizeGain;
+  return result.audioBuffer;
 }
 
 function encodeWav(audioBuffer, metadata = null, options = {}) {

@@ -158,6 +158,7 @@ node .\scripts\check.mjs
 - Project zip preview automation schema, session, and preset rows are formatted in `src/project-zip.js`
 - Project zip preview plugin-host, notes, and desktop-handoff rows are formatted in `src/project-zip.js`
 - Project zip preview header summaries for export, plugin scan, native audio, and desktop readiness are formatted in `src/project-zip.js`
+- Export mastering finalize logic for loudness normalize, peak normalize, and true-peak ceiling lives in `src/export-mastering.js`
 - Project zip preview beat, marker, and comp rows are formatted in `src/project-zip.js`
 - Project zip preview take cards and their processed-chain summaries are formatted in `src/project-zip.js`
 - Project zip preview HTML shell is rendered by `src/project-zip.js`; `app.js` only passes archive context

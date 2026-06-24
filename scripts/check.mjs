@@ -7,6 +7,7 @@ const syntaxFiles = [
   "app.js",
   "src/chain-params.js",
   "src/audio.js",
+  "src/export-mastering.js",
   "src/dsp.js",
   "src/files.js",
   "src/templates.js",
@@ -31,6 +32,7 @@ const requiredScripts = [
   "src/chain-params.js",
   "src/dsp.js",
   "src/audio.js",
+  "src/export-mastering.js",
   "src/files.js",
   "src/templates.js",
   "src/devices.js",
@@ -164,6 +166,10 @@ if (!indexHtml.includes("src/tauri-bridge.js") || !readFileSync("sw.js", "utf8")
   console.error("Tauri bridge adapter must be loaded by index.html and cached by the service worker.");
   failed = true;
 }
+if (!indexHtml.includes("src/export-mastering.js") || !readFileSync("sw.js", "utf8").includes("./src/export-mastering.js")) {
+  console.error("Export mastering module must be loaded by index.html and cached by the service worker.");
+  failed = true;
+}
 if (!tauriBridgeSource.includes("window.__TAURI__?.core?.invoke") || !tauriBridgeSource.includes("get_punchlab_bridge_status") || !tauriBridgeSource.includes("nativeBridgeReady")) {
   console.error("Tauri bridge adapter must probe Tauri invoke and gate native activation on nativeBridgeReady.");
   failed = true;
@@ -249,6 +255,11 @@ if (!appSource.includes("getDisplayRoundTripLatency") || !appSource.includes("lo
 }
 if (!appSource.includes("getDisplaySampleRate") || !appSource.includes("loadedProjectEnvironment?.nativeAudio?.stats?.sampleRate")) {
   console.error("Engine status must surface sample rate from runtime or loaded project environment.");
+  failed = true;
+}
+const exportMasteringSource = readFileSync("src/export-mastering.js", "utf8");
+if (!exportMasteringSource.includes("window.PunchLabExportMastering") || !exportMasteringSource.includes("finalizeAudio") || !appSource.includes("PunchLabExportMastering.finalizeAudio")) {
+  console.error("Export mastering must be separated from the app controller.");
   failed = true;
 }
 if (!indexHtml.includes("quickTakeList") || !appSource.includes("data-quick-play-take") || !appSource.includes("data-quick-vocal-take") || !appSource.includes("sendTakeToVocal")) {
