@@ -120,7 +120,7 @@ h1 {
 
 .view-tabs {
   display: inline-grid;
-  grid-template-columns: repeat(6, minmax(70px, 1fr));
+  grid-template-columns: repeat(7, minmax(68px, 1fr));
   gap: 6px;
   padding: 4px;
   border: 1px solid var(--line);
@@ -416,6 +416,49 @@ h1 {
 
 .timeline-region-heading {
   margin-top: 18px;
+}
+
+.export-grid {
+  min-height: 590px;
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  gap: 14px;
+}
+
+.export-actions,
+.export-list {
+  display: grid;
+  gap: 10px;
+}
+
+.export-panel {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.export-list {
+  align-content: start;
+  padding: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.export-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px;
+  background: #0f1411;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.export-row strong {
+  font-size: 13px;
+}
+
+.export-row small {
+  color: var(--muted);
+  font-size: 11px;
 }
 
 .panel-heading.padded {
@@ -1253,6 +1296,7 @@ textarea:focus {
 
   .record-grid,
   .lyrics-grid,
+  .export-grid,
   .timeline-grid,
   .vocal-grid {
     grid-template-columns: 1fr;
@@ -1290,6 +1334,7 @@ textarea:focus {
   .bottom-console,
   .record-grid,
   .lyrics-grid,
+  .export-grid,
   .timeline-grid,
   .vocal-grid {
     grid-template-columns: 1fr;

@@ -29,6 +29,7 @@
           <button class="view-tab" type="button" data-view="timeline">Timeline</button>
           <button class="view-tab" type="button" data-view="vocal">Vocal</button>
           <button class="view-tab" type="button" data-view="takes">Takes</button>
+          <button class="view-tab" type="button" data-view="export">Export</button>
           <button class="view-tab" type="button" data-view="lyrics">Lyrics</button>
         </nav>
 
@@ -264,6 +265,39 @@
                 Latest take
               </button>
             </div>
+          </section>
+        </section>
+
+        <section class="view-panel" data-view-panel="export">
+          <section class="export-grid">
+            <aside class="panel">
+              <div class="panel-heading">
+                <span>Render</span>
+                <span>WAV</span>
+              </div>
+              <div class="export-actions">
+                <button id="exportStemsButton" class="icon-button wide" type="button" disabled>
+                  <i data-lucide="split"></i>
+                  Track stems
+                </button>
+                <button id="exportDryVocalsButton" class="icon-button wide" type="button" disabled>
+                  <i data-lucide="mic"></i>
+                  Dry vocals
+                </button>
+                <button id="exportTunedVocalsButton" class="icon-button wide" type="button" disabled>
+                  <i data-lucide="sparkles"></i>
+                  Tuned vocals
+                </button>
+              </div>
+            </aside>
+
+            <section class="center-panel full-panel export-panel">
+              <div class="panel-heading padded">
+                <span>Export status</span>
+                <span id="exportStatusText">Idle</span>
+              </div>
+              <div class="export-list" id="exportList"></div>
+            </section>
           </section>
         </section>
 

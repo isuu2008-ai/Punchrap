@@ -30,6 +30,7 @@ Then open `http://localhost:4173`.
 - Separated DSP, audio utility, and project storage modules under `src/`
 - Timeline view with marker management and take region start/nudge controls
 - Region rename, clip gain, and fade in/out controls persisted in project files
+- Export tab for track stems, dry vocals, and tuned vocals
 
 ## Planning
 

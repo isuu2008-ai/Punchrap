@@ -25,6 +25,7 @@ const state = {
   mimeType: "",
   inputGain: 2,
   isExportingMix: false,
+  isExportingAssets: false,
   isRenderingVocal: false,
   currentTakeAudio: null,
   currentTakeId: null,
@@ -149,6 +150,11 @@ const els = {
   addMarkerButton: document.querySelector("#addMarkerButton"),
   markerList: document.querySelector("#markerList"),
   regionList: document.querySelector("#regionList"),
+  exportStemsButton: document.querySelector("#exportStemsButton"),
+  exportDryVocalsButton: document.querySelector("#exportDryVocalsButton"),
+  exportTunedVocalsButton: document.querySelector("#exportTunedVocalsButton"),
+  exportStatusText: document.querySelector("#exportStatusText"),
+  exportList: document.querySelector("#exportList"),
 };
 
 function init() {
@@ -158,6 +164,7 @@ function init() {
   renderArmTracks();
   renderTakes();
   renderTimeline();
+  renderExportPanel();
   renderPresets();
   applyPreset("trap-hard");
   updateInputGain();
@@ -211,6 +218,9 @@ function bindEvents() {
   els.saveProjectButton.addEventListener("click", saveProject);
   els.projectInput.addEventListener("change", loadProject);
   els.addMarkerButton.addEventListener("click", addTimelineMarker);
+  els.exportStemsButton.addEventListener("click", exportTrackStems);
+  els.exportDryVocalsButton.addEventListener("click", exportDryVocals);
+  els.exportTunedVocalsButton.addEventListener("click", exportTunedVocals);
 }
 
 function setActiveView(view) {
@@ -1784,6 +1794,31 @@ function renderTakes() {
   updateExportButtons();
   renderVocalPanel();
   renderTimeline();
+  renderExportPanel();
+}
+
+function renderExportPanel() {
+  if (!els.exportList) {
+    return;
+  }
+
+  const rows = [
+    { label: "Full mix", count: getAudibleTakes().length + (state.beatArrayBuffer ? 1 : 0) },
+    { label: "Track stems", count: getStemExportGroups().length },
+    { label: "Dry vocals", count: getAllTakes().filter((take) => !take.processed).length },
+    { label: "Tuned vocals", count: getAllTakes().filter((take) => take.processed).length },
+  ];
+
+  els.exportList.innerHTML = rows
+    .map(
+      (row) => `
+        <div class="export-row">
+          <strong>${row.label}</strong>
+          <small>${row.count} source${row.count === 1 ? "" : "s"}</small>
+        </div>
+      `,
+    )
+    .join("");
 }
 
 function renderTimeline() {
@@ -2098,6 +2133,134 @@ async function exportFullMix() {
   }
 }
 
+async function exportTrackStems() {
+  await exportRenderGroups(getStemExportGroups(), "Track stems");
+}
+
+async function exportDryVocals() {
+  const takes = getAudibleTakes().filter((take) => !take.processed);
+  await exportRenderGroups(
+    [
+      {
+        name: "Dry vocals",
+        filename: `${makeExportBaseSlug()}-dry-vocals.wav`,
+        takes,
+        includeBeat: false,
+      },
+    ],
+    "Dry vocals",
+  );
+}
+
+async function exportTunedVocals() {
+  const takes = getAudibleTakes().filter((take) => take.processed);
+  await exportRenderGroups(
+    [
+      {
+        name: "Tuned vocals",
+        filename: `${makeExportBaseSlug()}-tuned-vocals.wav`,
+        takes,
+        includeBeat: false,
+      },
+    ],
+    "Tuned vocals",
+  );
+}
+
+async function exportRenderGroups(groups, label) {
+  const activeGroups = groups.filter((group) => group.includeBeat || group.takes.length > 0);
+  if (!activeGroups.length) {
+    els.sessionState.textContent = "No export source";
+    return;
+  }
+
+  state.isExportingAssets = true;
+  updateExportButtons();
+  stopTakeQueue(false);
+  stopSessionPlayback(false);
+  stopCurrentTake(false);
+  els.sessionState.textContent = `Rendering ${label}`;
+  els.exportStatusText.textContent = "Rendering";
+
+  try {
+    for (let index = 0; index < activeGroups.length; index += 1) {
+      const group = activeGroups[index];
+      els.exportStatusText.textContent = `${index + 1}/${activeGroups.length} ${group.name}`;
+      const wavBlob = await renderTakeMixBlob(group.takes, group.includeBeat);
+      downloadBlob(wavBlob, group.filename);
+    }
+    els.sessionState.textContent = `${label} exported`;
+    els.exportStatusText.textContent = "Done";
+  } catch (error) {
+    els.sessionState.textContent = "Export failed";
+    els.exportStatusText.textContent = "Failed";
+    console.error(error);
+  } finally {
+    state.isExportingAssets = false;
+    updateExportButtons();
+  }
+}
+
+async function renderTakeMixBlob(takes, includeBeat = false) {
+  const sampleRate = state.audioContext?.sampleRate || 48000;
+  const decodeContext = new OfflineAudioContext(2, 1, sampleRate);
+  const beatBuffer = includeBeat && state.beatArrayBuffer
+    ? await decodeContext.decodeAudioData(state.beatArrayBuffer.slice(0))
+    : null;
+  const takeBuffers = await Promise.all(
+    takes.map(async (take) => ({
+      take,
+      track: findTrack(take.trackId),
+      buffer: await decodeContext.decodeAudioData(await take.blob.arrayBuffer()),
+    })),
+  );
+  const endPosition = Math.max(
+    beatBuffer?.duration || 0,
+    ...takeBuffers.map(({ take, buffer }) => (take.startTime || 0) + buffer.duration),
+    0.1,
+  );
+  const frameCount = Math.ceil(endPosition * sampleRate);
+  const renderContext = new OfflineAudioContext(2, frameCount, sampleRate);
+
+  if (beatBuffer) {
+    scheduleBuffer(renderContext, beatBuffer, 0, 1, 0);
+  }
+
+  takeBuffers.forEach(({ take, track, buffer }) => {
+    scheduleBuffer(renderContext, buffer, take.startTime || 0, getTrackOutputVolume(track), track.pan, take);
+  });
+
+  return encodeWav(await renderContext.startRendering());
+}
+
+function getStemExportGroups() {
+  const groups = [];
+  if (state.beatArrayBuffer) {
+    groups.push({
+      name: "Beat",
+      filename: `${makeExportBaseSlug()}-beat-stem.wav`,
+      takes: [],
+      includeBeat: true,
+    });
+  }
+
+  tracks.forEach((track) => {
+    const volume = getTrackOutputVolume(track);
+    if (volume <= 0 || !track.takes.length) {
+      return;
+    }
+
+    groups.push({
+      name: track.name,
+      filename: `${makeExportBaseSlug()}-${slugify(track.name)}-stem.wav`,
+      takes: track.takes,
+      includeBeat: false,
+    });
+  });
+
+  return groups;
+}
+
 function scheduleBuffer(context, buffer, startTime, volume, pan, take = null) {
   const source = context.createBufferSource();
   const gain = context.createGain();
@@ -2402,6 +2565,18 @@ function updateExportButtons() {
   if (label) {
     label.textContent = state.isExportingMix ? "Rendering" : "Full mix";
   }
+
+  const isBusy = state.isExportingMix || state.isExportingAssets;
+  const hasStems = getStemExportGroups().length > 0;
+  const hasDry = getAllTakes().some((take) => !take.processed && getTrackOutputVolume(findTrack(take.trackId)) > 0);
+  const hasTuned = getAllTakes().some((take) => take.processed && getTrackOutputVolume(findTrack(take.trackId)) > 0);
+  els.exportStemsButton.disabled = isBusy || !hasStems;
+  els.exportDryVocalsButton.disabled = isBusy || !hasDry;
+  els.exportTunedVocalsButton.disabled = isBusy || !hasTuned;
+  els.exportStemsButton.classList.toggle("rendering", state.isExportingAssets);
+  els.exportDryVocalsButton.classList.toggle("rendering", state.isExportingAssets);
+  els.exportTunedVocalsButton.classList.toggle("rendering", state.isExportingAssets);
+  renderExportPanel();
 }
 
 function formatPercent(value) {
@@ -2417,16 +2592,27 @@ function formatPan(value) {
 }
 
 function makeTakeFilename(take) {
-  const slug = take.trackName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  const preset = take.presetName ? `-${take.presetName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}` : "";
+  const slug = slugify(take.trackName);
+  const preset = take.presetName ? `-${slugify(take.presetName)}` : "";
   const version = take.processed ? `-v${take.version || 1}` : "";
   return `punchlab-${slug}${preset}${version}-${take.id.slice(0, 8)}.${take.extension}`;
 }
 
 function makeMixFilename() {
+  return `${makeExportBaseSlug()}-mix.wav`;
+}
+
+function makeExportBaseSlug() {
   const source = state.beatFileName || "session";
-  const slug = source.toLowerCase().replace(/\.[^.]+$/, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  return `punchlab-${slug || "session"}-mix.wav`;
+  return `punchlab-${slugify(source.replace(/\.[^.]+$/, "")) || "session"}`;
+}
+
+function slugify(value) {
+  return String(value || "session")
+    .toLowerCase()
+    .replace(/\.[^.]+$/, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 function getTakeTitle(take, index) {

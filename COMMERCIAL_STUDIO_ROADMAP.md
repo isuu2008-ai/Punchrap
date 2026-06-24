@@ -19,6 +19,10 @@
 - region 이름 변경
 - clip gain, fade in/out 설정
 - clip gain/fade mix playback/export 반영
+- Export 탭 추가
+- track stem export
+- dry vocal export
+- tuned vocal export
 
 ## 결론부터
 
