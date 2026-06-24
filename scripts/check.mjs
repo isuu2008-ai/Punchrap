@@ -389,6 +389,10 @@ if (!projectZipSource.includes("buildProjectZipPreviewBeatSection(manifest.beat)
   console.error("Project zip preview beat, marker, and comp rows must live in src/project-zip.js and be used by app.js.");
   failed = true;
 }
+if (!projectZipSource.includes("take.bestTake ? \"Best\"") || !projectZipSource.includes("formatProjectZipPreviewRenderVersion(take)") || !projectZipSource.includes("formatProjectZipPreviewPreset(take)") || !projectZipSource.includes("formatProjectZipPreviewTune(take)")) {
+  console.error("Project zip comp lane preview must show best, version, preset, and tune context.");
+  failed = true;
+}
 if (!projectZipSource.includes("Automation Schema") || !projectZipSource.includes("buildProjectZipPreviewAutomationSchemaRows(automationManifest)") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewHtml")) {
   console.error("Project zip preview must display the vocal chain automation parameter schema.");
   failed = true;

@@ -723,7 +723,15 @@ ${getProjectZipPreviewPlayerScript()}
     const safeTakes = Array.isArray(compTakes) ? compTakes : [];
     return safeTakes.length
       ? safeTakes
-        .map((take, index) => `<li><span>${index + 1}</span>${escapeHtml(take.name)} <small>${escapeHtml(take.trackName)}</small></li>`)
+        .map((take, index) => {
+          const badges = [
+            take.bestTake ? "Best" : "",
+            take.processed ? formatProjectZipPreviewRenderVersion(take) : "Raw",
+            take.processed ? formatProjectZipPreviewPreset(take) : "",
+            take.processed ? formatProjectZipPreviewTune(take) : "",
+          ].filter(Boolean);
+          return `<li><span>${index + 1}</span><strong>${escapeHtml(take.name)}</strong> <small>${escapeHtml([take.trackName, ...badges].filter(Boolean).join(" / "))}</small></li>`;
+        })
         .join("")
       : `<li>No comp lane takes selected.</li>`;
   }
