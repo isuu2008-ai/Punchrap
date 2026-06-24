@@ -11,6 +11,7 @@ const syntaxFiles = [
   "src/export-plan.js",
   "src/timeline.js",
   "src/takes.js",
+  "src/format.js",
   "src/dsp.js",
   "src/files.js",
   "src/templates.js",
@@ -39,6 +40,7 @@ const requiredScripts = [
   "src/export-plan.js",
   "src/timeline.js",
   "src/takes.js",
+  "src/format.js",
   "src/files.js",
   "src/templates.js",
   "src/devices.js",
@@ -188,6 +190,10 @@ if (!indexHtml.includes("src/takes.js") || !readFileSync("sw.js", "utf8").includ
   console.error("Take policy module must be loaded by index.html and cached by the service worker.");
   failed = true;
 }
+if (!indexHtml.includes("src/format.js") || !readFileSync("sw.js", "utf8").includes("./src/format.js")) {
+  console.error("Format utility module must be loaded by index.html and cached by the service worker.");
+  failed = true;
+}
 if (!tauriBridgeSource.includes("window.__TAURI__?.core?.invoke") || !tauriBridgeSource.includes("get_punchlab_bridge_status") || !tauriBridgeSource.includes("nativeBridgeReady")) {
   console.error("Tauri bridge adapter must probe Tauri invoke and gate native activation on nativeBridgeReady.");
   failed = true;
@@ -305,6 +311,11 @@ if (!timelineSource.includes("window.PunchLabTimeline") || !timelineSource.inclu
 const takesSource = readFileSync("src/takes.js", "utf8");
 if (!takesSource.includes("window.PunchLabTakes") || !takesSource.includes("sortTakesByCreatedAt") || !takesSource.includes("sortCompTakes") || !takesSource.includes("sortBestTakesForComp") || !takesSource.includes("normalizeCompOrder") || !takesSource.includes("moveCompTakeOrder") || !takesSource.includes("sortProcessedVersions") || !takesSource.includes("getNextProcessedVersion") || !takesSource.includes("makeTakeFilename") || !takesSource.includes("getTakeTitle") || !takesSource.includes("getTakeShortName") || !takesSource.includes("formatTakeLatencyTag") || !takesSource.includes("take.compOrder == null") || !appSource.includes("PunchLabTakes.sortTakesByCreatedAt") || !appSource.includes("PunchLabTakes.sortCompTakes") || !appSource.includes("PunchLabTakes.sortBestTakesForComp") || !appSource.includes("PunchLabTakes.normalizeCompOrder") || !appSource.includes("PunchLabTakes.moveCompTakeOrder") || !appSource.includes("PunchLabTakes.sortProcessedVersions") || !appSource.includes("PunchLabTakes.getNextProcessedVersion") || !appSource.includes("PunchLabTakes.makeTakeFilename") || !appSource.includes("PunchLabTakes.getTakeTitle") || !appSource.includes("PunchLabTakes.getTakeShortName") || !appSource.includes("PunchLabTakes.formatTakeLatencyTag")) {
   console.error("Take sorting, comp ordering, metadata display, filename, and processed-version policy must live in src/takes.js and be used by app.js.");
+  failed = true;
+}
+const formatSource = readFileSync("src/format.js", "utf8");
+if (!formatSource.includes("window.PunchLabFormat") || !formatSource.includes("formatDuration") || !formatSource.includes("formatGainDb") || !formatSource.includes("formatLufs") || !formatSource.includes("escapeHtml") || !appSource.includes("PunchLabFormat.formatDuration") || !appSource.includes("PunchLabFormat.formatGainDb") || !appSource.includes("PunchLabFormat.formatLufs") || !appSource.includes("PunchLabFormat.escapeHtml")) {
+  console.error("Shared display formatting must live in src/format.js and be used by app.js.");
   failed = true;
 }
 if (!indexHtml.includes("quickTakeList") || !appSource.includes("data-quick-play-take") || !appSource.includes("data-quick-vocal-take") || !appSource.includes("sendTakeToVocal")) {
