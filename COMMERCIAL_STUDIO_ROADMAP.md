@@ -44,6 +44,8 @@
 - index.html meta manifest 참조와 desktop-host contract file path 존재 여부를 contract check에서 검증
 - Output routing contract check 1차
 - `audioOutputRouting` permission과 `setOutputDevice` optional native method의 정합성을 desktop contract check에서 검증
+- Native audio engine performance contract 1차
+- desktop host manifest에 44.1/48kHz, 64/128/256 buffer, 10ms 이하 round-trip latency, exclusive audio thread 조건을 명시하고 contract check에서 검증
 - Native project file handoff 1차
 - saveProjectFile/openProjectFile optional native method를 Platform API와 project save/open 경로에 연결
 - Project file handoff readiness 1차

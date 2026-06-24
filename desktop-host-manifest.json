@@ -35,6 +35,22 @@
     "realtimeNativeMonitoring",
     "pluginHost"
   ],
+  "nativeAudioEngine": {
+    "sampleRates": [
+      44100,
+      48000
+    ],
+    "bufferSizes": [
+      64,
+      128,
+      256,
+      512,
+      1024
+    ],
+    "preferredBufferSize": 128,
+    "maxRoundTripLatencyMs": 10,
+    "requiresExclusiveAudioThread": true
+  },
   "contracts": {
     "chainParams": "src/chain-params.js",
     "engine": "src/engine-contract.js",

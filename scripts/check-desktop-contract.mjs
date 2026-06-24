@@ -27,6 +27,12 @@ function requireBoolean(value, label) {
   }
 }
 
+function requireNumber(value, label) {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    fail(`${label} must be a finite number.`);
+  }
+}
+
 requireString(wrapper.appId, "wrapper.appId");
 requireString(wrapper.appName, "wrapper.appName");
 requireString(wrapper.shell?.entry, "wrapper.shell.entry");
@@ -111,6 +117,30 @@ if (wrapper.permissions?.audioOutputRouting === true && !wrapperOptionalMethods.
 }
 if (hostOptionalMethods.includes("setOutputDevice") && wrapper.permissions?.audioOutputRouting !== true) {
   fail("Desktop host setOutputDevice contract requires wrapper audioOutputRouting permission.");
+}
+
+const nativeAudioEngine = host.nativeAudioEngine || {};
+const sampleRates = nativeAudioEngine.sampleRates || [];
+const bufferSizes = nativeAudioEngine.bufferSizes || [];
+requireNumber(nativeAudioEngine.preferredBufferSize, "host.nativeAudioEngine.preferredBufferSize");
+requireNumber(nativeAudioEngine.maxRoundTripLatencyMs, "host.nativeAudioEngine.maxRoundTripLatencyMs");
+requireBoolean(nativeAudioEngine.requiresExclusiveAudioThread, "host.nativeAudioEngine.requiresExclusiveAudioThread");
+if (!sampleRates.includes(44100) || !sampleRates.includes(48000)) {
+  fail("Native audio engine contract must support 44.1kHz and 48kHz sample rates.");
+}
+for (const size of [64, 128, 256]) {
+  if (!bufferSizes.includes(size)) {
+    fail(`Native audio engine contract must include low-latency buffer size ${size}.`);
+  }
+}
+if (!bufferSizes.includes(nativeAudioEngine.preferredBufferSize)) {
+  fail("Native audio engine preferred buffer size must be listed in supported buffer sizes.");
+}
+if (nativeAudioEngine.maxRoundTripLatencyMs > 10) {
+  fail("Native audio engine max round-trip latency must be 10ms or lower.");
+}
+if (nativeAudioEngine.requiresExclusiveAudioThread !== true) {
+  fail("Native audio engine must require an exclusive audio thread.");
 }
 
 if (failed) {
