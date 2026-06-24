@@ -114,6 +114,8 @@
 - project zip manifest에 plugin scan 가능 여부, scan 시각, format, count를 경로 없이 요약 저장
 - Native fixture mode 1차
 - `?nativeFixture=1`로 native adapter/engine 선택 경로를 브라우저에서 검증
+- Native fixture visibility 1차
+- desktop readiness, Record Session summary, project/zip preview에서 native fixture 모드를 명시 표시
 - Vocal chain parameter manifest 1차
 - `src/chain-params.js`에 automation/native/plugin 파라미터 ID, 범위, 기본값을 분리
 - Chain automation state 1차

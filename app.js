@@ -386,7 +386,7 @@ function renderNativeAudioSummary(desktopReadiness = window.PunchLabDesktop?.get
   }
 
   const nativeAudio = desktopReadiness?.nativeAudioEngine || {};
-  const driver = nativeAudio.ready ? nativeAudio.driver || "Native ready" : "Web fallback";
+  const driver = nativeAudio.ready ? nativeAudio.fixture ? "Native fixture" : nativeAudio.driver || "Native ready" : "Web fallback";
   const buffer = nativeAudio.preferredRuntimeBufferSize || state.nativeBufferSize;
   const latencyText = formatRuntimeLatency(getDisplayRoundTripLatency(desktopReadiness)) || "Latency pending";
   const sampleRateText = formatDisplaySampleRate(getDisplaySampleRate(desktopReadiness)) || "Rate pending";
@@ -1535,7 +1535,7 @@ function formatPreviewExportSettings(settings) {
 }
 
 function formatPreviewNativeAudio(nativeAudio = {}) {
-  const driver = nativeAudio.nativeAvailable ? nativeAudio.driver || "native" : "web";
+  const driver = nativeAudio.nativeAvailable ? nativeAudio.fixture ? "native fixture" : nativeAudio.driver || "native" : "web";
   const buffer = Number(nativeAudio.preferredBufferSize || 0);
   const latency = Number(nativeAudio.roundTripLatencyMs);
   const sampleRateText = formatDisplaySampleRate(nativeAudio.stats?.sampleRate);
@@ -1659,6 +1659,7 @@ function summarizeNativeAudioEnvironment() {
   const statsUpdatedAt = readiness?.latencyControl?.statsUpdatedAt ?? loadedNativeAudio?.statsUpdatedAt ?? null;
   return {
     driver: readiness?.engineDriver?.id || "web-audio",
+    fixture: Boolean(nativeAudio.fixture || readiness?.engineDriver?.capabilities?.nativeFixture),
     nativeAvailable: Boolean(readiness?.nativeAvailable),
     preferredBufferSize: nativeAudio.preferredRuntimeBufferSize || state.nativeBufferSize,
     roundTripLatencyMs: nativeAudio.runtimeRoundTripLatencyMs ?? loadedNativeAudio?.roundTripLatencyMs ?? null,
@@ -1696,6 +1697,7 @@ function summarizeDesktopReadinessEnvironment() {
     nativeAudioEngine: readiness.nativeAudioEngine
       ? {
         ready: Boolean(readiness.nativeAudioEngine.ready),
+        fixture: Boolean(readiness.nativeAudioEngine.fixture),
         detail: readiness.nativeAudioEngine.detail || null,
       }
       : null,

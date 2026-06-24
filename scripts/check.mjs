@@ -231,6 +231,10 @@ if (!readFileSync("src/desktop.js", "utf8").includes("runtimeRoundTripLatencyMs"
   console.error("Desktop readiness must expose runtime round-trip latency.");
   failed = true;
 }
+if (!readFileSync("src/desktop.js", "utf8").includes("fixture: Boolean(capabilities.nativeFixture)") || !appSource.includes("Native fixture")) {
+  console.error("Desktop readiness and UI must identify native fixture mode explicitly.");
+  failed = true;
+}
 if (!indexHtml.includes("nativeBufferSizeSelect")) {
   console.error("index.html must include the native buffer-size selector.");
   failed = true;

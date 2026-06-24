@@ -202,6 +202,7 @@
       },
       nativeAudioEngine: {
         ...nativeAudioContract,
+        fixture: Boolean(capabilities.nativeFixture),
         runtimeRoundTripLatencyMs: latencyStats?.roundTripLatencyMs ?? nativeAudioContract.roundTripLatencyMs,
         preferredRuntimeBufferSize: preferredNativeBufferSize,
       },

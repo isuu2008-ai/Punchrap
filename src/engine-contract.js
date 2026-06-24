@@ -79,14 +79,15 @@
 
   function describeDriver(driver, bridgeStatus = null) {
     const isNative = driver?.id === "native";
+    const isFixture = Boolean(driver?.capabilities?.nativeFixture);
     const missingCount = bridgeStatus?.missingMethods?.length || 0;
     const driverName = driver?.name || "Web Audio Engine";
 
     if (isNative) {
       return {
         kind: "native",
-        label: "Native",
-        title: `${driverName} active`,
+        label: isFixture ? "Fixture" : "Native",
+        title: `${driverName}${isFixture ? " fixture" : ""} active`,
       };
     }
 
