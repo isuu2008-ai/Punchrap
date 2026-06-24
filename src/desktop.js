@@ -30,6 +30,8 @@
       bundleFormat: ".punchlab.zip",
       requiredNativeMethods,
       optionalNativeMethods: [...OPTIONAL_NATIVE_METHODS],
+      requiredEngineCapabilities: window.PunchLabEngineContract?.getRequiredEngineCapabilities?.() || [],
+      optionalEngineCapabilities: window.PunchLabEngineContract?.getOptionalEngineCapabilities?.() || [],
       contracts: {
         chainParams: "src/chain-params.js",
         engine: "src/engine-contract.js",
@@ -45,6 +47,10 @@
   function getReadiness() {
     const platform = window.PunchLabPlatform?.platform || {};
     const bridgeStatus = window.PunchLabNativeBridge?.getStatus?.() || null;
+    const engineDriver = window.PunchLabEngine?.getDriver?.() || null;
+    const capabilities = engineDriver?.capabilities || {};
+    const requiredCapabilities = window.PunchLabEngineContract?.getRequiredEngineCapabilities?.() || [];
+    const missingCapabilities = window.PunchLabEngineContract?.getMissingCapabilities?.(capabilities, requiredCapabilities) || [];
     const serviceWorker = platform.serviceWorker || {};
     const checks = [
       makeCheck(
@@ -73,6 +79,14 @@
           ? "Native host contract satisfied."
           : `Web Audio fallback active; missing ${bridgeStatus?.missingMethods?.length || getManifest().requiredNativeMethods.length} method(s).`,
       ),
+      makeCheck(
+        "engine-capabilities",
+        "Engine capabilities",
+        missingCapabilities.length ? "blocked" : "ready",
+        missingCapabilities.length
+          ? `Missing ${missingCapabilities.join(", ")}.`
+          : `${engineDriver?.name || "Audio engine"} satisfies required render/export capabilities.`,
+      ),
     ];
     const readyCount = checks.filter((check) => check.status === "ready").length;
 
@@ -80,6 +94,14 @@
       manifest: getManifest(),
       displayMode: platform.displayMode || "browser",
       bridgeStatus,
+      engineDriver: engineDriver
+        ? {
+          id: engineDriver.id,
+          name: engineDriver.name,
+          capabilities,
+          missingCapabilities,
+        }
+        : null,
       nativeAvailable: Boolean(bridgeStatus?.available),
       desktopReady: checks.every((check) => check.status !== "blocked"),
       summary: `${readyCount}/${checks.length} ready`,

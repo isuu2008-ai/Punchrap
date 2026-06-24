@@ -64,6 +64,7 @@ node .\scripts\check.mjs
 - Node package scripts for local start and smoke checks
 - PWA manifest, local icon, platform bootstrap, and service worker shell cache for desktop-install preparation
 - Desktop host manifest and runtime desktop-readiness diagnostics for future Tauri/Electron/native wrapper integration
+- Desktop readiness checks required audio engine capabilities before native handoff
 - Timeline view with marker management and take region start/nudge controls
 - BPM-based timeline grid with optional beat/bar snap for markers and region starts
 - Region rename, color, clip gain, and fade in/out controls persisted in project files

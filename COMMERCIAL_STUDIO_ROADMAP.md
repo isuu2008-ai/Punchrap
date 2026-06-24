@@ -23,6 +23,8 @@
 - Platform bootstrap `src/platform.js` 추가
 - Desktop wrapper integration 1차
 - `desktop-host-manifest.json`과 `src/desktop.js`로 native wrapper 계약/준비 상태를 분리
+- Desktop engine capability readiness 1차
+- native 전환 전 필수 audio engine capability 누락 여부를 readiness check로 표시
 - Native adapter 1차
 - `src/native-adapter.js`가 native host bridge를 swappable engine interface로 연결
 - Native fixture mode 1차

@@ -22,6 +22,18 @@
     "exportCompressedAudio",
     "scanPluginHosts"
   ],
+  "requiredEngineCapabilities": [
+    "offlineMixRender",
+    "vocalRender",
+    "pitchAnalysis",
+    "wavExport",
+    "loudnessAnalysis",
+    "truePeakLimiter"
+  ],
+  "optionalEngineCapabilities": [
+    "realtimeNativeMonitoring",
+    "pluginHost"
+  ],
   "contracts": {
     "chainParams": "src/chain-params.js",
     "engine": "src/engine-contract.js",

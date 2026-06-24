@@ -19,12 +19,38 @@
     pluginHost: false,
   };
 
+  const REQUIRED_ENGINE_CAPABILITIES = [
+    "offlineMixRender",
+    "vocalRender",
+    "pitchAnalysis",
+    "wavExport",
+    "loudnessAnalysis",
+    "truePeakLimiter",
+  ];
+
+  const OPTIONAL_ENGINE_CAPABILITIES = [
+    "realtimeNativeMonitoring",
+    "pluginHost",
+  ];
+
   function getRequiredNativeMethods() {
     return [...REQUIRED_NATIVE_METHODS];
   }
 
+  function getRequiredEngineCapabilities() {
+    return [...REQUIRED_ENGINE_CAPABILITIES];
+  }
+
+  function getOptionalEngineCapabilities() {
+    return [...OPTIONAL_ENGINE_CAPABILITIES];
+  }
+
   function getWebAudioCapabilities() {
     return { ...WEB_AUDIO_CAPABILITIES };
+  }
+
+  function getMissingCapabilities(capabilities = {}, required = REQUIRED_ENGINE_CAPABILITIES) {
+    return required.filter((capability) => capabilities[capability] !== true);
   }
 
   function mergeNativeCapabilities(nativeCapabilities = {}) {
@@ -57,6 +83,9 @@
 
   window.PunchLabEngineContract = {
     describeDriver,
+    getMissingCapabilities,
+    getOptionalEngineCapabilities,
+    getRequiredEngineCapabilities,
     getRequiredNativeMethods,
     getWebAudioCapabilities,
     mergeNativeCapabilities,
