@@ -35,6 +35,12 @@
       "scanPluginHosts"
     ]
   },
+  "tauriBridge": {
+    "global": "__TAURI__",
+    "adapter": "src/tauri-bridge.js",
+    "statusCommand": "get_punchlab_bridge_status",
+    "activatesNativeBridgeWhen": "nativeBridgeReady"
+  },
   "permissions": {
     "microphone": true,
     "filesystem": true,

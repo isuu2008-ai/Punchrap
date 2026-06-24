@@ -182,5 +182,6 @@
     installNativeEngine,
   };
 
+  window.addEventListener("punchlab:tauri-native-ready", installNativeEngine);
   installNativeEngine();
 })();

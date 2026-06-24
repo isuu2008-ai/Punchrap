@@ -79,10 +79,12 @@ node .\scripts\check.mjs
 - Desktop wrapper manifest for shell size, permission, bridge, and handoff-stage planning
 - Tauri shell config scaffold at `src-tauri/tauri.conf.json` for the first desktop wrapper boundary
 - Tauri Rust/Cargo scaffold at `src-tauri/Cargo.toml`, `src-tauri/src/main.rs`, and `src-tauri/src/lib.rs`
+- Tauri invoke bridge adapter at `src/tauri-bridge.js` for the future native host handoff
 - Tauri main-window capability scaffold at `src-tauri/capabilities/main.json`
 - Desktop wrapper contract check for shell, permission, bridge, plugin, and handoff-stage requirements
 - Desktop contract check validates the Tauri app id, dev server, main window, and bundled manifest resources
 - Desktop contract check validates the Tauri Rust entry, library, build script, and dialog/fs plugin initialization
+- Desktop contract check validates the Tauri global invoke bridge and `nativeBridgeReady` gate
 - Desktop contract check validates selected Tauri capabilities and local-only main-window permissions
 - Desktop contract check verifies HTML manifest meta tags and host contract file paths
 - Tauri file associations register `.punchlab.json` projects and `.punchlab.zip` archives as PunchLab-owned editor types

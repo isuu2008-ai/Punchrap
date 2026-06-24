@@ -95,6 +95,12 @@
           scanMethod: "scanPluginHosts",
           requiresCapability: "pluginHost",
         },
+        tauriBridge: {
+          global: "__TAURI__",
+          adapter: "src/tauri-bridge.js",
+          statusCommand: "get_punchlab_bridge_status",
+          activatesNativeBridgeWhen: "nativeBridgeReady",
+        },
         fileAssociations: FILE_ASSOCIATIONS.map((association) => ({ ...association })),
       },
       requiredNativeMethods,
@@ -106,6 +112,7 @@
         chainParams: "src/chain-params.js",
         engine: "src/engine-contract.js",
         bridge: "src/native-bridge.js",
+        tauriBridge: "src/tauri-bridge.js",
         nativeFixture: "src/native-fixture.js",
         nativeAdapter: "src/native-adapter.js",
         project: "src/project.js",
@@ -261,6 +268,7 @@
         capabilityReady: capabilities.pluginHost === true,
         manifestPath: getManifest().pluginHostManifestPath,
       },
+      tauriBridge: window.PunchLabTauriBridge?.getStatus?.() || null,
       wrapper: {
         manifestPath: getManifest().wrapperManifestPath,
         handoffStages,

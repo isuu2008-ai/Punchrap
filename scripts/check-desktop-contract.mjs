@@ -8,6 +8,7 @@ const tauriConfig = readJson("src-tauri/tauri.conf.json");
 const mainCapability = readJson("src-tauri/capabilities/main.json");
 const indexHtml = readFileSync("index.html", "utf8");
 const desktopSource = readFileSync("src/desktop.js", "utf8");
+const tauriBridgeSource = readFileSync("src/tauri-bridge.js", "utf8");
 const tauriCargo = readFileSync("src-tauri/Cargo.toml", "utf8");
 const tauriBuildScript = readFileSync("src-tauri/build.rs", "utf8");
 const tauriMainSource = readFileSync("src-tauri/src/main.rs", "utf8");
@@ -105,6 +106,15 @@ if (wrapper.pluginHost?.scanMethod !== plugin.scan?.nativeMethod) {
 if (wrapper.pluginHost?.requiresCapability !== plugin.requiredCapabilities?.[0]) {
   fail("Wrapper plugin capability must match plugin host manifest.");
 }
+if (wrapper.tauriBridge?.adapter !== packageManifest.tauriBridge?.adapter) {
+  fail("Wrapper and package Tauri bridge adapter paths must match.");
+}
+if (wrapper.tauriBridge?.statusCommand !== "get_punchlab_bridge_status" || packageManifest.tauriBridge?.statusCommand !== wrapper.tauriBridge?.statusCommand) {
+  fail("Wrapper and package Tauri bridge status command must be get_punchlab_bridge_status.");
+}
+if (wrapper.tauriBridge?.activatesNativeBridgeWhen !== "nativeBridgeReady") {
+  fail("Tauri bridge must only activate the native bridge when nativeBridgeReady is true.");
+}
 if (host.packageManifest !== "desktop-package-manifest.json" || wrapper.packageManifest !== host.packageManifest) {
   fail("Desktop host and wrapper manifests must reference desktop-package-manifest.json.");
 }
@@ -148,7 +158,7 @@ for (const artifact of packageArtifacts) {
     fail(`Desktop package required artifact is missing: ${artifact}`);
   }
 }
-for (const artifact of ["desktop-package-manifest.json", "desktop-host-manifest.json", "desktop-wrapper-manifest.json", "plugin-host-manifest.json", "src/native-bridge.js", "src/desktop.js"]) {
+for (const artifact of ["desktop-package-manifest.json", "desktop-host-manifest.json", "desktop-wrapper-manifest.json", "plugin-host-manifest.json", "src/native-bridge.js", "src/tauri-bridge.js", "src/desktop.js"]) {
   if (!packageArtifacts.includes(artifact)) {
     fail(`Desktop package manifest must list required artifact: ${artifact}`);
   }
@@ -257,6 +267,17 @@ if (!desktopSource.includes("FILE_ASSOCIATIONS") || !desktopSource.includes(".pu
 if (!desktopSource.includes("TAURI_CAPABILITIES") || !desktopSource.includes("src-tauri/capabilities/main.json")) {
   fail("Desktop runtime manifest must expose Tauri capability paths.");
 }
+if (!desktopSource.includes("tauriBridge: window.PunchLabTauriBridge?.getStatus?.()")) {
+  fail("Desktop readiness must expose the Tauri bridge probe status.");
+}
+if (!tauriBridgeSource.includes("window.__TAURI__?.core?.invoke") || !tauriBridgeSource.includes("get_punchlab_bridge_status")) {
+  fail("Tauri bridge adapter must use the global Tauri core invoke status command.");
+}
+for (const requiredSnippet of ["nativeBridgeReady", "implementedMethods", "missingRequiredMethods", "window.__PUNCHLAB_NATIVE__", "punchlab:tauri-native-ready"]) {
+  if (!tauriBridgeSource.includes(requiredSnippet)) {
+    fail(`Tauri bridge adapter missing ${requiredSnippet}.`);
+  }
+}
 
 if (tauriConfig.$schema !== "https://schema.tauri.app/config/2") {
   fail("Tauri config must use the Tauri v2 schema.");
@@ -273,6 +294,9 @@ if (tauriConfig.build?.devUrl !== wrapper.shell?.devServer) {
 if (tauriConfig.build?.frontendDist !== "../") {
   fail("Tauri config frontendDist must point to the static PunchLab shell.");
 }
+if (tauriConfig.app?.withGlobalTauri !== true) {
+  fail("Tauri config must enable app.withGlobalTauri for the vanilla JS bridge adapter.");
+}
 if (wrapper.shell?.cargoManifest !== "src-tauri/Cargo.toml") {
   fail("Desktop wrapper shell must point to src-tauri/Cargo.toml.");
 }
@@ -284,6 +308,7 @@ if (!tauriCargo.includes('name = "punchlab"') || !tauriCargo.includes('name = "p
 }
 for (const requiredSnippet of [
   'crate-type = ["staticlib", "cdylib", "rlib"]',
+  'serde = { version = "1", features = ["derive"] }',
   'tauri-build = { version = "2"',
   'tauri = { version = "2"',
   'tauri-plugin-dialog = "2"',
@@ -300,6 +325,13 @@ if (!tauriMainSource.includes("windows_subsystem = \"windows\"") || !tauriMainSo
   fail("Tauri main.rs must hide the Windows console in release and call punchlab_lib::run().");
 }
 for (const requiredSnippet of [
+  "#[tauri::command]",
+  "get_punchlab_bridge_status",
+  "PunchLabBridgeStatus",
+  "native_bridge_ready: false",
+  "implemented_methods: Vec::new()",
+  "PLANNED_NATIVE_METHODS",
+  "invoke_handler(tauri::generate_handler![get_punchlab_bridge_status])",
   "tauri::Builder::default()",
   "tauri_plugin_dialog::init()",
   "tauri_plugin_fs::init()",

@@ -56,6 +56,7 @@
     "chainParams": "src/chain-params.js",
     "engine": "src/engine-contract.js",
     "bridge": "src/native-bridge.js",
+    "tauriBridge": "src/tauri-bridge.js",
     "nativeFixture": "src/native-fixture.js",
     "nativeAdapter": "src/native-adapter.js",
     "project": "src/project.js",

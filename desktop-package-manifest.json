@@ -46,6 +46,12 @@
       ]
     }
   ],
+  "tauriBridge": {
+    "global": "__TAURI__",
+    "adapter": "src/tauri-bridge.js",
+    "statusCommand": "get_punchlab_bridge_status",
+    "activatesNativeBridgeWhen": "nativeBridgeReady"
+  },
   "requiredArtifacts": [
     "index.html",
     "desktop-package-manifest.json",
@@ -60,6 +66,7 @@
     "src-tauri/capabilities/main.json",
     "src/engine-contract.js",
     "src/native-bridge.js",
+    "src/tauri-bridge.js",
     "src/native-adapter.js",
     "src/project.js",
     "src/desktop.js"

@@ -15,6 +15,7 @@ const syntaxFiles = [
   "src/vocal.js",
   "src/engine-contract.js",
   "src/native-bridge.js",
+  "src/tauri-bridge.js",
   "src/native-fixture.js",
   "src/native-adapter.js",
   "src/engine.js",
@@ -37,6 +38,7 @@ const requiredScripts = [
   "src/vocal.js",
   "src/engine-contract.js",
   "src/native-bridge.js",
+  "src/tauri-bridge.js",
   "src/native-fixture.js",
   "src/native-adapter.js",
   "src/engine.js",
@@ -60,6 +62,7 @@ const requiredFiles = [
   "src-tauri/src/main.rs",
   "src-tauri/src/lib.rs",
   "src-tauri/capabilities/main.json",
+  "src/tauri-bridge.js",
   "assets/punchlab-icon.svg",
   "sw.js",
 ];
@@ -84,6 +87,7 @@ if (desktopContractResult.status !== 0) {
 
 const indexHtml = readFileSync("index.html", "utf8");
 const appSource = readFileSync("app.js", "utf8");
+const tauriBridgeSource = readFileSync("src/tauri-bridge.js", "utf8");
 const projectZipSource = readFileSync("src/project-zip.js", "utf8");
 const zipSource = `${appSource}\n${projectZipSource}`;
 for (const script of requiredScripts) {
@@ -154,6 +158,14 @@ for (const capability of pluginHostManifest.requiredCapabilities || []) {
 
 if (!indexHtml.includes("manifest.webmanifest")) {
   console.error("Missing web app manifest link.");
+  failed = true;
+}
+if (!indexHtml.includes("src/tauri-bridge.js") || !readFileSync("sw.js", "utf8").includes("./src/tauri-bridge.js")) {
+  console.error("Tauri bridge adapter must be loaded by index.html and cached by the service worker.");
+  failed = true;
+}
+if (!tauriBridgeSource.includes("window.__TAURI__?.core?.invoke") || !tauriBridgeSource.includes("get_punchlab_bridge_status") || !tauriBridgeSource.includes("nativeBridgeReady")) {
+  console.error("Tauri bridge adapter must probe Tauri invoke and gate native activation on nativeBridgeReady.");
   failed = true;
 }
 if (!appSource.includes("nativeAudioEngine?.detail")) {
