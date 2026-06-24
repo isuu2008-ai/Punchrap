@@ -222,6 +222,10 @@ if (!appSource.includes("presets: summarizePresetManifest") || !appSource.includ
   console.error("Project zip manifest and preview must expose vocal chain preset summaries.");
   failed = true;
 }
+if (!appSource.includes("notes: summarizeProjectNotes") || !appSource.includes("Lyrics & Notes") || !appSource.includes("buildPreviewNotesRows") || !appSource.includes("manifest.json includes notes")) {
+  console.error("Project zip manifest and preview must expose scratch lyrics, marker lyrics, and session notes.");
+  failed = true;
+}
 if (!appSource.includes("Automation Schema") || !appSource.includes("buildPreviewAutomationSchemaRows")) {
   console.error("Project zip preview must display the vocal chain automation parameter schema.");
   failed = true;

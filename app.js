@@ -1161,6 +1161,7 @@ async function buildProjectZipFiles(bundle, projectFilename) {
     nativeAudio: summarizeNativeAudioEnvironment(),
     desktopReadiness: summarizeDesktopReadinessEnvironment(),
     presets: summarizePresetManifest(bundle.presets || presets, bundle.settings?.selectedPresetId),
+    notes: summarizeProjectNotes(bundle),
     beat: null,
     markers: [],
     takes: [],
@@ -1235,6 +1236,7 @@ async function buildProjectZipFiles(bundle, projectFilename) {
     type: marker.type,
     time: marker.time,
     comment: marker.comment,
+    lyrics: marker.lyrics,
     lyricLines: getLyricLineCount(marker.lyrics),
   }));
   files["preview.html"] = buildProjectZipPreviewHtml(manifest, bundle, projectFilename);
@@ -1250,6 +1252,7 @@ async function buildProjectZipFiles(bundle, projectFilename) {
     "manifest.json includes nativeAudio for driver, buffer, and latency environment context.",
     "manifest.json includes desktopReadiness for wrapper, native audio, and plugin host handoff context.",
     "manifest.json includes presets for vocal chain backup and transfer review.",
+    "manifest.json includes notes and marker lyrics for read-only archive review.",
     "Processed takes include automationState when a chain snapshot is available.",
     "assets/beat contains the loaded beat when available.",
     "assets/takes contains recorded and processed take audio files.",
@@ -1270,6 +1273,7 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
   const nativeAudio = manifest.nativeAudio || {};
   const desktopReadiness = manifest.desktopReadiness || {};
   const presetManifest = Array.isArray(manifest.presets) ? manifest.presets : [];
+  const notesManifest = manifest.notes || {};
   const takes = [...manifest.takes].sort(
     (left, right) => (left.startTime || 0) - (right.startTime || 0) || String(left.trackName).localeCompare(String(right.trackName)),
   );
@@ -1359,6 +1363,7 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
   const pluginHostRows = buildPreviewPluginHostRows(pluginHost);
   const automationSchemaRows = buildPreviewAutomationSchemaRows(automationManifest);
   const presetRows = buildPreviewPresetManifestRows(presetManifest);
+  const notesRows = buildPreviewNotesRows(notesManifest, manifest.markers);
 
   return `<!doctype html>
 <html lang="en">
@@ -1391,6 +1396,7 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
       dd { margin: 3px 0 0; font-size: 13px; font-weight: 800; }
       .region-chip { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
       .region-chip i { width: 10px; height: 10px; border: 1px solid rgba(255,255,255,.28); border-radius: 999px; flex: 0 0 auto; }
+      .note-text { max-height: 260px; overflow: auto; margin: 0; white-space: pre-wrap; color: var(--text); font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
       table { width: 100%; border-collapse: collapse; }
       th, td { padding: 8px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
       th { color: var(--muted); font-size: 11px; text-transform: uppercase; }
@@ -1416,6 +1422,7 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
           <span>${presetManifest.length} presets</span>
           <span>${takes.length} takes</span>
           <span>${manifest.markers.length} markers</span>
+          <span>${notesManifest.totalLyricLines || 0} lyric lines</span>
         </div>
         <p>Open <code>${escapeHtml(projectFilename)}</code> in PunchLab to edit the full session.</p>
         <div class="preview-controls">
@@ -1441,6 +1448,10 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
       <section>
         <h2>Presets</h2>
         <div class="grid">${presetRows}</div>
+      </section>
+      <section>
+        <h2>Lyrics & Notes</h2>
+        <div class="grid">${notesRows}</div>
       </section>
       ${beatSection}
       <section>
@@ -1605,6 +1616,22 @@ function getTuneSettingsForPreset(preset) {
   };
 }
 
+function summarizeProjectNotes(bundle = {}) {
+  const settings = bundle.settings || {};
+  const markers = normalizeMarkers(bundle.markers || []);
+  const scratchLyrics = String(settings.lyrics || "");
+  const sessionNotes = String(settings.sessionNotes || "");
+  const markerLyricLines = markers.reduce((count, marker) => count + getLyricLineCount(marker.lyrics), 0);
+  return {
+    scratchLyrics,
+    sessionNotes,
+    scratchLyricLines: getLyricLineCount(scratchLyrics),
+    sessionNoteLines: getLyricLineCount(sessionNotes),
+    markerLyricLines,
+    totalLyricLines: getLyricLineCount(scratchLyrics) + markerLyricLines,
+  };
+}
+
 function formatPreviewGain(volume, clipGain) {
   const gain = Math.max(0, Number(volume || 0) * Number(clipGain || 1));
   return `${Math.round(gain * 100)}%`;
@@ -1740,6 +1767,41 @@ function buildPreviewPresetManifestRows(presetManifest = []) {
         </dl>
       </article>`)
     .join("");
+}
+
+function buildPreviewNotesRows(notesManifest = {}, markers = []) {
+  const rows = [];
+  const scratchLyrics = String(notesManifest.scratchLyrics || "");
+  const sessionNotes = String(notesManifest.sessionNotes || "");
+  if (scratchLyrics.trim()) {
+    rows.push(buildPreviewTextCard("Scratch Lyrics", `${notesManifest.scratchLyricLines || getLyricLineCount(scratchLyrics)} lines`, scratchLyrics));
+  }
+  if (sessionNotes.trim()) {
+    rows.push(buildPreviewTextCard("Session Notes", `${notesManifest.sessionNoteLines || getLyricLineCount(sessionNotes)} lines`, sessionNotes));
+  }
+
+  normalizeMarkers(markers)
+    .filter((marker) => String(marker.lyrics || "").trim())
+    .forEach((marker) => {
+      rows.push(buildPreviewTextCard(`${marker.type} Lyrics`, formatDuration(marker.time), marker.lyrics));
+    });
+
+  return rows.length
+    ? rows.join("")
+    : `<article class="asset-card"><strong>No lyrics or notes</strong><small>The project bundle has no scratch lyrics, marker lyrics, or session notes.</small></article>`;
+}
+
+function buildPreviewTextCard(title, detail, value) {
+  return `
+    <article class="asset-card">
+      <div class="asset-heading">
+        <div>
+          <strong>${escapeHtml(title)}</strong>
+          <small>${escapeHtml(detail)}</small>
+        </div>
+      </div>
+      <pre class="note-text">${escapeHtml(value)}</pre>
+    </article>`;
 }
 
 function formatPreviewDesktopReadiness(desktopReadiness = {}) {
