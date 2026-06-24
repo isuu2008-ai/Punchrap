@@ -98,7 +98,15 @@
   function shouldInstallFixture() {
     try {
       const params = new URLSearchParams(window.location.search);
-      return params.has("nativeFixture") || window.localStorage?.getItem("punchlab:nativeFixture") === "1";
+      if (params.get("nativeFixture") === "0") {
+        window.localStorage?.removeItem("punchlab:nativeFixture");
+        return false;
+      }
+      if (params.get("nativeFixture") === "1" || params.has("nativeFixture")) {
+        window.localStorage?.setItem("punchlab:nativeFixture", "1");
+        return true;
+      }
+      return window.localStorage?.getItem("punchlab:nativeFixture") === "1";
     } catch {
       return false;
     }

@@ -235,6 +235,10 @@ if (!readFileSync("src/desktop.js", "utf8").includes("fixture: Boolean(capabilit
   console.error("Desktop readiness and UI must identify native fixture mode explicitly.");
   failed = true;
 }
+if (!readFileSync("src/native-fixture.js", "utf8").includes("setItem(\"punchlab:nativeFixture\", \"1\")") || !readFileSync("src/native-fixture.js", "utf8").includes("removeItem(\"punchlab:nativeFixture\")")) {
+  console.error("Native fixture mode must support persistent URL enable/disable flags.");
+  failed = true;
+}
 if (!indexHtml.includes("nativeBufferSizeSelect")) {
   console.error("index.html must include the native buffer-size selector.");
   failed = true;

@@ -116,6 +116,8 @@
 - `?nativeFixture=1`로 native adapter/engine 선택 경로를 브라우저에서 검증
 - Native fixture visibility 1차
 - desktop readiness, Record Session summary, project/zip preview에서 native fixture 모드를 명시 표시
+- Native fixture preference 1차
+- `?nativeFixture=1`은 fixture mode를 저장하고 `?nativeFixture=0`은 저장된 fixture mode를 해제
 - Vocal chain parameter manifest 1차
 - `src/chain-params.js`에 automation/native/plugin 파라미터 ID, 범위, 기본값을 분리
 - Chain automation state 1차
