@@ -81,6 +81,8 @@ node .\scripts\check.mjs
 - Desktop wrapper contract check for shell, permission, bridge, plugin, and handoff-stage requirements
 - Desktop contract check validates the Tauri app id, dev server, main window, and bundled manifest resources
 - Desktop contract check verifies HTML manifest meta tags and host contract file paths
+- Tauri file associations register `.punchlab.json` projects and `.punchlab.zip` archives as PunchLab-owned editor types
+- Desktop contract check validates file association extensions, MIME types, and exported type identifiers
 - Desktop contract check verifies native output routing permission and `setOutputDevice` alignment
 - Native project save/open handoff through optional `saveProjectFile` and `openProjectFile`
 - Desktop readiness reports native project file open/save handoff availability

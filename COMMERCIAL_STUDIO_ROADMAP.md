@@ -86,6 +86,10 @@
 - shell size, local-first permission, native bridge, plugin host, handoff stage 조건을 `scripts/check-desktop-contract.mjs`에서 검증
 - Tauri shell contract check 1차
 - Tauri config의 schema/app id/dev server/window/bundle resource 정합성을 `scripts/check-desktop-contract.mjs`에서 검증
+- Tauri file association scaffold 1차
+- `.punchlab.json`, `.punchlab.zip` file association을 Tauri bundle config와 desktop manifests에 등록
+- Desktop file association contract check 1차
+- file association extension, MIME type, exported type identifier 정합성을 contract check에서 검증
 - Desktop manifest reference check 1차
 - index.html meta manifest 참조와 desktop-host contract file path 존재 여부를 contract check에서 검증
 - Output routing contract check 1차

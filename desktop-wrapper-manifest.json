@@ -43,6 +43,20 @@
     "scanMethod": "scanPluginHosts",
     "requiresCapability": "pluginHost"
   },
+  "fileAssociations": [
+    {
+      "id": "project",
+      "extension": ".punchlab.json",
+      "mimeType": "application/vnd.punchlab.project+json",
+      "role": "Editor"
+    },
+    {
+      "id": "archive",
+      "extension": ".punchlab.zip",
+      "mimeType": "application/vnd.punchlab.archive+zip",
+      "role": "Editor"
+    }
+  ],
   "handoffStages": [
     {
       "id": "browser-shell",

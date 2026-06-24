@@ -27,6 +27,48 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "fileAssociations": [
+      {
+        "name": "PunchLab Project",
+        "ext": [
+          "punchlab.json"
+        ],
+        "description": "PunchLab editable project bundle",
+        "mimeType": "application/vnd.punchlab.project+json",
+        "role": "Editor",
+        "rank": "Owner",
+        "contentTypes": [
+          "ai.isuu2008.punchrap.project"
+        ],
+        "exportedType": {
+          "identifier": "ai.isuu2008.punchrap.project",
+          "conformsTo": [
+            "public.json",
+            "public.data"
+          ]
+        }
+      },
+      {
+        "name": "PunchLab Archive",
+        "ext": [
+          "punchlab.zip"
+        ],
+        "description": "PunchLab project archive with audio assets",
+        "mimeType": "application/vnd.punchlab.archive+zip",
+        "role": "Editor",
+        "rank": "Owner",
+        "contentTypes": [
+          "ai.isuu2008.punchrap.archive"
+        ],
+        "exportedType": {
+          "identifier": "ai.isuu2008.punchrap.archive",
+          "conformsTo": [
+            "public.zip-archive",
+            "public.data"
+          ]
+        }
+      }
+    ],
     "resources": [
       "../desktop-host-manifest.json",
       "../desktop-wrapper-manifest.json",

@@ -146,6 +146,11 @@ for (const stageId of ["wrapper-scaffold", "file-association", "native-audio-bri
     fail(`Desktop package stage missing: ${stageId}`);
   }
 }
+const packageStages = packageManifest.packagingStages || [];
+const fileAssociationStage = packageStages.find((stage) => stage.id === "file-association");
+if (fileAssociationStage?.status !== "scaffolded") {
+  fail("Desktop package file-association stage must be scaffolded.");
+}
 
 const noRewriteBoundary = packageManifest.nativeMigrationGate?.noRewriteBoundary || [];
 for (const boundary of ["src/engine-contract.js", "src/chain-params.js", "src/project.js", "src/native-adapter.js"]) {
@@ -218,6 +223,9 @@ if (!desktopSource.includes("packageManifestPath")) {
 if (!desktopSource.includes("tauriConfig")) {
   fail("Desktop runtime manifest must expose the Tauri config path.");
 }
+if (!desktopSource.includes("FILE_ASSOCIATIONS") || !desktopSource.includes(".punchlab.json") || !desktopSource.includes(".punchlab.zip")) {
+  fail("Desktop runtime manifest must expose PunchLab file associations.");
+}
 
 if (tauriConfig.$schema !== "https://schema.tauri.app/config/2") {
   fail("Tauri config must use the Tauri v2 schema.");
@@ -252,6 +260,49 @@ const tauriResources = tauriConfig.bundle?.resources || [];
 for (const resource of ["../desktop-host-manifest.json", "../desktop-wrapper-manifest.json", "../desktop-package-manifest.json", "../plugin-host-manifest.json"]) {
   if (!tauriResources.includes(resource)) {
     fail(`Tauri bundle resources must include ${resource}.`);
+  }
+}
+const expectedFileAssociations = [
+  {
+    id: "project",
+    extension: ".punchlab.json",
+    tauriExt: "punchlab.json",
+    mimeType: "application/vnd.punchlab.project+json",
+    exportedType: "ai.isuu2008.punchrap.project",
+  },
+  {
+    id: "archive",
+    extension: ".punchlab.zip",
+    tauriExt: "punchlab.zip",
+    mimeType: "application/vnd.punchlab.archive+zip",
+    exportedType: "ai.isuu2008.punchrap.archive",
+  },
+];
+const tauriFileAssociations = tauriConfig.bundle?.fileAssociations || [];
+const packageFileAssociations = packageManifest.fileAssociations || [];
+const wrapperFileAssociations = wrapper.fileAssociations || [];
+for (const expected of expectedFileAssociations) {
+  const tauriAssociation = tauriFileAssociations.find((association) => association.ext?.includes(expected.tauriExt));
+  if (!tauriAssociation) {
+    fail(`Tauri file association missing ${expected.tauriExt}.`);
+    continue;
+  }
+  if (tauriAssociation.mimeType !== expected.mimeType) {
+    fail(`Tauri file association ${expected.tauriExt} must use ${expected.mimeType}.`);
+  }
+  if (tauriAssociation.role !== "Editor" || tauriAssociation.rank !== "Owner") {
+    fail(`Tauri file association ${expected.tauriExt} must be registered as owning editor.`);
+  }
+  if (tauriAssociation.exportedType?.identifier !== expected.exportedType) {
+    fail(`Tauri file association ${expected.tauriExt} must export ${expected.exportedType}.`);
+  }
+  const packageAssociation = packageFileAssociations.find((association) => association.id === expected.id);
+  const wrapperAssociation = wrapperFileAssociations.find((association) => association.id === expected.id);
+  if (packageAssociation?.extension !== expected.extension || packageAssociation?.mimeType !== expected.mimeType) {
+    fail(`Desktop package file association mismatch for ${expected.id}.`);
+  }
+  if (wrapperAssociation?.extension !== expected.extension || wrapperAssociation?.mimeType !== expected.mimeType) {
+    fail(`Desktop wrapper file association mismatch for ${expected.id}.`);
   }
 }
 

@@ -24,6 +24,20 @@
     { id: "native-audio-engine", label: "Native low-latency audio engine", status: "planned" },
     { id: "plugin-host", label: "VST3/AU plugin host", status: "planned" },
   ];
+  const FILE_ASSOCIATIONS = [
+    {
+      id: "project",
+      extension: ".punchlab.json",
+      mimeType: "application/vnd.punchlab.project+json",
+      role: "Editor",
+    },
+    {
+      id: "archive",
+      extension: ".punchlab.zip",
+      mimeType: "application/vnd.punchlab.archive+zip",
+      role: "Editor",
+    },
+  ];
 
   const NATIVE_AUDIO_ENGINE_CONTRACT = {
     sampleRates: [44100, 48000],
@@ -65,6 +79,7 @@
           scanMethod: "scanPluginHosts",
           requiresCapability: "pluginHost",
         },
+        fileAssociations: FILE_ASSOCIATIONS.map((association) => ({ ...association })),
       },
       requiredNativeMethods,
       optionalNativeMethods: [...OPTIONAL_NATIVE_METHODS],

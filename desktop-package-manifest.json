@@ -13,6 +13,22 @@
     "productionDir": ".",
     "tauriConfig": "src-tauri/tauri.conf.json"
   },
+  "fileAssociations": [
+    {
+      "id": "project",
+      "name": "PunchLab Project",
+      "extension": ".punchlab.json",
+      "mimeType": "application/vnd.punchlab.project+json",
+      "role": "Editor"
+    },
+    {
+      "id": "archive",
+      "name": "PunchLab Archive",
+      "extension": ".punchlab.zip",
+      "mimeType": "application/vnd.punchlab.archive+zip",
+      "role": "Editor"
+    }
+  ],
   "requiredArtifacts": [
     "index.html",
     "desktop-package-manifest.json",
@@ -35,7 +51,7 @@
     {
       "id": "file-association",
       "label": "Register .punchlab.json and .punchlab.zip",
-      "status": "planned"
+      "status": "scaffolded"
     },
     {
       "id": "native-audio-bridge",
