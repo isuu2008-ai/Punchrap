@@ -196,6 +196,7 @@ const els = {
   punchWindowText: document.querySelector("#punchWindowText"),
   presetGrid: document.querySelector("#presetGrid"),
   customPresetNameInput: document.querySelector("#customPresetNameInput"),
+  updateCustomPresetButton: document.querySelector("#updateCustomPresetButton"),
   saveCustomPresetButton: document.querySelector("#saveCustomPresetButton"),
   presetName: document.querySelector("#presetName"),
   retuneValue: document.querySelector("#retuneValue"),
@@ -696,6 +697,7 @@ function bindEvents() {
   els.exportLoudnessNormalizeInput.addEventListener("change", updateExportMetadata);
   els.lyricsInput.addEventListener("input", updateProjectLyrics);
   els.sessionNotesInput.addEventListener("input", updateProjectNotes);
+  els.updateCustomPresetButton.addEventListener("click", updateCustomPreset);
   els.saveCustomPresetButton.addEventListener("click", saveCustomPreset);
 }
 
@@ -3767,10 +3769,36 @@ function renderPresets() {
 }
 
 function saveCustomPreset() {
-  const tuneSettings = getTuneSettings();
   const name = els.customPresetNameInput.value.trim() || `Custom ${presets.filter((preset) => preset.custom).length + 1}`;
-  const preset = {
-    id: `custom-${crypto.randomUUID()}`,
+  const preset = createCustomPresetSnapshot(`custom-${crypto.randomUUID()}`, name);
+  presets.push(preset);
+  els.customPresetNameInput.value = "";
+  renderPresets();
+  applyPreset(preset.id);
+  els.sessionState.textContent = "Preset saved";
+  scheduleAutosave();
+}
+
+function updateCustomPreset() {
+  const preset = presets.find((item) => item.id === state.selectedPresetId && item.custom);
+  if (!preset) {
+    els.sessionState.textContent = "Select custom preset";
+    return;
+  }
+
+  const name = els.customPresetNameInput.value.trim() || preset.name;
+  Object.assign(preset, createCustomPresetSnapshot(preset.id, name));
+  els.customPresetNameInput.value = "";
+  renderPresets();
+  applyPreset(preset.id);
+  els.sessionState.textContent = "Preset updated";
+  scheduleAutosave();
+}
+
+function createCustomPresetSnapshot(id, name) {
+  const tuneSettings = getTuneSettings();
+  return {
+    id,
     name,
     retune: tuneSettings.retuneSpeed,
     humanize: tuneSettings.humanize,
@@ -3794,13 +3822,6 @@ function saveCustomPreset() {
     limiterCeiling: tuneSettings.limiterCeiling,
     custom: true,
   };
-
-  presets.push(preset);
-  els.customPresetNameInput.value = "";
-  renderPresets();
-  applyPreset(preset.id);
-  els.sessionState.textContent = "Preset saved";
-  scheduleAutosave();
 }
 
 function deleteCustomPreset(presetId) {
@@ -3928,6 +3949,7 @@ function renderVocalPanel() {
   const batchTargets = getBatchTargets(selectedTake);
   const skippedBatchTargets = Math.max(0, batchSourceTargets.length - batchTargets.length);
   const vocalBusy = isVocalBusy();
+  const selectedPreset = getSelectedPreset();
   els.vocalTakeSelect.innerHTML = allTakes.length
     ? allTakes
       .map(
@@ -3949,6 +3971,7 @@ function renderVocalPanel() {
   els.batchScopeSelect.disabled = vocalBusy || allTakes.length === 0;
   els.batchSkipRenderedInput.disabled = vocalBusy || allTakes.length === 0;
   els.batchRenderButton.disabled = vocalBusy || batchTargets.length === 0;
+  els.updateCustomPresetButton.disabled = vocalBusy || !selectedPreset.custom;
   els.compareSourceButton.classList.toggle("active", Boolean(comparisonPair?.source.id === state.currentTakeId));
   els.compareProcessedButton.classList.toggle("active", Boolean(comparisonPair?.processed.id === state.currentTakeId));
   setTuneControlsDisabled(vocalBusy);
@@ -3970,8 +3993,7 @@ function renderVocalPanel() {
     return;
   }
 
-  const preset = getSelectedPreset();
-  els.vocalStatus.textContent = state.isRenderingVocal ? "Rendering" : `${preset.name} ready`;
+  els.vocalStatus.textContent = state.isRenderingVocal ? "Rendering" : `${selectedPreset.name} ready`;
   els.selectedTakeMeta.innerHTML = `
     <strong>${selectedTake.trackName}</strong>
     <span>${selectedTake.processed ? "Processed" : "Original"} / ${formatDuration(selectedTake.duration)} @ ${formatDuration(selectedTake.startTime || 0)}</span>

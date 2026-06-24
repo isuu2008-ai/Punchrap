@@ -182,6 +182,10 @@ if (!appSource.includes("deleteCustomPreset") || !appSource.includes("data-delet
   console.error("Custom vocal presets must be removable without exposing delete controls for built-in presets.");
   failed = true;
 }
+if (!indexHtml.includes("updateCustomPresetButton") || !appSource.includes("updateCustomPreset") || !appSource.includes("createCustomPresetSnapshot")) {
+  console.error("Custom vocal presets must support updating the selected custom preset from current chain settings.");
+  failed = true;
+}
 if (!appSource.includes("summarizeNativeAudioEnvironment") || !appSource.includes("nativeAudio: summarizeNativeAudioEnvironment()")) {
   console.error("Project zip manifest must include native audio environment summary.");
   failed = true;

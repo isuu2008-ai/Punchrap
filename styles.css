@@ -1678,7 +1678,7 @@ textarea:focus {
 
 .preset-save-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: start;
   align-self: start;
   gap: 8px;
@@ -2402,6 +2402,10 @@ textarea:focus {
 
   .comp-row-actions .mini-button {
     flex: 1;
+  }
+
+  .preset-save-row {
+    grid-template-columns: 1fr;
   }
 
   .loudness-grid {
