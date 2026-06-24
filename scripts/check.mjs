@@ -191,6 +191,10 @@ if (!appSource.includes("formatPreviewPluginHostScan") || !appSource.includes("m
   console.error("Project zip preview must display plugin host scan summary.");
   failed = true;
 }
+if (!appSource.includes("Plugin Host") || !appSource.includes("buildPreviewPluginHostRows")) {
+  console.error("Project zip preview must include a plugin host detail section.");
+  failed = true;
+}
 if (!appSource.includes("formatPluginScanStatusTitle") || !appSource.includes("scannedAt: result?.scannedAt || new Date().toISOString()")) {
   console.error("Topbar plugin scan status must expose scan freshness.");
   failed = true;

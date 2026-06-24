@@ -1336,6 +1336,7 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
       .map((stage, index) => `<li><span>${index + 1}</span>${escapeHtml(formatPreviewHandoffStageName(stage.id))} <small>${escapeHtml(stage.status || "pending")}</small></li>`)
       .join("")
     : `<li>No desktop handoff snapshot.</li>`;
+  const pluginHostRows = buildPreviewPluginHostRows(pluginHost);
 
   return `<!doctype html>
 <html lang="en">
@@ -1401,6 +1402,12 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
       <section>
         <h2>Desktop Handoff</h2>
         <ol>${handoffStageRows}</ol>
+      </section>
+      <section>
+        <h2>Plugin Host</h2>
+        <article class="asset-card">
+          <dl>${pluginHostRows}</dl>
+        </article>
       </section>
       ${beatSection}
       <section>
@@ -1560,6 +1567,21 @@ function formatPreviewPluginHostScan(pluginHost = {}) {
   const formats = Array.isArray(pluginHost.formats) && pluginHost.formats.length ? pluginHost.formats.join(", ") : "formats unknown";
   const scannedAt = formatDisplayTimestamp(pluginHost.scannedAt);
   return [`Plugin ${pluginHost.pluginCount || 0}`, formats, scannedAt].filter(Boolean).join(" / ");
+}
+
+function buildPreviewPluginHostRows(pluginHost = {}) {
+  const formats = Array.isArray(pluginHost.formats) && pluginHost.formats.length ? pluginHost.formats.join(", ") : "None";
+  const scannedAt = formatDisplayTimestamp(pluginHost.scannedAt) || "Not scanned";
+  const rows = [
+    ["Scan", pluginHost.scanAvailable ? pluginHost.scanned ? "Scanned" : "Ready" : "Unavailable"],
+    ["Formats", formats],
+    ["Plugins", String(pluginHost.pluginCount || 0)],
+    ["Freshness", scannedAt],
+    ["Source", pluginHost.fixture ? "Fixture" : "Native"],
+  ];
+  return rows
+    .map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`)
+    .join("");
 }
 
 function formatPreviewDesktopReadiness(desktopReadiness = {}) {

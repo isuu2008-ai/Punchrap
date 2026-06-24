@@ -79,6 +79,7 @@ node .\scripts\check.mjs
 - Desktop readiness reports plugin-host scan method availability separately from plugin-host capability
 - Topbar plugin scan chip calls native `scanPluginHosts` when available and shows scan count
 - Topbar and project zip previews show plugin scan formats and scan freshness when available
+- Project zip preview includes a plugin-host detail section for scan status, formats, count, freshness, and source
 - Project zip manifests include sanitized plugin-host scan summary metadata
 - Desktop readiness checks required audio engine capabilities before native handoff
 - Desktop readiness reports native latency statistics and buffer-size control availability
