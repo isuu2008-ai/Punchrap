@@ -155,6 +155,14 @@ if (!appSource.includes("summarizeNativeAudioEnvironment") || !appSource.include
   console.error("Project zip manifest must include native audio environment summary.");
   failed = true;
 }
+if (!appSource.includes("summarizeDesktopReadinessEnvironment") || !appSource.includes("desktopReadiness: summarizeDesktopReadinessEnvironment()")) {
+  console.error("Project environment must include desktop readiness snapshots.");
+  failed = true;
+}
+if (!appSource.includes("manifest.json includes desktopReadiness") || !readFileSync("src/project.js", "utf8").includes("desktopReadiness: environment.desktopReadiness")) {
+  console.error("Project zip and bundle must preserve desktop readiness context.");
+  failed = true;
+}
 if (!appSource.includes("environment: getProjectEnvironment()") || !readFileSync("src/project.js", "utf8").includes("sanitizeEnvironment")) {
   console.error("Project bundle must include native audio environment summary.");
   failed = true;

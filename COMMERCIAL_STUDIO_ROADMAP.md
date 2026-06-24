@@ -48,6 +48,8 @@
 - engine status tooltip에 runtime round-trip latency를 표시
 - Native audio zip manifest summary 1차
 - project zip manifest에 native audio driver, buffer, latency 환경 요약을 포함
+- Desktop readiness environment snapshot 1차
+- project bundle과 zip manifest에 wrapper/native/plugin handoff readiness snapshot을 저장
 - Native audio zip README note 1차
 - project zip README에 nativeAudio 환경 요약 포함 사실을 명시
 - Native audio zip preview summary 1차

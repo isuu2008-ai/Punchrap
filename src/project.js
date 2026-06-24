@@ -75,6 +75,7 @@
   function sanitizeEnvironment(environment = {}) {
     return {
       nativeAudio: environment.nativeAudio || null,
+      desktopReadiness: environment.desktopReadiness || null,
     };
   }
 

@@ -1090,6 +1090,7 @@ async function buildProjectZipFiles(bundle, projectFilename) {
     exportSettings: summarizeExportSettings(),
     pluginHost: summarizePluginHostScan(),
     nativeAudio: summarizeNativeAudioEnvironment(),
+    desktopReadiness: summarizeDesktopReadinessEnvironment(),
     beat: null,
     markers: [],
     takes: [],
@@ -1174,6 +1175,7 @@ async function buildProjectZipFiles(bundle, projectFilename) {
     "manifest.json lists extracted audio assets for backup, transfer, and manual inspection.",
     "manifest.json includes exportSettings for WAV depth, normalize, loudness target, and recent analysis context.",
     "manifest.json includes nativeAudio for driver, buffer, and latency environment context.",
+    "manifest.json includes desktopReadiness for wrapper, native audio, and plugin host handoff context.",
     "Processed takes include automationState when a chain snapshot is available.",
     "assets/beat contains the loaded beat when available.",
     "assets/takes contains recorded and processed take audio files.",
@@ -1537,9 +1539,48 @@ function summarizeNativeAudioEnvironment() {
   };
 }
 
+function summarizeDesktopReadinessEnvironment() {
+  const readiness = window.PunchLabDesktop?.getReadiness?.();
+  const loadedDesktop = state.loadedProjectEnvironment?.desktopReadiness || null;
+  if (!readiness) {
+    return loadedDesktop;
+  }
+
+  return {
+    summary: readiness.summary || null,
+    nativeAvailable: Boolean(readiness.nativeAvailable),
+    desktopReady: Boolean(readiness.desktopReady),
+    wrapper: readiness.wrapper
+      ? {
+        status: readiness.wrapper.status || null,
+        summary: readiness.wrapper.summary || null,
+      }
+      : null,
+    nativeAudioEngine: readiness.nativeAudioEngine
+      ? {
+        ready: Boolean(readiness.nativeAudioEngine.ready),
+        detail: readiness.nativeAudioEngine.detail || null,
+      }
+      : null,
+    pluginHost: readiness.pluginHost
+      ? {
+        scanAvailable: Boolean(readiness.pluginHost.scanAvailable),
+        summary: readiness.pluginHost.summary || null,
+      }
+      : null,
+    handoffStages: Array.isArray(readiness.handoffStages)
+      ? readiness.handoffStages.map((stage) => ({
+        id: stage.id,
+        status: stage.status,
+      }))
+      : [],
+  };
+}
+
 function getProjectEnvironment() {
   return {
     nativeAudio: summarizeNativeAudioEnvironment(),
+    desktopReadiness: summarizeDesktopReadinessEnvironment(),
   };
 }
 

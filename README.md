@@ -90,6 +90,7 @@ node .\scripts\check.mjs
 - Engine status tooltip shows runtime native round-trip latency when available
 - Project zip manifests include native audio driver, buffer, and latency environment summaries
 - `.punchlab.json` project bundles include native audio environment summaries
+- Project bundles and zip manifests preserve desktop readiness snapshots for wrapper/native/plugin handoff context
 - Project load and autosave preserve native audio environment summaries
 - Project load restores native buffer-size preference from saved environment fallback when settings are missing
 - Engine status latency display falls back to loaded project native audio environment when runtime stats are missing
