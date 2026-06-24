@@ -222,15 +222,15 @@ if (!appSource.includes("automationManifest: summarizeAutomationParameterManifes
   console.error("Project zip manifest must include the vocal chain automation parameter schema.");
   failed = true;
 }
-if (!appSource.includes("presets: summarizePresetManifest") || !projectZipSource.includes("buildProjectZipPreviewPresetRows") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewPresetRows") || !zipSource.includes("manifest.json includes presets")) {
+if (!appSource.includes("presets: summarizePresetManifest") || !projectZipSource.includes("buildProjectZipPreviewPresetRows(presetManifest)") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewHtml") || !zipSource.includes("manifest.json includes presets")) {
   console.error("Project zip manifest and preview must expose vocal chain preset summaries.");
   failed = true;
 }
-if (!appSource.includes("notes: summarizeProjectNotes") || !appSource.includes("Lyrics & Notes") || !projectZipSource.includes("buildProjectZipPreviewNotesRows") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewNotesRows") || !zipSource.includes("manifest.json includes notes")) {
+if (!appSource.includes("notes: summarizeProjectNotes") || !projectZipSource.includes("Lyrics & Notes") || !projectZipSource.includes("buildProjectZipPreviewNotesRows(notesManifest, markers)") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewHtml") || !zipSource.includes("manifest.json includes notes")) {
   console.error("Project zip manifest and preview must expose scratch lyrics, marker lyrics, and session notes.");
   failed = true;
 }
-if (!appSource.includes("session: summarizeSessionManifest") || !projectZipSource.includes("buildProjectZipPreviewSessionRows") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewSessionRows") || !zipSource.includes("manifest.json includes session settings")) {
+if (!appSource.includes("session: summarizeSessionManifest") || !projectZipSource.includes("buildProjectZipPreviewSessionRows(sessionManifest)") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewHtml") || !zipSource.includes("manifest.json includes session settings")) {
   console.error("Project zip manifest and preview must expose session settings.");
   failed = true;
 }
@@ -242,23 +242,23 @@ if (!projectZipSource.includes("buildProjectZipReadme") || !appSource.includes("
   console.error("Project zip README policy must live in src/project-zip.js and be used by app.js.");
   failed = true;
 }
-if (!projectZipSource.includes("buildProjectZipPreviewPlaybackData") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewPlaybackData")) {
+if (!projectZipSource.includes("buildProjectZipPreviewPlaybackData") || !projectZipSource.includes("buildProjectZipPreviewPlaybackData(manifest, takes)") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewHtml")) {
   console.error("Project zip preview playback data policy must live in src/project-zip.js and be used by app.js.");
   failed = true;
 }
-if (!projectZipSource.includes("getProjectZipPreviewStyles") || !projectZipSource.includes("getProjectZipPreviewPlayerScript") || !appSource.includes("window.PunchLabProjectZip.getProjectZipPreviewStyles") || !appSource.includes("window.PunchLabProjectZip.getProjectZipPreviewPlayerScript")) {
+if (!projectZipSource.includes("getProjectZipPreviewStyles()") || !projectZipSource.includes("getProjectZipPreviewPlayerScript()") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewHtml")) {
   console.error("Project zip preview style and player boilerplate must live in src/project-zip.js and be used by app.js.");
   failed = true;
 }
-if (!projectZipSource.includes("buildProjectZipPreviewBeatSection") || !projectZipSource.includes("buildProjectZipPreviewMarkerRows") || !projectZipSource.includes("buildProjectZipPreviewCompRows") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewBeatSection") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewMarkerRows") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewCompRows")) {
+if (!projectZipSource.includes("buildProjectZipPreviewBeatSection(manifest.beat)") || !projectZipSource.includes("buildProjectZipPreviewMarkerRows(markers)") || !projectZipSource.includes("buildProjectZipPreviewCompRows(compTakes)") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewHtml")) {
   console.error("Project zip preview beat, marker, and comp rows must live in src/project-zip.js and be used by app.js.");
   failed = true;
 }
-if (!appSource.includes("Automation Schema") || !projectZipSource.includes("buildProjectZipPreviewAutomationSchemaRows") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewAutomationSchemaRows")) {
+if (!projectZipSource.includes("Automation Schema") || !projectZipSource.includes("buildProjectZipPreviewAutomationSchemaRows(automationManifest)") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewHtml")) {
   console.error("Project zip preview must display the vocal chain automation parameter schema.");
   failed = true;
 }
-if (!projectZipSource.includes("formatProjectZipAutomationParameterValue") || !projectZipSource.includes("formatProjectZipAutomationStateSummary(take.automationState, automationManifest)") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewTakeRows(takes, automationManifest)")) {
+if (!projectZipSource.includes("formatProjectZipAutomationParameterValue") || !projectZipSource.includes("formatProjectZipAutomationStateSummary(take.automationState, automationManifest)") || !projectZipSource.includes("buildProjectZipPreviewTakeRows(takes, automationManifest)") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewHtml")) {
   console.error("Project zip preview must summarize processed take automation values with schema labels.");
   failed = true;
 }
@@ -278,19 +278,19 @@ if (!projectZipSource.includes("formatProjectZipPreviewLatency") || !projectZipS
   console.error("Project zip preview must display take latency, trim, and fade metadata.");
   failed = true;
 }
-if (!projectZipSource.includes("formatProjectZipPreviewNativeAudio") || !appSource.includes("window.PunchLabProjectZip.formatProjectZipPreviewNativeAudio")) {
+if (!projectZipSource.includes("formatProjectZipPreviewNativeAudio(nativeAudio)") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewHtml")) {
   console.error("Project zip preview must display the native audio environment summary.");
   failed = true;
 }
-if (!projectZipSource.includes("formatProjectZipPreviewDesktopReadiness") || !appSource.includes("window.PunchLabProjectZip.formatProjectZipPreviewDesktopReadiness") || !appSource.includes("manifest.desktopReadiness || {}")) {
+if (!projectZipSource.includes("formatProjectZipPreviewDesktopReadiness(desktopReadiness)") || !projectZipSource.includes("manifest.desktopReadiness || {}") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewHtml")) {
   console.error("Project zip preview must display the desktop readiness snapshot.");
   failed = true;
 }
-if (!projectZipSource.includes("formatProjectZipPreviewPluginHostScan") || !appSource.includes("window.PunchLabProjectZip.formatProjectZipPreviewPluginHostScan") || !appSource.includes("manifest.pluginHost || {}")) {
+if (!projectZipSource.includes("formatProjectZipPreviewPluginHostScan(pluginHost)") || !projectZipSource.includes("manifest.pluginHost || {}") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewHtml")) {
   console.error("Project zip preview must display plugin host scan summary.");
   failed = true;
 }
-if (!appSource.includes("Plugin Host") || !projectZipSource.includes("buildProjectZipPreviewPluginHostRows") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewPluginHostRows")) {
+if (!projectZipSource.includes("Plugin Host") || !projectZipSource.includes("buildProjectZipPreviewPluginHostRows(pluginHost)") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewHtml")) {
   console.error("Project zip preview must include a plugin host detail section.");
   failed = true;
 }
@@ -298,7 +298,7 @@ if (!appSource.includes("formatPluginScanStatusTitle") || !appSource.includes("s
   console.error("Topbar plugin scan status must expose scan freshness.");
   failed = true;
 }
-if (!appSource.includes("Desktop Handoff") || !projectZipSource.includes("buildProjectZipPreviewHandoffRows") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewHandoffRows")) {
+if (!projectZipSource.includes("Desktop Handoff") || !projectZipSource.includes("buildProjectZipPreviewHandoffRows(desktopReadiness)") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewHtml")) {
   console.error("Project zip preview must list desktop handoff stages.");
   failed = true;
 }

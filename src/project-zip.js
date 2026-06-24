@@ -272,6 +272,126 @@
       })();`;
   }
 
+  function buildProjectZipPreviewHtml({
+    manifest = {},
+    projectFilename = "session.punchlab.json",
+    title = "PunchLab Session",
+    artist = "PunchLab",
+    bpm = 140,
+    key = "C minor",
+  } = {}) {
+    const markers = Array.isArray(manifest.markers) ? manifest.markers : [];
+    const sessionManifest = manifest.session || {};
+    const exportSettings = manifest.exportSettings || {};
+    const pluginHost = manifest.pluginHost || {};
+    const automationManifest = manifest.automationManifest || {};
+    const nativeAudio = manifest.nativeAudio || {};
+    const desktopReadiness = manifest.desktopReadiness || {};
+    const presetManifest = Array.isArray(manifest.presets) ? manifest.presets : [];
+    const notesManifest = manifest.notes || {};
+    const takes = sortProjectZipPreviewTakes(manifest);
+    const compTakes = sortProjectZipPreviewCompTakes(takes);
+    const playbackData = JSON.stringify(buildProjectZipPreviewPlaybackData(manifest, takes));
+
+    const beatSection = buildProjectZipPreviewBeatSection(manifest.beat);
+    const markerRows = buildProjectZipPreviewMarkerRows(markers);
+    const takeRows = buildProjectZipPreviewTakeRows(takes, automationManifest);
+    const compRows = buildProjectZipPreviewCompRows(compTakes);
+    const handoffStageRows = buildProjectZipPreviewHandoffRows(desktopReadiness);
+    const pluginHostRows = buildProjectZipPreviewPluginHostRows(pluginHost);
+    const sessionRows = buildProjectZipPreviewSessionRows(sessionManifest);
+    const automationSchemaRows = buildProjectZipPreviewAutomationSchemaRows(automationManifest);
+    const presetRows = buildProjectZipPreviewPresetRows(presetManifest);
+    const notesRows = buildProjectZipPreviewNotesRows(notesManifest, markers);
+
+    return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>${escapeHtml(title)} - PunchLab Preview</title>
+    <style>
+${getProjectZipPreviewStyles()}
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <p>Read-only PunchLab project preview</p>
+        <h1>${escapeHtml(title)}</h1>
+        <div class="meta">
+          <span>${escapeHtml(artist)}</span>
+          <span>${escapeHtml(String(bpm))} BPM</span>
+          <span>${escapeHtml(key)}</span>
+          <span>${escapeHtml(formatProjectZipPreviewExportSettings(exportSettings))}</span>
+          <span>${escapeHtml(formatProjectZipPreviewPluginHostScan(pluginHost))}</span>
+          <span>${escapeHtml(formatProjectZipPreviewNativeAudio(nativeAudio))}</span>
+          <span>${escapeHtml(formatProjectZipPreviewDesktopReadiness(desktopReadiness))}</span>
+          <span>${presetManifest.length} presets</span>
+          <span>${takes.length} takes</span>
+          <span>${markers.length} markers</span>
+          <span>${notesManifest.totalLyricLines || 0} lyric lines</span>
+        </div>
+        <p>Open <code>${escapeHtml(projectFilename)}</code> in PunchLab to edit the full session.</p>
+        <div class="preview-controls">
+          <button id="playPreviewButton" type="button">Play timeline</button>
+          <button id="stopPreviewButton" class="secondary" type="button">Stop</button>
+          <span id="previewStatus">Ready</span>
+        </div>
+      </header>
+      <section>
+        <h2>Session</h2>
+        <article class="asset-card">
+          <dl>${sessionRows}</dl>
+        </article>
+      </section>
+      <section>
+        <h2>Desktop Handoff</h2>
+        <ol>${handoffStageRows}</ol>
+      </section>
+      <section>
+        <h2>Plugin Host</h2>
+        <article class="asset-card">
+          <dl>${pluginHostRows}</dl>
+        </article>
+      </section>
+      <section>
+        <h2>Automation Schema</h2>
+        <div class="grid">${automationSchemaRows}</div>
+      </section>
+      <section>
+        <h2>Presets</h2>
+        <div class="grid">${presetRows}</div>
+      </section>
+      <section>
+        <h2>Lyrics & Notes</h2>
+        <div class="grid">${notesRows}</div>
+      </section>
+      ${beatSection}
+      <section>
+        <h2>Comp Lane</h2>
+        <ol>${compRows}</ol>
+      </section>
+      <section>
+        <h2>Timeline Markers</h2>
+        <table>
+          <thead><tr><th>Time</th><th>Type</th><th>Comment</th><th>Lyric lines</th></tr></thead>
+          <tbody>${markerRows}</tbody>
+        </table>
+      </section>
+      <section>
+        <h2>Take Audio</h2>
+        <div class="grid">${takeRows}</div>
+      </section>
+    </main>
+    <script type="application/json" id="previewData">${escapeScriptJson(playbackData)}</script>
+    <script>
+${getProjectZipPreviewPlayerScript()}
+    </script>
+  </body>
+</html>`;
+  }
+
   function buildProjectZipPreviewBeatSection(beat = null) {
     return beat
       ? `
@@ -664,6 +784,7 @@
     escapeScriptJson,
     getProjectZipPreviewStyles,
     getProjectZipPreviewPlayerScript,
+    buildProjectZipPreviewHtml,
     buildProjectZipPreviewBeatSection,
     buildProjectZipPreviewTakeRows,
     buildProjectZipPreviewMarkerRows,

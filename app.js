@@ -1243,119 +1243,14 @@ async function buildProjectZipFiles(bundle, projectFilename) {
 function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
   const settings = bundle.settings || {};
   const metadata = settings.exportMetadata || {};
-  const title = metadata.title || state.beatFileName || "PunchLab Session";
-  const artist = metadata.artist || "PunchLab";
-  const bpm = settings.bpm || Number(els.bpmInput.value) || 140;
-  const key = settings.key || els.keySelect.value || "C minor";
-  const sessionManifest = manifest.session || {};
-  const exportSettings = manifest.exportSettings || {};
-  const pluginHost = manifest.pluginHost || {};
-  const automationManifest = manifest.automationManifest || {};
-  const nativeAudio = manifest.nativeAudio || {};
-  const desktopReadiness = manifest.desktopReadiness || {};
-  const presetManifest = Array.isArray(manifest.presets) ? manifest.presets : [];
-  const notesManifest = manifest.notes || {};
-  const takes = window.PunchLabProjectZip.sortProjectZipPreviewTakes(manifest);
-  const compTakes = window.PunchLabProjectZip.sortProjectZipPreviewCompTakes(takes);
-  const playbackData = JSON.stringify(window.PunchLabProjectZip.buildProjectZipPreviewPlaybackData(manifest, takes));
-
-  const beatSection = window.PunchLabProjectZip.buildProjectZipPreviewBeatSection(manifest.beat);
-  const markerRows = window.PunchLabProjectZip.buildProjectZipPreviewMarkerRows(manifest.markers);
-  const takeRows = window.PunchLabProjectZip.buildProjectZipPreviewTakeRows(takes, automationManifest);
-  const compRows = window.PunchLabProjectZip.buildProjectZipPreviewCompRows(compTakes);
-  const handoffStageRows = window.PunchLabProjectZip.buildProjectZipPreviewHandoffRows(desktopReadiness);
-  const pluginHostRows = window.PunchLabProjectZip.buildProjectZipPreviewPluginHostRows(pluginHost);
-  const sessionRows = window.PunchLabProjectZip.buildProjectZipPreviewSessionRows(sessionManifest);
-  const automationSchemaRows = window.PunchLabProjectZip.buildProjectZipPreviewAutomationSchemaRows(automationManifest);
-  const presetRows = window.PunchLabProjectZip.buildProjectZipPreviewPresetRows(presetManifest);
-  const notesRows = window.PunchLabProjectZip.buildProjectZipPreviewNotesRows(notesManifest, manifest.markers);
-
-  return `<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>${escapeHtml(title)} - PunchLab Preview</title>
-    <style>
-${window.PunchLabProjectZip.getProjectZipPreviewStyles()}
-    </style>
-  </head>
-  <body>
-    <main>
-      <header>
-        <p>Read-only PunchLab project preview</p>
-        <h1>${escapeHtml(title)}</h1>
-        <div class="meta">
-          <span>${escapeHtml(artist)}</span>
-          <span>${escapeHtml(String(bpm))} BPM</span>
-          <span>${escapeHtml(key)}</span>
-          <span>${escapeHtml(window.PunchLabProjectZip.formatProjectZipPreviewExportSettings(exportSettings))}</span>
-          <span>${escapeHtml(window.PunchLabProjectZip.formatProjectZipPreviewPluginHostScan(pluginHost))}</span>
-          <span>${escapeHtml(window.PunchLabProjectZip.formatProjectZipPreviewNativeAudio(nativeAudio))}</span>
-          <span>${escapeHtml(window.PunchLabProjectZip.formatProjectZipPreviewDesktopReadiness(desktopReadiness))}</span>
-          <span>${presetManifest.length} presets</span>
-          <span>${takes.length} takes</span>
-          <span>${manifest.markers.length} markers</span>
-          <span>${notesManifest.totalLyricLines || 0} lyric lines</span>
-        </div>
-        <p>Open <code>${escapeHtml(projectFilename)}</code> in PunchLab to edit the full session.</p>
-        <div class="preview-controls">
-          <button id="playPreviewButton" type="button">Play timeline</button>
-          <button id="stopPreviewButton" class="secondary" type="button">Stop</button>
-          <span id="previewStatus">Ready</span>
-        </div>
-      </header>
-      <section>
-        <h2>Session</h2>
-        <article class="asset-card">
-          <dl>${sessionRows}</dl>
-        </article>
-      </section>
-      <section>
-        <h2>Desktop Handoff</h2>
-        <ol>${handoffStageRows}</ol>
-      </section>
-      <section>
-        <h2>Plugin Host</h2>
-        <article class="asset-card">
-          <dl>${pluginHostRows}</dl>
-        </article>
-      </section>
-      <section>
-        <h2>Automation Schema</h2>
-        <div class="grid">${automationSchemaRows}</div>
-      </section>
-      <section>
-        <h2>Presets</h2>
-        <div class="grid">${presetRows}</div>
-      </section>
-      <section>
-        <h2>Lyrics & Notes</h2>
-        <div class="grid">${notesRows}</div>
-      </section>
-      ${beatSection}
-      <section>
-        <h2>Comp Lane</h2>
-        <ol>${compRows}</ol>
-      </section>
-      <section>
-        <h2>Timeline Markers</h2>
-        <table>
-          <thead><tr><th>Time</th><th>Type</th><th>Comment</th><th>Lyric lines</th></tr></thead>
-          <tbody>${markerRows}</tbody>
-        </table>
-      </section>
-      <section>
-        <h2>Take Audio</h2>
-        <div class="grid">${takeRows}</div>
-      </section>
-    </main>
-    <script type="application/json" id="previewData">${window.PunchLabProjectZip.escapeScriptJson(playbackData)}</script>
-    <script>
-${window.PunchLabProjectZip.getProjectZipPreviewPlayerScript()}
-    </script>
-  </body>
-</html>`;
+  return window.PunchLabProjectZip.buildProjectZipPreviewHtml({
+    manifest,
+    projectFilename,
+    title: metadata.title || state.beatFileName || "PunchLab Session",
+    artist: metadata.artist || "PunchLab",
+    bpm: settings.bpm || Number(els.bpmInput.value) || 140,
+    key: settings.key || els.keySelect.value || "C minor",
+  });
 }
 
 function summarizePresetManifest(presetList = [], selectedPresetId = "") {

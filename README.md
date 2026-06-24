@@ -135,6 +135,7 @@ node .\scripts\check.mjs
 - Project zip preview header summaries for export, plugin scan, native audio, and desktop readiness are formatted in `src/project-zip.js`
 - Project zip preview beat, marker, and comp rows are formatted in `src/project-zip.js`
 - Project zip preview take cards and their processed-chain summaries are formatted in `src/project-zip.js`
+- Project zip preview HTML shell is rendered by `src/project-zip.js`; `app.js` only passes archive context
 - Export queue with sequential job status for mix, stems, beat stem, vocal stem, dry vocals, and tuned vocals
 - Export queue retry, remove, and clear-finished controls
 - WAV export metadata for artist, title, BPM, key, and software

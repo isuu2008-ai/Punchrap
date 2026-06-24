@@ -158,6 +158,8 @@
 - project zip preview의 beat section, marker rows, comp lane rows를 `src/project-zip.js`로 분리
 - Project zip take card formatter split 1차
 - project zip preview의 take audio card formatter와 automation/region/latency summary를 `src/project-zip.js`로 분리
+- Project zip preview shell split 1차
+- project zip `preview.html` 전체 shell 조립을 `src/project-zip.js`로 분리하고 app controller는 archive context만 전달
 - Recording quick take handoff 1차
 - 녹음 화면 최근 take 리스트에서 바로 듣기와 Vocal 탭 전송 제공
 - Desktop package manifest 1차
