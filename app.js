@@ -65,6 +65,8 @@ const state = {
   metronomeEnabled: false,
   metronomeTimer: 0,
   metronomeBeat: 0,
+  isCountInActive: false,
+  countInToken: 0,
   punchIn: 0,
   punchOut: 4,
   punchTimers: [],
@@ -1680,6 +1682,7 @@ function stopCurrentTake(shouldRender = true) {
 function stopAll() {
   state.isLoopRecording = false;
   state.currentLoopCycle = false;
+  cancelCountIn();
   if (state.isRecording) {
     stopRecording();
   }
@@ -1695,6 +1698,12 @@ function stopAll() {
 }
 
 async function toggleRecord() {
+  if (state.isCountInActive) {
+    cancelCountIn();
+    els.sessionState.textContent = "Count canceled";
+    return;
+  }
+
   if (state.isRecording) {
     state.isLoopRecording = false;
     stopRecording();
@@ -1725,7 +1734,10 @@ async function toggleRecord() {
 
   const bars = Number(els.countInSelect.value);
   if (bars > 0) {
-    await countIn(bars);
+    const completed = await countIn(bars);
+    if (!completed) {
+      return;
+    }
   }
 
   startRecording();
@@ -1941,16 +1953,36 @@ async function countIn(bars) {
   const bpm = Number(els.bpmInput.value) || 140;
   const beats = bars * 4;
   const beatMs = 60000 / bpm;
+  const token = state.countInToken + 1;
+  state.countInToken = token;
+  state.isCountInActive = true;
 
   els.countdown.hidden = false;
   els.sessionState.textContent = "Count in";
 
   for (let beat = beats; beat > 0; beat -= 1) {
+    if (!state.isCountInActive || state.countInToken !== token) {
+      els.countdown.hidden = true;
+      return false;
+    }
+
     els.countdown.textContent = String(beat);
     tick(beat === beats ? 880 : 660);
     await wait(beatMs);
   }
 
+  state.isCountInActive = false;
+  els.countdown.hidden = true;
+  return state.countInToken === token;
+}
+
+function cancelCountIn() {
+  if (!state.isCountInActive) {
+    return;
+  }
+
+  state.isCountInActive = false;
+  state.countInToken += 1;
   els.countdown.hidden = true;
 }
 

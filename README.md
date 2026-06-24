@@ -67,6 +67,7 @@ node .\scripts\check.mjs
 - Export loudness analysis with K-weighted LUFS estimate, true peak estimate, clipping count, and -14 LUFS target gain
 - IndexedDB autosave with rolling project backups and recovery fallback
 - BPM-based metronome toggle for recording and session playback
+- Cancelable 1, 2, or 4 bar count-in before recording
 - Global shortcuts for transport, metronome, stop, and tab switching outside text inputs
 - Recording latency compensation in milliseconds, applied to new take placement
 - Punch + Loop recording mode that keeps stacking takes until stopped
