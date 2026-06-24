@@ -66,6 +66,7 @@ node .\scripts\check.mjs
 - PWA manifest, local icon, platform bootstrap, and service worker shell cache for desktop-install preparation
 - Desktop host manifest and runtime desktop-readiness diagnostics for future Tauri/Electron/native wrapper integration
 - Desktop wrapper manifest for shell size, permission, bridge, and handoff-stage planning
+- Desktop readiness exposes wrapper handoff-stage progress for browser, desktop, native engine, and plugin host
 - Desktop readiness checks required audio engine capabilities before native handoff
 - Desktop readiness reports native latency statistics and buffer-size control availability
 - Native bridge exposes optional latency statistics and buffer-size control through the engine adapter

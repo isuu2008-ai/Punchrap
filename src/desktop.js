@@ -18,6 +18,13 @@
     "scanPluginHosts",
   ];
 
+  const WRAPPER_HANDOFF_STAGES = [
+    { id: "browser-shell", label: "Browser shell", status: "ready" },
+    { id: "desktop-wrapper", label: "Tauri/Electron wrapper", status: "planned" },
+    { id: "native-audio-engine", label: "Native low-latency audio engine", status: "planned" },
+    { id: "plugin-host", label: "VST3/AU plugin host", status: "planned" },
+  ];
+
   function getManifest() {
     const requiredNativeMethods = window.PunchLabEngineContract?.getRequiredNativeMethods?.() || FALLBACK_REQUIRED_NATIVE_METHODS;
     return {
@@ -29,6 +36,20 @@
       wrapperManifestPath: "./desktop-wrapper-manifest.json",
       projectFormat: ".punchlab.json",
       bundleFormat: ".punchlab.zip",
+      wrapper: {
+        shell: {
+          entry: "index.html",
+          minWidth: 1180,
+          minHeight: 760,
+        },
+        permissions: {
+          microphone: true,
+          filesystem: true,
+          audioOutputRouting: true,
+          network: false,
+        },
+        handoffStages: WRAPPER_HANDOFF_STAGES.map((stage) => ({ ...stage })),
+      },
       requiredNativeMethods,
       optionalNativeMethods: [...OPTIONAL_NATIVE_METHODS],
       requiredEngineCapabilities: window.PunchLabEngineContract?.getRequiredEngineCapabilities?.() || [],
@@ -54,6 +75,7 @@
     const missingCapabilities = window.PunchLabEngineContract?.getMissingCapabilities?.(capabilities, requiredCapabilities) || [];
     const missingLatencyMethods = getMissingOptionalMethods(bridgeStatus, ["getLatencyStats", "setBufferSize"]);
     const hasLatencyControl = missingLatencyMethods.length === 0;
+    const handoffStages = getWrapperHandoffStages(bridgeStatus, capabilities);
     const serviceWorker = platform.serviceWorker || {};
     const checks = [
       makeCheck(
@@ -109,6 +131,11 @@
         available: hasLatencyControl,
         missingMethods: missingLatencyMethods,
       },
+      wrapper: {
+        manifestPath: getManifest().wrapperManifestPath,
+        handoffStages,
+        summary: summarizeHandoffStages(handoffStages),
+      },
       engineDriver: engineDriver
         ? {
           id: engineDriver.id,
@@ -149,6 +176,26 @@
 
   function makeCheck(id, label, status, detail) {
     return { id, label, status, detail };
+  }
+
+  function getWrapperHandoffStages(bridgeStatus, capabilities) {
+    return WRAPPER_HANDOFF_STAGES.map((stage) => {
+      if (stage.id === "desktop-wrapper" && bridgeStatus?.available) {
+        return { ...stage, status: "ready" };
+      }
+      if (stage.id === "native-audio-engine" && capabilities?.realtimeNativeMonitoring) {
+        return { ...stage, status: "ready" };
+      }
+      if (stage.id === "plugin-host" && capabilities?.pluginHost) {
+        return { ...stage, status: "ready" };
+      }
+      return { ...stage };
+    });
+  }
+
+  function summarizeHandoffStages(stages) {
+    const readyCount = stages.filter((stage) => stage.status === "ready").length;
+    return `${readyCount}/${stages.length} handoff stages ready`;
   }
 
   function getMissingOptionalMethods(status, methods) {

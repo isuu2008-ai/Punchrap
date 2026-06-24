@@ -354,7 +354,7 @@ function renderEngineStatus() {
   els.engineStatus.dataset.desktop = desktopReadiness?.nativeAvailable ? "native" : "fallback";
   els.engineStatusText.textContent = descriptor.label;
   els.engineStatus.title = desktopReadiness
-    ? `${descriptor.title} / Desktop ${desktopReadiness.summary}`
+    ? `${descriptor.title} / Desktop ${desktopReadiness.summary} / ${desktopReadiness.wrapper?.summary || "wrapper pending"}`
     : descriptor.title;
 }
 
