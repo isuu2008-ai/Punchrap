@@ -25,6 +25,7 @@ Then open `http://localhost:4173`.
 - Retune speed, humanize, and formant controls for rendered vocal takes
 - Correction-aware formant compensation for pitch-shifted vocal renders
 - User-adjustable compressor, space, and width controls for vocal renders and custom presets
+- User-adjustable low, mid, air EQ and limiter ceiling controls for vocal renders and custom presets
 - A/B comparison between raw and tuned takes
 - Batch render for the current track or all raw vocal takes
 - Processed take version labels for repeated renders from the same source take
@@ -60,5 +61,5 @@ See [COMMERCIAL_STUDIO_ROADMAP.md](./COMMERCIAL_STUDIO_ROADMAP.md) for the comme
 
 ## Next DSP Steps
 
-- EQ, delay, reverb, and limiter detail controls
+- Delay and reverb detail controls
 - Audio Engine Layer additional separation

@@ -161,6 +161,14 @@ const els = {
   spaceText: document.querySelector("#spaceText"),
   widthSlider: document.querySelector("#widthSlider"),
   widthText: document.querySelector("#widthText"),
+  lowEqSlider: document.querySelector("#lowEqSlider"),
+  lowEqText: document.querySelector("#lowEqText"),
+  midEqSlider: document.querySelector("#midEqSlider"),
+  midEqText: document.querySelector("#midEqText"),
+  airEqSlider: document.querySelector("#airEqSlider"),
+  airEqText: document.querySelector("#airEqText"),
+  limiterCeilingSlider: document.querySelector("#limiterCeilingSlider"),
+  limiterCeilingText: document.querySelector("#limiterCeilingText"),
   vocalTakeSelect: document.querySelector("#vocalTakeSelect"),
   selectedTakeMeta: document.querySelector("#selectedTakeMeta"),
   vocalStatus: document.querySelector("#vocalStatus"),
@@ -308,6 +316,22 @@ function bindEvents() {
     scheduleAutosave();
   });
   els.widthSlider.addEventListener("input", () => {
+    updateTuneControls();
+    scheduleAutosave();
+  });
+  els.lowEqSlider.addEventListener("input", () => {
+    updateTuneControls();
+    scheduleAutosave();
+  });
+  els.midEqSlider.addEventListener("input", () => {
+    updateTuneControls();
+    scheduleAutosave();
+  });
+  els.airEqSlider.addEventListener("input", () => {
+    updateTuneControls();
+    scheduleAutosave();
+  });
+  els.limiterCeilingSlider.addEventListener("input", () => {
     updateTuneControls();
     scheduleAutosave();
   });
@@ -918,6 +942,10 @@ function applyProjectSettings(settings = {}) {
     els.compSlider.value = settings.tune.comp ?? els.compSlider.value;
     els.spaceSlider.value = settings.tune.space ?? els.spaceSlider.value;
     els.widthSlider.value = settings.tune.width ?? els.widthSlider.value;
+    els.lowEqSlider.value = settings.tune.lowEq ?? els.lowEqSlider.value;
+    els.midEqSlider.value = settings.tune.midEq ?? els.midEqSlider.value;
+    els.airEqSlider.value = settings.tune.airEq ?? els.airEqSlider.value;
+    els.limiterCeilingSlider.value = settings.tune.limiterCeiling ?? els.limiterCeilingSlider.value;
     updateTuneControls();
   }
 
@@ -2076,6 +2104,10 @@ function saveCustomPreset() {
     comp: tuneSettings.comp,
     space: tuneSettings.space,
     width: tuneSettings.width,
+    lowEq: tuneSettings.lowEq,
+    midEq: tuneSettings.midEq,
+    airEq: tuneSettings.airEq,
+    limiterCeiling: tuneSettings.limiterCeiling,
     custom: true,
   };
 
@@ -2099,6 +2131,10 @@ function normalizePreset(preset) {
     comp: Number(preset.comp ?? 60),
     space: Number(preset.space ?? 12),
     width: Number(preset.width ?? 24),
+    lowEq: Number(preset.lowEq ?? 0),
+    midEq: Number(preset.midEq ?? 0),
+    airEq: Number(preset.airEq ?? 0),
+    limiterCeiling: Number(preset.limiterCeiling ?? -3),
     custom: Boolean(preset.custom),
   };
 }
@@ -2119,6 +2155,10 @@ function applyPreset(id) {
   els.compSlider.value = preset.comp;
   els.spaceSlider.value = preset.space;
   els.widthSlider.value = preset.width;
+  els.lowEqSlider.value = preset.lowEq ?? 0;
+  els.midEqSlider.value = preset.midEq ?? 0;
+  els.airEqSlider.value = preset.airEq ?? 0;
+  els.limiterCeilingSlider.value = preset.limiterCeiling ?? -3;
   updateTuneControls();
 
   els.presetGrid.querySelectorAll("[data-preset]").forEach((button) => {
@@ -2207,6 +2247,10 @@ function updateTuneControls() {
   els.compValue.textContent = String(settings.comp);
   els.spaceValue.textContent = String(settings.space);
   els.widthValue.textContent = String(settings.width);
+  els.lowEqText.textContent = `${formatDb(settings.lowEq)} dB`;
+  els.midEqText.textContent = `${formatDb(settings.midEq)} dB`;
+  els.airEqText.textContent = `${formatDb(settings.airEq)} dB`;
+  els.limiterCeilingText.textContent = `${formatDb(settings.limiterCeiling)} dB`;
 }
 
 function setTuneControlsDisabled(isDisabled) {
@@ -2218,6 +2262,10 @@ function setTuneControlsDisabled(isDisabled) {
   els.compSlider.disabled = isDisabled;
   els.spaceSlider.disabled = isDisabled;
   els.widthSlider.disabled = isDisabled;
+  els.lowEqSlider.disabled = isDisabled;
+  els.midEqSlider.disabled = isDisabled;
+  els.airEqSlider.disabled = isDisabled;
+  els.limiterCeilingSlider.disabled = isDisabled;
 }
 
 function isVocalBusy() {
@@ -2453,6 +2501,10 @@ function getEffectivePreset(preset, tuneSettings = getTuneSettings()) {
     comp: Number(tuneSettings.comp ?? preset.comp),
     space: Number(tuneSettings.space ?? preset.space),
     width: Number(tuneSettings.width ?? preset.width),
+    lowEq: Number(tuneSettings.lowEq ?? preset.lowEq ?? 0),
+    midEq: Number(tuneSettings.midEq ?? preset.midEq ?? 0),
+    airEq: Number(tuneSettings.airEq ?? preset.airEq ?? 0),
+    limiterCeiling: Number(tuneSettings.limiterCeiling ?? preset.limiterCeiling ?? -3),
   };
 }
 
@@ -4014,6 +4066,10 @@ function getTuneSettings() {
     comp: Number(els.compSlider?.value) || 0,
     space: Number(els.spaceSlider?.value) || 0,
     width: Number(els.widthSlider?.value) || 0,
+    lowEq: Number(els.lowEqSlider?.value) || 0,
+    midEq: Number(els.midEqSlider?.value) || 0,
+    airEq: Number(els.airEqSlider?.value) || 0,
+    limiterCeiling: Number(els.limiterCeilingSlider?.value) || 0,
   };
 }
 
@@ -4334,7 +4390,11 @@ function getTuneSignature(settings = {}) {
   const comp = Number(settings.comp ?? 0);
   const space = Number(settings.space ?? 0);
   const width = Number(settings.width ?? 0);
-  return `R${retuneSpeed} H${humanize} F${formatSigned(formant)} G${gate} D${deEss} C${comp} S${space} W${width}`;
+  const lowEq = Number(settings.lowEq ?? 0);
+  const midEq = Number(settings.midEq ?? 0);
+  const airEq = Number(settings.airEq ?? 0);
+  const limiterCeiling = Number(settings.limiterCeiling ?? -3);
+  return `R${retuneSpeed} H${humanize} F${formatSigned(formant)} G${gate} D${deEss} C${comp} S${space} W${width} EQ${formatDb(lowEq)}/${formatDb(midEq)}/${formatDb(airEq)} Lim${formatDb(limiterCeiling)}`;
 }
 
 function escapeHtml(value) {

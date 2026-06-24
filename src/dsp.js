@@ -10,8 +10,11 @@
     const source = context.createBufferSource();
     const highPass = context.createBiquadFilter();
     const deEsser = context.createBiquadFilter();
+    const toneLow = context.createBiquadFilter();
+    const toneMid = context.createBiquadFilter();
     const presence = context.createBiquadFilter();
     const air = context.createBiquadFilter();
+    const toneAir = context.createBiquadFilter();
     const compressor = context.createDynamicsCompressor();
     const saturation = context.createWaveShaper();
     const dryGain = context.createGain();
@@ -23,6 +26,10 @@
     const formantAmount = (tuneSettings.formant || 0) / 50;
     const gateAmount = (tuneSettings.gate || 0) / 100;
     const deEssAmount = (tuneSettings.deEss || 0) / 100;
+    const lowEqDb = clamp(Number(tuneSettings.lowEq) || 0, -12, 12);
+    const midEqDb = clamp(Number(tuneSettings.midEq) || 0, -12, 12);
+    const airEqDb = clamp(Number(tuneSettings.airEq) || 0, -12, 12);
+    const limiterCeiling = clamp(Number(tuneSettings.limiterCeiling ?? -3), -8, 0);
     const spaceAmount = preset.space / 100;
     const widthAmount = preset.width / 100;
     const gatedBuffer = createNoiseGateBuffer(context, sourceBuffer, gateAmount);
@@ -48,6 +55,15 @@
     deEsser.Q.value = 2.4;
     deEsser.gain.value = -deEssAmount * 9;
 
+    toneLow.type = "lowshelf";
+    toneLow.frequency.value = 180;
+    toneLow.gain.value = lowEqDb;
+
+    toneMid.type = "peaking";
+    toneMid.frequency.value = 950;
+    toneMid.Q.value = 0.9;
+    toneMid.gain.value = midEqDb;
+
     presence.type = "peaking";
     presence.frequency.value = clamp(2600 * correctionFrequencyShift, 1800, 3400);
     presence.Q.value = 0.9;
@@ -56,6 +72,10 @@
     air.type = "highshelf";
     air.frequency.value = 7800;
     air.gain.value = 1 + widthAmount * 4 + Math.max(0, formantAmount) * 2 - Math.max(0, correctionTilt) * 0.7;
+
+    toneAir.type = "highshelf";
+    toneAir.frequency.value = 9200;
+    toneAir.gain.value = airEqDb;
 
     const formantBody = context.createBiquadFilter();
     const formantFocus = context.createBiquadFilter();
@@ -78,7 +98,7 @@
     saturation.oversample = "4x";
 
     dryGain.gain.value = 0.82;
-    limiter.threshold.value = -3;
+    limiter.threshold.value = limiterCeiling;
     limiter.knee.value = 0;
     limiter.ratio.value = 20;
     limiter.attack.value = 0.002;
@@ -87,8 +107,11 @@
     source
       .connect(highPass)
       .connect(deEsser)
+      .connect(toneLow)
+      .connect(toneMid)
       .connect(presence)
       .connect(air)
+      .connect(toneAir)
       .connect(formantBody)
       .connect(formantFocus)
       .connect(compressor)
