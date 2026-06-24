@@ -1,0 +1,2405 @@
+const state = {
+  audioContext: null,
+  stream: null,
+  processedStream: null,
+  analyser: null,
+  gainNode: null,
+  recorderDestination: null,
+  mediaRecorder: null,
+  chunks: [],
+  isRecording: false,
+  recordStart: 0,
+  recordStartPosition: 0,
+  timerFrame: 0,
+  waveFrame: 0,
+  latestTake: null,
+  activeView: "record",
+  armedTrackId: "main",
+  selectedPresetId: "trap-hard",
+  selectedVocalTakeId: null,
+  isAnalyzingVocal: false,
+  isBatchRendering: false,
+  beatUrl: "",
+  beatArrayBuffer: null,
+  beatFileName: "",
+  mimeType: "",
+  inputGain: 2,
+  isExportingMix: false,
+  isRenderingVocal: false,
+  currentTakeAudio: null,
+  currentTakeId: null,
+  currentTakeResolve: null,
+  isQueuePlaying: false,
+  queueTakeIds: [],
+  queueIndex: -1,
+  isSessionPlaying: false,
+  sessionOrigin: 0,
+  sessionStartedAt: 0,
+  sessionEndTimer: 0,
+  sessionTimers: [],
+  sessionPlayers: [],
+  sessionPlayingTakeIds: new Set(),
+  punchEnabled: false,
+  loopEnabled: false,
+  punchIn: 0,
+  punchOut: 4,
+  punchTimers: [],
+  isPunchWaiting: false,
+  isPunchRecording: false,
+};
+
+const tracks = [
+  { id: "main", name: "Main", color: "#c8ff4d", volume: 0.9, pan: 0, muted: false, solo: false, takes: [] },
+  { id: "double", name: "Double", color: "#41e6d0", volume: 0.72, pan: 0, muted: false, solo: false, takes: [] },
+  { id: "adlib-l", name: "Adlib L", color: "#ffb74a", volume: 0.68, pan: -0.45, muted: false, solo: false, takes: [] },
+  { id: "adlib-r", name: "Adlib R", color: "#7db2ff", volume: 0.68, pan: 0.45, muted: false, solo: false, takes: [] },
+  { id: "hook", name: "Hook", color: "#ff4f64", volume: 0.82, pan: 0, muted: false, solo: false, takes: [] },
+];
+
+const presets = [
+  { id: "trap-hard", name: "Trap Hard", retune: 88, humanize: 10, formant: 10, comp: 72, space: 18, width: 42 },
+  { id: "drill-dark", name: "Drill Dark", retune: 72, humanize: 18, formant: -12, comp: 82, space: 12, width: 28 },
+  { id: "clean-rap", name: "Clean Rap", retune: 22, humanize: 60, formant: 0, comp: 62, space: 8, width: 18 },
+  { id: "rage-wide", name: "Rage Wide", retune: 95, humanize: 5, formant: 18, comp: 76, space: 34, width: 86 },
+  { id: "radio-hook", name: "Radio Hook", retune: 58, humanize: 30, formant: 8, comp: 68, space: 45, width: 72 },
+  { id: "lofi-demo", name: "Lo-Fi Demo", retune: 36, humanize: 55, formant: -18, comp: 54, space: 22, width: 12 },
+];
+
+const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+const MINOR_SCALE = [0, 2, 3, 5, 7, 8, 10];
+
+const els = {
+  viewTabs: document.querySelectorAll("[data-view]"),
+  viewPanels: document.querySelectorAll("[data-view-panel]"),
+  projectInput: document.querySelector("#projectInput"),
+  saveProjectButton: document.querySelector("#saveProjectButton"),
+  beatInput: document.querySelector("#beatInput"),
+  beatName: document.querySelector("#beatName"),
+  beatAudio: document.querySelector("#beatAudio"),
+  bpmInput: document.querySelector("#bpmInput"),
+  countInSelect: document.querySelector("#countInSelect"),
+  keySelect: document.querySelector("#keySelect"),
+  inputGainSlider: document.querySelector("#inputGainSlider"),
+  inputGainText: document.querySelector("#inputGainText"),
+  micButton: document.querySelector("#micButton"),
+  playButton: document.querySelector("#playButton"),
+  stopButton: document.querySelector("#stopButton"),
+  recordButton: document.querySelector("#recordButton"),
+  sessionState: document.querySelector("#sessionState"),
+  clock: document.querySelector("#clock"),
+  micStatus: document.querySelector("#micStatus"),
+  inputMeter: document.querySelector("#inputMeter"),
+  inputLevelText: document.querySelector("#inputLevelText"),
+  waveCanvas: document.querySelector("#waveCanvas"),
+  countdown: document.querySelector("#countdown"),
+  trackList: document.querySelector("#trackList"),
+  armTrackList: document.querySelector("#armTrackList"),
+  armedTrackName: document.querySelector("#armedTrackName"),
+  punchToggle: document.querySelector("#punchToggle"),
+  loopToggle: document.querySelector("#loopToggle"),
+  punchStatus: document.querySelector("#punchStatus"),
+  punchInInput: document.querySelector("#punchInInput"),
+  punchOutInput: document.querySelector("#punchOutInput"),
+  setPunchInButton: document.querySelector("#setPunchInButton"),
+  setPunchOutButton: document.querySelector("#setPunchOutButton"),
+  punchWindowText: document.querySelector("#punchWindowText"),
+  presetGrid: document.querySelector("#presetGrid"),
+  presetName: document.querySelector("#presetName"),
+  retuneValue: document.querySelector("#retuneValue"),
+  compValue: document.querySelector("#compValue"),
+  spaceValue: document.querySelector("#spaceValue"),
+  widthValue: document.querySelector("#widthValue"),
+  retuneSpeedSlider: document.querySelector("#retuneSpeedSlider"),
+  retuneSpeedText: document.querySelector("#retuneSpeedText"),
+  humanizeSlider: document.querySelector("#humanizeSlider"),
+  humanizeText: document.querySelector("#humanizeText"),
+  formantSlider: document.querySelector("#formantSlider"),
+  formantText: document.querySelector("#formantText"),
+  vocalTakeSelect: document.querySelector("#vocalTakeSelect"),
+  selectedTakeMeta: document.querySelector("#selectedTakeMeta"),
+  vocalStatus: document.querySelector("#vocalStatus"),
+  previewVocalButton: document.querySelector("#previewVocalButton"),
+  analyzeVocalButton: document.querySelector("#analyzeVocalButton"),
+  renderVocalButton: document.querySelector("#renderVocalButton"),
+  compareSourceButton: document.querySelector("#compareSourceButton"),
+  compareProcessedButton: document.querySelector("#compareProcessedButton"),
+  compareStatus: document.querySelector("#compareStatus"),
+  compareMeta: document.querySelector("#compareMeta"),
+  pitchKeyText: document.querySelector("#pitchKeyText"),
+  pitchDetectedText: document.querySelector("#pitchDetectedText"),
+  pitchTargetText: document.querySelector("#pitchTargetText"),
+  pitchCorrectionText: document.querySelector("#pitchCorrectionText"),
+  pitchConfidenceText: document.querySelector("#pitchConfidenceText"),
+  batchScopeSelect: document.querySelector("#batchScopeSelect"),
+  batchRenderButton: document.querySelector("#batchRenderButton"),
+  batchStatus: document.querySelector("#batchStatus"),
+  batchMeta: document.querySelector("#batchMeta"),
+  takesList: document.querySelector("#takesList"),
+  playQueueButton: document.querySelector("#playQueueButton"),
+  exportMixButton: document.querySelector("#exportMixButton"),
+  downloadLatestButton: document.querySelector("#downloadLatestButton"),
+};
+
+function init() {
+  state.mimeType = getBestMimeType();
+  bindEvents();
+  renderTracks();
+  renderArmTracks();
+  renderTakes();
+  renderPresets();
+  applyPreset("trap-hard");
+  updateInputGain();
+  updatePunchControls();
+  drawIdleWave();
+  updateTimer();
+
+  window.addEventListener("resize", drawIdleWave);
+  window.addEventListener("load", () => {
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
+  });
+}
+
+function bindEvents() {
+  els.viewTabs.forEach((button) => {
+    button.addEventListener("click", () => setActiveView(button.dataset.view));
+  });
+  els.micButton.addEventListener("click", enableMic);
+  els.playButton.addEventListener("click", toggleSessionPlayback);
+  els.stopButton.addEventListener("click", stopAll);
+  els.recordButton.addEventListener("click", toggleRecord);
+  els.beatInput.addEventListener("change", loadBeat);
+  els.inputGainSlider.addEventListener("input", updateInputGain);
+  els.punchToggle.addEventListener("click", togglePunchMode);
+  els.loopToggle.addEventListener("click", toggleLoopMode);
+  els.punchInInput.addEventListener("input", updatePunchFromInputs);
+  els.punchOutInput.addEventListener("input", updatePunchFromInputs);
+  els.keySelect.addEventListener("change", renderVocalPanel);
+  els.setPunchInButton.addEventListener("click", () => setPunchPoint("in"));
+  els.setPunchOutButton.addEventListener("click", () => setPunchPoint("out"));
+  els.beatAudio.addEventListener("timeupdate", maintainLoopPlayback);
+  els.playQueueButton.addEventListener("click", toggleTakeQueue);
+  els.exportMixButton.addEventListener("click", exportFullMix);
+  els.downloadLatestButton.addEventListener("click", downloadLatestTake);
+  els.retuneSpeedSlider.addEventListener("input", updateTuneControls);
+  els.humanizeSlider.addEventListener("input", updateTuneControls);
+  els.formantSlider.addEventListener("input", updateTuneControls);
+  els.vocalTakeSelect.addEventListener("change", () => {
+    state.selectedVocalTakeId = els.vocalTakeSelect.value || null;
+    renderVocalPanel();
+  });
+  els.previewVocalButton.addEventListener("click", previewSelectedVocalTake);
+  els.analyzeVocalButton.addEventListener("click", analyzeSelectedVocalTake);
+  els.renderVocalButton.addEventListener("click", renderSelectedVocalTake);
+  els.compareSourceButton.addEventListener("click", () => playComparisonTake("source"));
+  els.compareProcessedButton.addEventListener("click", () => playComparisonTake("processed"));
+  els.batchScopeSelect.addEventListener("change", renderVocalPanel);
+  els.batchRenderButton.addEventListener("click", renderBatchVocalTakes);
+  els.saveProjectButton.addEventListener("click", saveProject);
+  els.projectInput.addEventListener("change", loadProject);
+}
+
+function setActiveView(view) {
+  state.activeView = view;
+  els.viewTabs.forEach((button) => {
+    button.classList.toggle("active", button.dataset.view === view);
+  });
+  els.viewPanels.forEach((panel) => {
+    panel.classList.toggle("active", panel.dataset.viewPanel === view);
+  });
+}
+
+function getBestMimeType() {
+  const types = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", ""];
+  return types.find((type) => !type || MediaRecorder.isTypeSupported(type)) || "";
+}
+
+async function ensureAudioContext() {
+  if (!state.audioContext) {
+    state.audioContext = new AudioContext();
+  }
+
+  if (state.audioContext.state === "suspended") {
+    await state.audioContext.resume();
+  }
+
+  return state.audioContext;
+}
+
+async function enableMic() {
+  if (state.stream) {
+    return;
+  }
+
+  try {
+    state.stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false,
+      },
+    });
+
+    state.audioContext = await ensureAudioContext();
+    const source = state.audioContext.createMediaStreamSource(state.stream);
+    state.gainNode = state.audioContext.createGain();
+    state.analyser = state.audioContext.createAnalyser();
+    state.recorderDestination = state.audioContext.createMediaStreamDestination();
+
+    state.analyser.fftSize = 2048;
+    state.gainNode.gain.value = state.inputGain;
+    source.connect(state.gainNode);
+    state.gainNode.connect(state.analyser);
+    state.gainNode.connect(state.recorderDestination);
+    state.processedStream = state.recorderDestination.stream;
+
+    els.micStatus.classList.add("ready");
+    els.sessionState.textContent = "Mic ready";
+    updateInputGain();
+    startMeter();
+  } catch (error) {
+    els.sessionState.textContent = "Mic blocked";
+    console.error(error);
+  }
+}
+
+async function loadBeat(event) {
+  const [file] = event.target.files;
+  if (!file) {
+    return;
+  }
+
+  if (state.beatUrl) {
+    URL.revokeObjectURL(state.beatUrl);
+  }
+
+  state.beatArrayBuffer = await file.arrayBuffer();
+  state.beatFileName = file.name;
+  state.beatUrl = URL.createObjectURL(file);
+  els.beatAudio.src = state.beatUrl;
+  els.beatName.textContent = file.name;
+  els.sessionState.textContent = "Beat loaded";
+  updateExportButtons();
+}
+
+async function saveProject() {
+  if (!window.PunchLabProject) {
+    els.sessionState.textContent = "Project module missing";
+    return;
+  }
+
+  try {
+    els.saveProjectButton.disabled = true;
+    els.sessionState.textContent = "Saving project";
+    const bundle = await window.PunchLabProject.buildProjectBundle({
+      state,
+      tracks,
+      presets,
+      settings: getProjectSettings(),
+    });
+    const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: "application/json" });
+    downloadBlob(blob, window.PunchLabProject.makeProjectFilename(state.beatFileName));
+    els.sessionState.textContent = "Project saved";
+  } catch (error) {
+    els.sessionState.textContent = "Save failed";
+    console.error(error);
+  } finally {
+    els.saveProjectButton.disabled = false;
+  }
+}
+
+async function loadProject(event) {
+  const [file] = event.target.files;
+  if (!file || !window.PunchLabProject) {
+    return;
+  }
+
+  try {
+    els.sessionState.textContent = "Opening project";
+    stopAll();
+    const bundle = JSON.parse(await file.text());
+    const project = await window.PunchLabProject.hydrateProjectBundle(bundle);
+    applyLoadedProject(project);
+    els.sessionState.textContent = "Project opened";
+  } catch (error) {
+    els.sessionState.textContent = "Open failed";
+    console.error(error);
+  } finally {
+    els.projectInput.value = "";
+  }
+}
+
+function applyLoadedProject(project) {
+  revokeCurrentProjectAssets();
+
+  if (project.beat) {
+    state.beatArrayBuffer = project.beat.arrayBuffer;
+    state.beatFileName = project.beat.fileName;
+    state.beatUrl = URL.createObjectURL(project.beat.blob);
+    els.beatAudio.src = state.beatUrl;
+    els.beatName.textContent = project.beat.fileName;
+  } else {
+    state.beatArrayBuffer = null;
+    state.beatFileName = "";
+    state.beatUrl = "";
+    els.beatAudio.removeAttribute("src");
+    els.beatAudio.load();
+    els.beatName.textContent = "MP3, WAV, M4A";
+  }
+
+  tracks.splice(
+    0,
+    tracks.length,
+    ...project.tracks.map((track) => ({
+      ...track,
+      takes: track.takes.map((take) => ({
+        ...take,
+        trackName: take.trackName || track.name,
+        url: URL.createObjectURL(take.blob),
+      })),
+    })),
+  );
+
+  applyProjectSettings(project.settings);
+  state.latestTake = getAllTakes().at(-1) || null;
+  state.selectedVocalTakeId = state.latestTake?.id || null;
+  els.downloadLatestButton.disabled = !state.latestTake;
+  renderTracks();
+  renderArmTracks();
+  renderTakes();
+  renderVocalPanel();
+  updateQueueButton();
+  updateExportButtons();
+}
+
+function revokeCurrentProjectAssets() {
+  if (state.beatUrl) {
+    URL.revokeObjectURL(state.beatUrl);
+  }
+
+  tracks.forEach((track) => {
+    track.takes.forEach((take) => {
+      if (take.url) {
+        URL.revokeObjectURL(take.url);
+      }
+    });
+  });
+}
+
+function getProjectSettings() {
+  return {
+    bpm: Number(els.bpmInput.value) || 140,
+    countIn: els.countInSelect.value,
+    key: els.keySelect.value,
+    inputGain: state.inputGain,
+    armedTrackId: state.armedTrackId,
+    selectedPresetId: state.selectedPresetId,
+    tune: getTuneSettings(),
+    punchEnabled: state.punchEnabled,
+    loopEnabled: state.loopEnabled,
+    punchIn: state.punchIn,
+    punchOut: state.punchOut,
+  };
+}
+
+function applyProjectSettings(settings = {}) {
+  els.bpmInput.value = settings.bpm || 140;
+  els.countInSelect.value = settings.countIn || "0";
+  els.keySelect.value = settings.key || "C minor";
+  els.inputGainSlider.value = settings.inputGain || 2;
+  state.armedTrackId = tracks.some((track) => track.id === settings.armedTrackId)
+    ? settings.armedTrackId
+    : tracks[0]?.id || "main";
+  state.punchEnabled = Boolean(settings.punchEnabled);
+  state.loopEnabled = Boolean(settings.loopEnabled);
+  state.punchIn = Number(settings.punchIn || 0);
+  state.punchOut = Number(settings.punchOut || 4);
+
+  if (settings.selectedPresetId && presets.some((preset) => preset.id === settings.selectedPresetId)) {
+    applyPreset(settings.selectedPresetId);
+  }
+
+  if (settings.tune) {
+    els.retuneSpeedSlider.value = settings.tune.retuneSpeed ?? els.retuneSpeedSlider.value;
+    els.humanizeSlider.value = settings.tune.humanize ?? els.humanizeSlider.value;
+    els.formantSlider.value = settings.tune.formant ?? els.formantSlider.value;
+    updateTuneControls();
+  }
+
+  updateInputGain();
+  updatePunchControls();
+}
+
+function updateInputGain() {
+  state.inputGain = Number(els.inputGainSlider.value);
+  els.inputGainText.textContent = formatGainDb(state.inputGain);
+
+  if (state.gainNode && state.audioContext) {
+    state.gainNode.gain.setTargetAtTime(state.inputGain, state.audioContext.currentTime, 0.01);
+  }
+}
+
+function togglePunchMode() {
+  state.punchEnabled = !state.punchEnabled;
+  updatePunchControls();
+}
+
+function toggleLoopMode() {
+  state.loopEnabled = !state.loopEnabled;
+  updatePunchControls();
+}
+
+function updatePunchFromInputs() {
+  state.punchIn = Math.max(0, Number(els.punchInInput.value) || 0);
+  state.punchOut = Math.max(0, Number(els.punchOutInput.value) || 0);
+  updatePunchControls(false);
+}
+
+function setPunchPoint(point) {
+  const position = getCurrentSessionPosition();
+  if (point === "in") {
+    state.punchIn = Math.max(0, position);
+    if (state.punchOut <= state.punchIn) {
+      state.punchOut = state.punchIn + 4;
+    }
+  } else {
+    state.punchOut = Math.max(state.punchIn + 0.1, position);
+  }
+
+  updatePunchControls();
+}
+
+function updatePunchControls(syncInputs = true) {
+  const isValid = state.punchOut > state.punchIn;
+
+  if (syncInputs) {
+    els.punchInInput.value = state.punchIn.toFixed(1);
+    els.punchOutInput.value = state.punchOut.toFixed(1);
+  }
+
+  els.punchToggle.classList.toggle("active", state.punchEnabled);
+  els.loopToggle.classList.toggle("active", state.loopEnabled);
+  els.punchToggle.setAttribute("aria-pressed", String(state.punchEnabled));
+  els.loopToggle.setAttribute("aria-pressed", String(state.loopEnabled));
+  els.punchStatus.textContent = state.punchEnabled ? (isValid ? "Ready" : "Check range") : "Off";
+  els.punchWindowText.textContent = `${formatDuration(state.punchIn)} - ${formatDuration(state.punchOut)}`;
+}
+
+function getCountInSeconds() {
+  const bars = Number(els.countInSelect.value) || 0;
+  const bpm = Number(els.bpmInput.value) || 140;
+  return bars * 4 * (60 / bpm);
+}
+
+function clearPunchTimers() {
+  state.punchTimers.forEach((timer) => window.clearTimeout(timer));
+  state.punchTimers = [];
+}
+
+function cancelPunchWait() {
+  clearPunchTimers();
+  state.isPunchWaiting = false;
+  els.countdown.hidden = true;
+  els.recordButton.classList.remove("armed");
+}
+
+async function toggleSessionPlayback() {
+  if (state.isSessionPlaying) {
+    stopSessionPlayback();
+    els.sessionState.textContent = "Mix paused";
+    return;
+  }
+
+  await playSession();
+}
+
+async function playSession() {
+  const audibleTakes = getAllTakes().filter((take) => getTrackOutputVolume(findTrack(take.trackId)) > 0);
+
+  if (!els.beatAudio.src && !audibleTakes.length) {
+    els.sessionState.textContent = "Load beat";
+    return;
+  }
+
+  stopTakeQueue(false);
+  stopCurrentTake(false);
+  stopSessionPlayback(false);
+  await ensureAudioContext();
+
+  const loopRangeValid = state.loopEnabled && state.punchOut > state.punchIn;
+  let origin = loopRangeValid ? state.punchIn : els.beatAudio.src ? els.beatAudio.currentTime : 0;
+  if (els.beatAudio.src && Number.isFinite(els.beatAudio.duration) && origin >= els.beatAudio.duration - 0.05) {
+    origin = 0;
+  }
+  if (!els.beatAudio.src && audibleTakes.length) {
+    origin = Math.min(...audibleTakes.map((take) => take.startTime || 0));
+  }
+
+  state.isSessionPlaying = true;
+  state.sessionOrigin = origin;
+  state.sessionStartedAt = performance.now();
+  state.sessionPlayers = [];
+  state.sessionPlayingTakeIds = new Set();
+  updateSessionPlayButton();
+
+  if (els.beatAudio.src) {
+    els.beatAudio.currentTime = origin;
+    els.beatAudio.volume = 1;
+    try {
+      await els.beatAudio.play();
+    } catch (error) {
+      stopSessionPlayback();
+      els.sessionState.textContent = "Playback blocked";
+      console.error(error);
+      return;
+    }
+  }
+
+  audibleTakes.forEach((take) => {
+    const takeStart = take.startTime || 0;
+    const offset = Math.max(0, origin - takeStart);
+    const delay = takeStart - origin;
+    if (offset >= take.duration) {
+      return;
+    }
+
+    if (delay <= 0) {
+      startSessionTake(take, offset);
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      startSessionTake(take, 0);
+    }, delay * 1000);
+    state.sessionTimers.push(timer);
+  });
+
+  const endPosition = loopRangeValid ? state.punchOut : getSessionEndPosition();
+  if (endPosition > origin) {
+    state.sessionEndTimer = window.setTimeout(() => {
+      if (state.isSessionPlaying) {
+        if (loopRangeValid) {
+          stopSessionPlayback(false);
+          if (els.beatAudio.src) {
+            els.beatAudio.currentTime = state.punchIn;
+          }
+          playSession();
+          return;
+        }
+
+        stopSessionPlayback();
+        els.sessionState.textContent = "Mix ended";
+      }
+    }, (endPosition - origin) * 1000 + 180);
+  }
+
+  els.sessionState.textContent = "Mix playing";
+  renderTracks();
+  renderTakes();
+}
+
+async function startSessionTake(take, offset) {
+  if (!state.isSessionPlaying) {
+    return;
+  }
+
+  const track = findTrack(take.trackId);
+  if (!track || getTrackOutputVolume(track) <= 0 || offset >= take.duration) {
+    return;
+  }
+
+  const ctx = await ensureAudioContext();
+  const audio = new Audio(take.url);
+  audio.currentTime = Math.max(0, Math.min(offset, Math.max(0, take.duration - 0.05)));
+
+  const source = ctx.createMediaElementSource(audio);
+  const gain = ctx.createGain();
+  const panner = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+  const player = { takeId: take.id, trackId: track.id, audio, source, gain, panner };
+
+  gain.gain.value = getTrackOutputVolume(track);
+  source.connect(gain);
+  if (panner) {
+    panner.pan.value = track.pan;
+    gain.connect(panner).connect(ctx.destination);
+  } else {
+    gain.connect(ctx.destination);
+  }
+
+  const cleanup = () => {
+    removeSessionPlayer(player);
+  };
+
+  audio.addEventListener("ended", cleanup, { once: true });
+  audio.addEventListener("error", cleanup, { once: true });
+
+  state.sessionPlayers.push(player);
+  state.sessionPlayingTakeIds.add(take.id);
+  renderTracks();
+  renderTakes();
+
+  try {
+    await audio.play();
+  } catch (error) {
+    removeSessionPlayer(player);
+    els.sessionState.textContent = "Playback blocked";
+    console.error(error);
+  }
+}
+
+function removeSessionPlayer(player) {
+  const index = state.sessionPlayers.indexOf(player);
+  if (index >= 0) {
+    state.sessionPlayers.splice(index, 1);
+  }
+
+  state.sessionPlayingTakeIds.delete(player.takeId);
+  try {
+    player.source.disconnect();
+    player.gain.disconnect();
+    player.panner?.disconnect();
+  } catch {
+    // The node may already be disconnected by the browser.
+  }
+
+  renderTracks();
+  renderTakes();
+}
+
+function stopSessionPlayback(shouldRender = true, resetBeat = false) {
+  state.sessionTimers.forEach((timer) => window.clearTimeout(timer));
+  state.sessionTimers = [];
+  window.clearTimeout(state.sessionEndTimer);
+  state.sessionEndTimer = 0;
+
+  state.sessionPlayers.forEach((player) => {
+    player.audio.pause();
+    player.audio.currentTime = 0;
+    try {
+      player.source.disconnect();
+      player.gain.disconnect();
+      player.panner?.disconnect();
+    } catch {
+      // The node may already be disconnected by the browser.
+    }
+  });
+
+  state.sessionPlayers = [];
+  state.sessionPlayingTakeIds.clear();
+  state.isSessionPlaying = false;
+
+  els.beatAudio.pause();
+  if (resetBeat) {
+    els.beatAudio.currentTime = 0;
+  }
+
+  updateSessionPlayButton();
+  if (shouldRender) {
+    renderTracks();
+    renderTakes();
+  }
+}
+
+function updateActiveSessionMix() {
+  state.sessionPlayers.forEach((player) => {
+    const track = findTrack(player.trackId);
+    if (!track) {
+      return;
+    }
+
+    player.gain.gain.setTargetAtTime(getTrackOutputVolume(track), state.audioContext.currentTime, 0.01);
+    if (player.panner) {
+      player.panner.pan.setTargetAtTime(track.pan, state.audioContext.currentTime, 0.01);
+    }
+  });
+}
+
+function updateSessionPlayButton() {
+  els.playButton.classList.toggle("session-active", state.isSessionPlaying);
+  els.playButton.title = state.isSessionPlaying ? "Pause mix" : "Play mix";
+}
+
+function maintainLoopPlayback() {
+  if (!state.loopEnabled || state.isRecording || state.isPunchWaiting || state.isSessionPlaying) {
+    return;
+  }
+
+  if (state.punchOut <= state.punchIn || !els.beatAudio.src) {
+    return;
+  }
+
+  if (els.beatAudio.currentTime >= state.punchOut) {
+    els.beatAudio.currentTime = state.punchIn;
+  }
+}
+
+async function playTake(takeId) {
+  const take = findTake(takeId);
+  if (!take) {
+    return;
+  }
+
+  if (state.currentTakeId === takeId && state.currentTakeAudio && !state.currentTakeAudio.paused) {
+    stopSessionPlayback(false);
+    stopTakeQueue(false);
+    stopCurrentTake();
+    els.sessionState.textContent = "Take paused";
+    return;
+  }
+
+  stopSessionPlayback(false);
+  stopTakeQueue(false);
+  await playTakeAudio(take, `Playing ${take.trackName}`);
+}
+
+function playTakeAudio(take, label) {
+  stopCurrentTake(false);
+  els.beatAudio.pause();
+  const audio = new Audio(take.url);
+  state.currentTakeAudio = audio;
+  state.currentTakeId = take.id;
+  renderTracks();
+  renderTakes();
+
+  return new Promise((resolve) => {
+    let settled = false;
+
+    const finish = (status) => {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
+      if (state.currentTakeAudio === audio) {
+        state.currentTakeAudio = null;
+        state.currentTakeId = null;
+      }
+      if (state.currentTakeResolve === finish) {
+        state.currentTakeResolve = null;
+      }
+
+      if (status === "ended" && !state.isQueuePlaying) {
+        els.sessionState.textContent = "Take ended";
+      }
+
+      renderTracks();
+      renderTakes();
+      resolve(status);
+    };
+
+    audio.addEventListener("ended", () => finish("ended"));
+    audio.addEventListener("error", () => finish("error"));
+    state.currentTakeResolve = finish;
+
+    audio
+      .play()
+      .then(() => {
+        els.sessionState.textContent = label;
+      })
+      .catch((error) => {
+        els.sessionState.textContent = "Playback blocked";
+        console.error(error);
+        finish("blocked");
+      });
+  });
+}
+
+async function toggleTakeQueue() {
+  if (state.isQueuePlaying) {
+    stopTakeQueue();
+    els.sessionState.textContent = "Review stopped";
+    return;
+  }
+
+  const allTakes = getAllTakes();
+  if (!allTakes.length) {
+    els.sessionState.textContent = "No takes";
+    return;
+  }
+
+  stopSessionPlayback(false);
+  state.isQueuePlaying = true;
+  state.queueTakeIds = allTakes.map((take) => take.id);
+  state.queueIndex = 0;
+  updateQueueButton();
+
+  for (let index = 0; index < state.queueTakeIds.length; index += 1) {
+    if (!state.isQueuePlaying) {
+      break;
+    }
+
+    state.queueIndex = index;
+    const take = findTake(state.queueTakeIds[index]);
+    if (!take) {
+      continue;
+    }
+
+    renderTracks();
+    renderTakes();
+    const status = await playTakeAudio(take, `Review ${index + 1}/${state.queueTakeIds.length} ${take.trackName}`);
+    if (status === "blocked" || status === "error") {
+      break;
+    }
+
+    if (state.isQueuePlaying) {
+      await wait(120);
+    }
+  }
+
+  if (state.isQueuePlaying) {
+    state.isQueuePlaying = false;
+    state.queueTakeIds = [];
+    state.queueIndex = -1;
+    els.sessionState.textContent = "Review done";
+    updateQueueButton();
+    renderTracks();
+    renderTakes();
+  }
+}
+
+function stopTakeQueue(shouldRender = true) {
+  state.isQueuePlaying = false;
+  state.queueTakeIds = [];
+  state.queueIndex = -1;
+  stopCurrentTake(false);
+  updateQueueButton();
+
+  if (shouldRender) {
+    renderTracks();
+    renderTakes();
+  }
+}
+
+function stopCurrentTake(shouldRender = true) {
+  const finish = state.currentTakeResolve;
+  if (state.currentTakeAudio) {
+    state.currentTakeAudio.pause();
+    state.currentTakeAudio.currentTime = 0;
+  }
+
+  state.currentTakeAudio = null;
+  state.currentTakeId = null;
+  state.currentTakeResolve = null;
+
+  if (finish) {
+    finish("stopped");
+  }
+
+  if (shouldRender) {
+    renderTracks();
+    renderTakes();
+  }
+}
+
+function stopAll() {
+  if (state.isRecording) {
+    stopRecording();
+  }
+
+  cancelPunchWait();
+  stopTakeQueue(false);
+  stopSessionPlayback(false, true);
+  stopCurrentTake();
+  els.beatAudio.pause();
+  els.beatAudio.currentTime = 0;
+  els.sessionState.textContent = "Stopped";
+}
+
+async function toggleRecord() {
+  if (state.isRecording) {
+    stopRecording();
+    return;
+  }
+
+  if (state.isPunchWaiting) {
+    cancelPunchWait();
+    els.sessionState.textContent = "Punch canceled";
+    return;
+  }
+
+  if (!state.stream) {
+    await enableMic();
+  }
+
+  if (!state.stream) {
+    return;
+  }
+
+  if (state.punchEnabled) {
+    startPunchRecording();
+    return;
+  }
+
+  const bars = Number(els.countInSelect.value);
+  if (bars > 0) {
+    await countIn(bars);
+  }
+
+  startRecording();
+}
+
+async function startPunchRecording() {
+  if (state.punchOut <= state.punchIn) {
+    els.sessionState.textContent = "Set punch out";
+    return;
+  }
+
+  stopTakeQueue(false);
+  stopSessionPlayback(false);
+  stopCurrentTake(false);
+  clearPunchTimers();
+  await ensureAudioContext();
+
+  const preRoll = getCountInSeconds();
+  const punchIn = state.punchIn;
+  const punchOut = state.punchOut;
+  const playStart = Math.max(0, punchIn - preRoll);
+  const waitMs = Math.max(0, (punchIn - playStart) * 1000);
+  const durationMs = Math.max(100, (punchOut - punchIn) * 1000);
+
+  state.isPunchWaiting = true;
+  els.recordButton.classList.add("armed");
+  els.sessionState.textContent = "Punch armed";
+
+  if (els.beatAudio.src) {
+    els.beatAudio.currentTime = playStart;
+    els.beatAudio.play().catch((error) => {
+      console.error(error);
+    });
+  }
+
+  if (waitMs > 0) {
+    startPunchCountdown(waitMs);
+  }
+
+  const startTimer = window.setTimeout(() => {
+    state.isPunchWaiting = false;
+    els.recordButton.classList.remove("armed");
+    els.countdown.hidden = true;
+    startRecording({
+      startPosition: punchIn,
+      keepBeat: true,
+      autoStopAfter: durationMs,
+      punch: true,
+    });
+  }, waitMs);
+
+  state.punchTimers.push(startTimer);
+}
+
+function startPunchCountdown(waitMs) {
+  const bpm = Number(els.bpmInput.value) || 140;
+  const beatMs = 60000 / bpm;
+  const startedAt = performance.now();
+
+  els.countdown.hidden = false;
+
+  const pulse = () => {
+    const remaining = Math.max(0, waitMs - (performance.now() - startedAt));
+    els.countdown.textContent = String(Math.max(1, Math.ceil(remaining / beatMs)));
+    tick(remaining > waitMs - beatMs ? 880 : 660);
+    if (remaining <= 0) {
+      return;
+    }
+
+    state.punchTimers.push(window.setTimeout(pulse, beatMs));
+  };
+
+  pulse();
+}
+
+function startRecording(options = {}) {
+  stopTakeQueue(false);
+  if (!options.keepBeat) {
+    stopSessionPlayback(false);
+  }
+  stopCurrentTake();
+  state.chunks = [];
+  const mediaOptions = state.mimeType ? { mimeType: state.mimeType } : undefined;
+  const recordStream = state.processedStream || state.stream;
+  state.mediaRecorder = new MediaRecorder(recordStream, mediaOptions);
+  state.mediaRecorder.addEventListener("dataavailable", (event) => {
+    if (event.data.size > 0) {
+      state.chunks.push(event.data);
+    }
+  });
+  state.mediaRecorder.addEventListener("stop", saveTake);
+
+  state.recordStart = performance.now();
+  state.recordStartPosition = Number.isFinite(options.startPosition) ? options.startPosition : getCurrentSessionPosition();
+  state.isPunchRecording = Boolean(options.punch);
+  state.mediaRecorder.start(250);
+  state.isRecording = true;
+  els.recordButton.classList.add("active");
+  els.sessionState.textContent = options.punch ? "Punch recording" : "Recording";
+
+  if (els.beatAudio.src && els.beatAudio.paused) {
+    els.beatAudio.play();
+  }
+
+  if (options.autoStopAfter) {
+    const stopTimer = window.setTimeout(() => {
+      if (state.isRecording) {
+        stopRecording();
+      }
+    }, options.autoStopAfter);
+    state.punchTimers.push(stopTimer);
+  }
+}
+
+function stopRecording() {
+  if (!state.mediaRecorder || state.mediaRecorder.state === "inactive") {
+    return;
+  }
+
+  const wasPunchRecording = state.isPunchRecording;
+  clearPunchTimers();
+  state.mediaRecorder.stop();
+  state.isRecording = false;
+  state.isPunchRecording = false;
+  els.recordButton.classList.remove("active");
+  els.sessionState.textContent = wasPunchRecording ? "Punch saved" : "Take saved";
+
+  if (wasPunchRecording && state.loopEnabled && els.beatAudio.src && state.punchOut > state.punchIn) {
+    els.beatAudio.currentTime = state.punchIn;
+    els.beatAudio.play().catch((error) => {
+      console.error(error);
+    });
+    els.sessionState.textContent = "Looping punch";
+  }
+}
+
+function saveTake() {
+  const track = tracks.find((item) => item.id === state.armedTrackId);
+  const extension = state.mimeType.includes("mp4") ? "m4a" : "webm";
+  const blob = new Blob(state.chunks, { type: state.mimeType || "audio/webm" });
+  const url = URL.createObjectURL(blob);
+  const take = {
+    id: crypto.randomUUID(),
+    trackId: track.id,
+    trackName: track.name,
+    url,
+    blob,
+    extension,
+    createdAt: new Date(),
+    startTime: state.recordStartPosition,
+    duration: (performance.now() - state.recordStart) / 1000,
+  };
+
+  track.takes.push(take);
+  state.latestTake = take;
+  state.selectedVocalTakeId = take.id;
+  els.downloadLatestButton.disabled = false;
+  renderTracks();
+  renderArmTracks();
+  renderTakes();
+  updateQueueButton();
+  updateExportButtons();
+}
+
+async function countIn(bars) {
+  const bpm = Number(els.bpmInput.value) || 140;
+  const beats = bars * 4;
+  const beatMs = 60000 / bpm;
+
+  els.countdown.hidden = false;
+  els.sessionState.textContent = "Count in";
+
+  for (let beat = beats; beat > 0; beat -= 1) {
+    els.countdown.textContent = String(beat);
+    tick(beat === beats ? 880 : 660);
+    await wait(beatMs);
+  }
+
+  els.countdown.hidden = true;
+}
+
+function tick(frequency) {
+  if (!state.audioContext) {
+    return;
+  }
+
+  const osc = state.audioContext.createOscillator();
+  const gain = state.audioContext.createGain();
+  osc.frequency.value = frequency;
+  gain.gain.setValueAtTime(0.0001, state.audioContext.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.14, state.audioContext.currentTime + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.0001, state.audioContext.currentTime + 0.08);
+  osc.connect(gain).connect(state.audioContext.destination);
+  osc.start();
+  osc.stop(state.audioContext.currentTime + 0.09);
+}
+
+function wait(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+function startMeter() {
+  const data = new Uint8Array(state.analyser.fftSize);
+  const canvas = els.waveCanvas;
+  const ctx = canvas.getContext("2d");
+
+  const draw = () => {
+    state.analyser.getByteTimeDomainData(data);
+
+    let sum = 0;
+    for (const value of data) {
+      const normalized = (value - 128) / 128;
+      sum += normalized * normalized;
+    }
+
+    const rms = Math.sqrt(sum / data.length);
+    const db = rms > 0 ? 20 * Math.log10(rms) : -Infinity;
+    const meterValue = Math.min(100, Math.max(0, (db + 60) * 1.9));
+    els.inputMeter.style.width = `${meterValue}%`;
+    els.inputLevelText.textContent = Number.isFinite(db) ? `${db.toFixed(1)} dBFS` : "-inf dBFS";
+
+    drawLiveWave(ctx, canvas, data);
+    state.waveFrame = requestAnimationFrame(draw);
+  };
+
+  cancelAnimationFrame(state.waveFrame);
+  draw();
+}
+
+function drawLiveWave(ctx, canvas, data) {
+  const width = canvas.width;
+  const height = canvas.height;
+  ctx.clearRect(0, 0, width, height);
+  drawGrid(ctx, width, height);
+
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = state.isRecording ? "#ff4f64" : "#c8ff4d";
+  ctx.beginPath();
+
+  const slice = width / data.length;
+  for (let i = 0; i < data.length; i += 1) {
+    const y = (data[i] / 255) * height;
+    const x = i * slice;
+    if (i === 0) {
+      ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+    }
+  }
+
+  ctx.stroke();
+}
+
+function drawIdleWave() {
+  if (state.analyser) {
+    return;
+  }
+
+  const canvas = els.waveCanvas;
+  const ctx = canvas.getContext("2d");
+  const width = canvas.width;
+  const height = canvas.height;
+  ctx.clearRect(0, 0, width, height);
+  drawGrid(ctx, width, height);
+
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = "#41e6d0";
+  ctx.beginPath();
+  for (let x = 0; x <= width; x += 8) {
+    const y =
+      height / 2 +
+      Math.sin(x * 0.018) * 36 +
+      Math.sin(x * 0.067) * 12 +
+      Math.sin(x * 0.13) * 5;
+    if (x === 0) {
+      ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+    }
+  }
+  ctx.stroke();
+}
+
+function drawGrid(ctx, width, height) {
+  ctx.fillStyle = "#0b0e0c";
+  ctx.fillRect(0, 0, width, height);
+  ctx.strokeStyle = "rgba(238, 244, 237, 0.06)";
+  ctx.lineWidth = 1;
+
+  for (let x = 0; x < width; x += 80) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, height);
+    ctx.stroke();
+  }
+
+  for (let y = 0; y < height; y += 40) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(width, y);
+    ctx.stroke();
+  }
+
+  ctx.strokeStyle = "rgba(200, 255, 77, 0.18)";
+  ctx.beginPath();
+  ctx.moveTo(0, height / 2);
+  ctx.lineTo(width, height / 2);
+  ctx.stroke();
+}
+
+function renderTracks() {
+  els.trackList.innerHTML = tracks
+    .map((track) => {
+      const isArmed = track.id === state.armedTrackId;
+      const isAudible = isTrackAudible(track);
+      const pills = track.takes
+        .map((take, index) => {
+          const isPlaying = take.id === state.currentTakeId || state.sessionPlayingTakeIds.has(take.id);
+          return `
+            <div class="take-chip">
+              <button class="take-pill ${isPlaying ? "playing" : ""}" type="button" data-play-take="${take.id}">
+                ${isPlaying ? "Pause" : "Play"} T${index + 1} ${formatDuration(take.duration)} @${formatDuration(take.startTime || 0)}
+              </button>
+              <button class="take-delete" type="button" data-delete-take="${take.id}" title="Delete take">Del</button>
+            </div>
+          `;
+        })
+        .join("");
+
+      return `
+        <div class="track-row ${isArmed ? "armed" : ""} ${isAudible ? "" : "muted"}" style="--track-color: ${track.color}">
+          <div class="track-name">
+            <span class="track-color"></span>
+            <span>
+              ${track.name}
+              <small>${formatPercent(track.volume)} ${formatPan(track.pan)}</small>
+            </span>
+          </div>
+          <div class="take-strip">${pills || `<span class="eyebrow">No takes</span>`}</div>
+          <div class="track-actions">
+            <button class="track-toggle ${track.muted ? "active" : ""}" type="button" data-track-mute="${track.id}" title="Mute ${track.name}">M</button>
+            <button class="track-toggle ${track.solo ? "active" : ""}" type="button" data-track-solo="${track.id}" title="Solo ${track.name}">S</button>
+            <label class="mini-slider">
+              <span>Vol</span>
+              <input type="range" min="0" max="1" step="0.01" value="${track.volume}" data-track-volume="${track.id}" />
+            </label>
+            <label class="mini-slider">
+              <span>Pan</span>
+              <input type="range" min="-1" max="1" step="0.05" value="${track.pan}" data-track-pan="${track.id}" />
+            </label>
+            <button class="icon-button" type="button" data-arm="${track.id}" title="Arm ${track.name}">
+              Arm
+            </button>
+          </div>
+        </div>
+      `;
+    })
+    .join("");
+
+  els.trackList.querySelectorAll("[data-arm]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.armedTrackId = button.dataset.arm;
+      const track = tracks.find((item) => item.id === state.armedTrackId);
+      els.armedTrackName.textContent = track.name;
+      renderTracks();
+      renderArmTracks();
+    });
+  });
+
+  els.trackList.querySelectorAll("[data-play-take]").forEach((button) => {
+    button.addEventListener("click", () => {
+      playTake(button.dataset.playTake);
+    });
+  });
+
+  els.trackList.querySelectorAll("[data-delete-take]").forEach((button) => {
+    button.addEventListener("click", () => {
+      deleteTake(button.dataset.deleteTake);
+    });
+  });
+
+  els.trackList.querySelectorAll("[data-track-mute]").forEach((button) => {
+    button.addEventListener("click", () => {
+      toggleTrackMute(button.dataset.trackMute);
+    });
+  });
+
+  els.trackList.querySelectorAll("[data-track-solo]").forEach((button) => {
+    button.addEventListener("click", () => {
+      toggleTrackSolo(button.dataset.trackSolo);
+    });
+  });
+
+  els.trackList.querySelectorAll("[data-track-volume]").forEach((input) => {
+    input.addEventListener("input", () => {
+      setTrackVolume(input.dataset.trackVolume, input.value);
+    });
+  });
+
+  els.trackList.querySelectorAll("[data-track-pan]").forEach((input) => {
+    input.addEventListener("input", () => {
+      setTrackPan(input.dataset.trackPan, input.value);
+    });
+  });
+}
+
+function renderArmTracks() {
+  els.armTrackList.innerHTML = tracks
+    .map((track) => {
+      const isArmed = track.id === state.armedTrackId;
+      return `
+        <button class="arm-button ${isArmed ? "active" : ""}" type="button" data-arm-quick="${track.id}" style="--track-color: ${track.color}">
+          <span></span>
+          ${track.name}
+          <small>${track.takes.length}</small>
+        </button>
+      `;
+    })
+    .join("");
+
+  els.armTrackList.querySelectorAll("[data-arm-quick]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.armedTrackId = button.dataset.armQuick;
+      const track = findTrack(state.armedTrackId);
+      els.armedTrackName.textContent = track.name;
+      renderArmTracks();
+      renderTracks();
+    });
+  });
+}
+
+function renderPresets() {
+  els.presetGrid.innerHTML = presets
+    .map(
+      (preset) => `
+        <button class="preset-button" type="button" data-preset="${preset.id}">
+          ${preset.name}
+        </button>
+      `,
+    )
+    .join("");
+
+  els.presetGrid.querySelectorAll("[data-preset]").forEach((button) => {
+    button.addEventListener("click", () => applyPreset(button.dataset.preset));
+  });
+}
+
+function applyPreset(id) {
+  state.selectedPresetId = id;
+  const preset = presets.find((item) => item.id === id);
+  els.presetName.textContent = preset.name;
+  els.compValue.textContent = preset.comp;
+  els.spaceValue.textContent = preset.space;
+  els.widthValue.textContent = preset.width;
+  els.retuneSpeedSlider.value = preset.retune;
+  els.humanizeSlider.value = preset.humanize;
+  els.formantSlider.value = preset.formant;
+  updateTuneControls();
+
+  els.presetGrid.querySelectorAll("[data-preset]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.preset === id);
+  });
+
+  renderVocalPanel();
+}
+
+function renderVocalPanel() {
+  if (!els.vocalTakeSelect) {
+    return;
+  }
+
+  const allTakes = getAllTakes();
+  const selectedExists = allTakes.some((take) => take.id === state.selectedVocalTakeId);
+  if (!selectedExists) {
+    state.selectedVocalTakeId = allTakes.at(-1)?.id || null;
+  }
+
+  const selectedTake = getSelectedVocalTake();
+  const comparisonPair = getComparisonPair(selectedTake);
+  const batchTargets = getBatchTargets(selectedTake);
+  const vocalBusy = isVocalBusy();
+  els.vocalTakeSelect.innerHTML = allTakes.length
+    ? allTakes
+      .map(
+        (take, index) => `
+          <option value="${take.id}" ${take.id === state.selectedVocalTakeId ? "selected" : ""}>
+            ${getTakeTitle(take, index)}
+          </option>
+        `,
+      )
+      .join("")
+    : `<option value="">No takes</option>`;
+
+  els.vocalTakeSelect.disabled = vocalBusy || allTakes.length === 0;
+  els.previewVocalButton.disabled = vocalBusy || !selectedTake;
+  els.analyzeVocalButton.disabled = vocalBusy || !selectedTake;
+  els.renderVocalButton.disabled = vocalBusy || !selectedTake;
+  els.compareSourceButton.disabled = vocalBusy || !comparisonPair;
+  els.compareProcessedButton.disabled = vocalBusy || !comparisonPair;
+  els.batchScopeSelect.disabled = vocalBusy || allTakes.length === 0;
+  els.batchRenderButton.disabled = vocalBusy || batchTargets.length === 0;
+  els.compareSourceButton.classList.toggle("active", Boolean(comparisonPair?.source.id === state.currentTakeId));
+  els.compareProcessedButton.classList.toggle("active", Boolean(comparisonPair?.processed.id === state.currentTakeId));
+  setTuneControlsDisabled(vocalBusy);
+  els.analyzeVocalButton.classList.toggle("rendering", state.isAnalyzingVocal);
+  els.renderVocalButton.classList.toggle("rendering", state.isRenderingVocal);
+  els.batchRenderButton.classList.toggle("rendering", state.isBatchRendering);
+  els.analyzeVocalButton.querySelector(".button-label").textContent = state.isAnalyzingVocal ? "Analyzing" : "Analyze";
+  els.renderVocalButton.querySelector(".button-label").textContent = state.isRenderingVocal ? "Rendering" : "Render";
+  els.batchRenderButton.querySelector(".button-label").textContent = state.isBatchRendering ? "Rendering" : "Render batch";
+  renderPitchPanel(selectedTake?.pitchAnalysis || null);
+  renderBatchPanel(batchTargets);
+
+  if (!selectedTake) {
+    els.vocalStatus.textContent = "No take";
+    els.selectedTakeMeta.innerHTML = `<span class="eyebrow">Record a take first</span>`;
+    renderComparePanel(null);
+    return;
+  }
+
+  const preset = getSelectedPreset();
+  els.vocalStatus.textContent = state.isRenderingVocal ? "Rendering" : `${preset.name} ready`;
+  els.selectedTakeMeta.innerHTML = `
+    <strong>${selectedTake.trackName}</strong>
+    <span>${selectedTake.processed ? "Processed" : "Original"} / ${formatDuration(selectedTake.duration)} @ ${formatDuration(selectedTake.startTime || 0)}</span>
+    <small>${selectedTake.processed ? `${selectedTake.presetName} v${selectedTake.version || 1} / ${getTuneSignature(selectedTake.tuneSettings)}` : "Raw take"}</small>
+  `;
+  renderComparePanel(comparisonPair);
+}
+
+function updateTuneControls() {
+  const settings = getTuneSettings();
+  els.retuneSpeedText.textContent = String(settings.retuneSpeed);
+  els.retuneValue.textContent = String(settings.retuneSpeed);
+  els.humanizeText.textContent = String(settings.humanize);
+  els.formantText.textContent = formatSigned(settings.formant);
+}
+
+function setTuneControlsDisabled(isDisabled) {
+  els.retuneSpeedSlider.disabled = isDisabled;
+  els.humanizeSlider.disabled = isDisabled;
+  els.formantSlider.disabled = isDisabled;
+}
+
+function isVocalBusy() {
+  return state.isAnalyzingVocal || state.isRenderingVocal || state.isBatchRendering;
+}
+
+async function analyzeSelectedVocalTake() {
+  if (state.isAnalyzingVocal || state.isRenderingVocal) {
+    return;
+  }
+
+  const selectedTake = getSelectedVocalTake();
+  if (!selectedTake) {
+    els.sessionState.textContent = "No take";
+    return;
+  }
+
+  state.isAnalyzingVocal = true;
+  els.sessionState.textContent = "Analyzing pitch";
+  renderVocalPanel();
+
+  try {
+    const decodeContext = new OfflineAudioContext(2, 1, 48000);
+    const sourceBuffer = await decodeContext.decodeAudioData(await selectedTake.blob.arrayBuffer());
+    selectedTake.pitchAnalysis = analyzePitchBuffer(sourceBuffer);
+    const plan = getPitchPlan(selectedTake.pitchAnalysis);
+    els.sessionState.textContent = plan.detectedLabel === "--" ? "Pitch not found" : `${plan.detectedLabel} detected`;
+  } catch (error) {
+    els.sessionState.textContent = "Analyze failed";
+    console.error(error);
+  } finally {
+    state.isAnalyzingVocal = false;
+    renderVocalPanel();
+  }
+}
+
+function previewSelectedVocalTake() {
+  const selectedTake = getSelectedVocalTake();
+  if (!selectedTake) {
+    els.sessionState.textContent = "No take";
+    return;
+  }
+
+  playTake(selectedTake.id);
+}
+
+function renderComparePanel(pair) {
+  if (!pair) {
+    els.compareStatus.textContent = "No pair";
+    els.compareMeta.textContent = "Render a take to enable comparison.";
+    return;
+  }
+
+  els.compareStatus.textContent = "Ready";
+  els.compareMeta.textContent = `${getTakeShortName(pair.source)} -> ${getTakeShortName(pair.processed)}`;
+}
+
+function renderBatchPanel(targets) {
+  const scope = els.batchScopeSelect.value;
+  els.batchStatus.textContent = targets.length ? `${targets.length} raw` : "No raw";
+  if (targets.length) {
+    els.batchMeta.textContent =
+      scope === "track"
+        ? `Will render ${targets.length} raw take(s) on this track.`
+        : `Will render ${targets.length} raw take(s) across all vocal tracks.`;
+    return;
+  }
+
+  els.batchMeta.textContent = scope === "track" ? "No raw takes on this track." : "No raw vocal takes available.";
+}
+
+async function playComparisonTake(kind) {
+  const pair = getComparisonPair(getSelectedVocalTake());
+  if (!pair) {
+    els.sessionState.textContent = "No compare pair";
+    return;
+  }
+
+  const take = pair[kind];
+  const label = kind === "source" ? `A Raw ${take.trackName}` : `B Tuned ${take.trackName}`;
+  stopSessionPlayback(false);
+  stopTakeQueue(false);
+  await playTakeAudio(take, label);
+}
+
+async function renderSelectedVocalTake() {
+  if (isVocalBusy()) {
+    return;
+  }
+
+  const sourceTake = getSelectedVocalTake();
+  if (!sourceTake) {
+    els.sessionState.textContent = "No take";
+    return;
+  }
+
+  const preset = getSelectedPreset();
+  state.isRenderingVocal = true;
+  stopSessionPlayback(false);
+  stopTakeQueue(false);
+  stopCurrentTake(false);
+  els.sessionState.textContent = "Rendering vocal";
+  renderVocalPanel();
+
+  try {
+    const take = await renderProcessedTake(sourceTake, preset, getTuneSettings());
+    state.latestTake = take;
+    state.selectedVocalTakeId = take.id;
+    els.downloadLatestButton.disabled = false;
+    els.sessionState.textContent = `${preset.name} rendered`;
+  } catch (error) {
+    els.sessionState.textContent = "Render failed";
+    console.error(error);
+  } finally {
+    state.isRenderingVocal = false;
+    renderTracks();
+    renderArmTracks();
+    renderTakes();
+    updateQueueButton();
+    updateExportButtons();
+    renderVocalPanel();
+  }
+}
+
+async function renderBatchVocalTakes() {
+  if (isVocalBusy()) {
+    return;
+  }
+
+  const targets = getBatchTargets(getSelectedVocalTake());
+  if (!targets.length) {
+    els.sessionState.textContent = "No raw takes";
+    return;
+  }
+
+  const preset = getSelectedPreset();
+  const tuneSettings = getTuneSettings();
+  let latestRendered = null;
+  state.isBatchRendering = true;
+  stopSessionPlayback(false);
+  stopTakeQueue(false);
+  stopCurrentTake(false);
+  renderVocalPanel();
+
+  try {
+    for (let index = 0; index < targets.length; index += 1) {
+      els.sessionState.textContent = `Batch ${index + 1}/${targets.length}`;
+      latestRendered = await renderProcessedTake(targets[index], preset, tuneSettings);
+    }
+
+    if (latestRendered) {
+      state.latestTake = latestRendered;
+      state.selectedVocalTakeId = latestRendered.id;
+      els.downloadLatestButton.disabled = false;
+    }
+    els.sessionState.textContent = `Batch rendered ${targets.length}`;
+  } catch (error) {
+    els.sessionState.textContent = "Batch failed";
+    console.error(error);
+  } finally {
+    state.isBatchRendering = false;
+    renderTracks();
+    renderArmTracks();
+    renderTakes();
+    updateQueueButton();
+    updateExportButtons();
+    renderVocalPanel();
+  }
+}
+
+async function renderProcessedTake(sourceTake, preset, tuneSettings) {
+  preset ||= getSelectedPreset();
+  tuneSettings ||= getTuneSettings();
+  const version = getNextProcessedVersion(sourceTake.id, preset.id);
+  const decodeContext = new OfflineAudioContext(2, 1, 48000);
+  const sourceBuffer = await decodeContext.decodeAudioData(await sourceTake.blob.arrayBuffer());
+  sourceTake.pitchAnalysis ||= analyzePitchBuffer(sourceBuffer);
+  const pitchPlan = getPitchPlan(sourceTake.pitchAnalysis);
+  const rendered = await renderVocalBuffer(sourceBuffer, preset, pitchPlan, tuneSettings);
+  const renderedAnalysis = analyzePitchBuffer(rendered);
+  const blob = encodeWav(rendered);
+  const url = URL.createObjectURL(blob);
+  const track = findTrack(sourceTake.trackId);
+  const take = {
+    id: crypto.randomUUID(),
+    trackId: sourceTake.trackId,
+    trackName: sourceTake.trackName,
+    url,
+    blob,
+    extension: "wav",
+    createdAt: new Date(),
+    startTime: sourceTake.startTime || 0,
+    duration: rendered.duration,
+    processed: true,
+    sourceTakeId: sourceTake.id,
+    presetId: preset.id,
+    presetName: preset.name,
+    version,
+    renderLabel: `${preset.name} v${version}`,
+    chainSnapshot: {
+      preset: { ...preset },
+      tuneSettings: { ...tuneSettings },
+      key: els.keySelect.value,
+    },
+    pitchAnalysis: renderedAnalysis,
+    pitchPlan: getPitchPlan(renderedAnalysis),
+    sourcePitchPlan: pitchPlan,
+    tuneSettings: { ...tuneSettings },
+  };
+
+  track.takes.push(take);
+  return take;
+}
+
+async function renderVocalBuffer(sourceBuffer, preset, pitchPlan = null, tuneSettings = getTuneSettings()) {
+  return window.PunchLabDSP.renderVocalBuffer(sourceBuffer, preset, pitchPlan, tuneSettings);
+}
+
+function createTunedBuffer(context, sourceBuffer, pitchPlan, amount, humanize) {
+  const frames = pitchPlan?.frames || [];
+  if (!frames.length || amount < 0.04) {
+    return sourceBuffer;
+  }
+
+  const channelCount = sourceBuffer.numberOfChannels;
+  const output = context.createBuffer(channelCount, sourceBuffer.length, sourceBuffer.sampleRate);
+  const frameSize = 2048;
+  const wet = clamp(0.32 + amount * 0.66 - humanize * 0.24, 0.12, 0.98);
+  const usableFrames = frames.filter((frame) => Math.abs(frame.correctionSemitones) > 0.04);
+
+  if (!usableFrames.length) {
+    return sourceBuffer;
+  }
+
+  for (let channel = 0; channel < channelCount; channel += 1) {
+    const input = sourceBuffer.getChannelData(channel);
+    const outputData = output.getChannelData(channel);
+    const tunedSum = new Float32Array(input.length);
+    const weight = new Float32Array(input.length);
+
+    outputData.set(input);
+    usableFrames.forEach((frame) => {
+      const deadband = humanize * 0.18;
+      const frameCorrection = Math.abs(frame.correctionSemitones) < deadband ? 0 : frame.correctionSemitones;
+      const confidenceScale = clamp(0.52 + frame.confidence * 0.48 - humanize * 0.18, 0.35, 1);
+      const correction = clamp(frameCorrection, -4, 4) * amount * (1 - humanize * 0.58) * confidenceScale;
+      const pitchRatio = Math.pow(2, correction / 12);
+      const start = Math.max(0, Math.min(input.length - frameSize, Math.round(frame.start)));
+      const center = (frameSize - 1) / 2;
+
+      for (let index = 0; index < frameSize; index += 1) {
+        const outputIndex = start + index;
+        const sourcePosition = start + center + (index - center) * pitchRatio;
+        const windowValue = hannWindow(index, frameSize);
+        tunedSum[outputIndex] += sampleLinear(input, sourcePosition) * windowValue;
+        weight[outputIndex] += windowValue;
+      }
+    });
+
+    for (let index = 0; index < outputData.length; index += 1) {
+      if (weight[index] <= 0.001) {
+        continue;
+      }
+
+      const tuned = tunedSum[index] / weight[index];
+      outputData[index] = input[index] * (1 - wet) + tuned * wet;
+    }
+  }
+
+  return output;
+}
+
+function sampleLinear(input, position) {
+  if (position <= 0) {
+    return input[0];
+  }
+
+  if (position >= input.length - 1) {
+    return input[input.length - 1];
+  }
+
+  const left = Math.floor(position);
+  const right = left + 1;
+  const mix = position - left;
+  return input[left] * (1 - mix) + input[right] * mix;
+}
+
+function hannWindow(index, size) {
+  return 0.5 - 0.5 * Math.cos((2 * Math.PI * index) / (size - 1));
+}
+
+function analyzePitchBuffer(audioBuffer) {
+  return window.PunchLabDSP.analyzePitchBuffer(audioBuffer);
+}
+
+function getMonoChannel(audioBuffer) {
+  const length = audioBuffer.length;
+  const mono = new Float32Array(length);
+  const channels = audioBuffer.numberOfChannels;
+
+  for (let channel = 0; channel < channels; channel += 1) {
+    const data = audioBuffer.getChannelData(channel);
+    for (let index = 0; index < length; index += 1) {
+      mono[index] += data[index] / channels;
+    }
+  }
+
+  return mono;
+}
+
+function getFrameRms(data, start, size) {
+  let sum = 0;
+  for (let index = 0; index < size; index += 1) {
+    const sample = data[start + index];
+    sum += sample * sample;
+  }
+
+  return Math.sqrt(sum / size);
+}
+
+function detectFramePitch(data, start, size, minLag, maxLag, sampleRate) {
+  let bestLag = 0;
+  let bestCorrelation = 0;
+
+  for (let lag = minLag; lag <= maxLag; lag += 1) {
+    let sum = 0;
+    let sumA = 0;
+    let sumB = 0;
+
+    for (let index = 0; index < size; index += 1) {
+      const a = data[start + index];
+      const b = data[start + index + lag];
+      sum += a * b;
+      sumA += a * a;
+      sumB += b * b;
+    }
+
+    const correlation = sum / Math.sqrt(sumA * sumB || 1);
+    if (correlation > bestCorrelation) {
+      bestCorrelation = correlation;
+      bestLag = lag;
+    }
+  }
+
+  if (!bestLag) {
+    return null;
+  }
+
+  return {
+    frequency: sampleRate / bestLag,
+    confidence: bestCorrelation,
+  };
+}
+
+function renderPitchPanel(analysis) {
+  if (!els.pitchDetectedText) {
+    return;
+  }
+
+  const plan = getPitchPlan(analysis);
+  els.pitchKeyText.textContent = els.keySelect.value;
+  els.pitchDetectedText.textContent = plan.detectedLabel;
+  els.pitchTargetText.textContent = plan.targetLabel;
+  els.pitchCorrectionText.textContent = plan.correctionLabel;
+  els.pitchConfidenceText.textContent = plan.keyFitLabel;
+}
+
+function getPitchPlan(analysis) {
+  return window.PunchLabDSP.getPitchPlan(analysis, els.keySelect.value);
+}
+
+function parseKey(value) {
+  const rootName = value.split(" ")[0];
+  return { root: NOTE_NAMES.indexOf(rootName) >= 0 ? NOTE_NAMES.indexOf(rootName) : 0 };
+}
+
+function getNearestScaleMidi(midi, root) {
+  const rounded = Math.round(midi);
+  let best = rounded;
+  let bestDistance = Infinity;
+
+  for (let candidate = rounded - 12; candidate <= rounded + 12; candidate += 1) {
+    if (!isScalePitchClass(candidate, root)) {
+      continue;
+    }
+
+    const distance = Math.abs(candidate - midi);
+    if (distance < bestDistance) {
+      best = candidate;
+      bestDistance = distance;
+    }
+  }
+
+  return best;
+}
+
+function isScalePitchClass(midi, root) {
+  return MINOR_SCALE.includes(positiveModulo(midi - root, 12));
+}
+
+function getScaleFit(noteClassCounts, root) {
+  const total = noteClassCounts.reduce((sum, count) => sum + count, 0);
+  if (!total) {
+    return 0;
+  }
+
+  const inScale = noteClassCounts.reduce(
+    (sum, count, noteClass) => sum + (isScalePitchClass(noteClass, root) ? count : 0),
+    0,
+  );
+  return inScale / total;
+}
+
+function connectDelayTap(context, source, destination, delayTime, pan, gainValue) {
+  if (gainValue <= 0.001) {
+    return;
+  }
+
+  const delay = context.createDelay(1);
+  const gain = context.createGain();
+  const panner = context.createStereoPanner ? context.createStereoPanner() : null;
+
+  delay.delayTime.value = delayTime;
+  gain.gain.value = gainValue;
+  source.connect(delay).connect(gain);
+  if (panner) {
+    panner.pan.value = pan;
+    gain.connect(panner).connect(destination);
+  } else {
+    gain.connect(destination);
+  }
+}
+
+function makeSaturationCurve(amount) {
+  const samples = 2048;
+  const curve = new Float32Array(samples);
+  const drive = 1 + amount * 12;
+
+  for (let index = 0; index < samples; index += 1) {
+    const x = (index * 2) / samples - 1;
+    curve[index] = Math.tanh(x * drive) / Math.tanh(drive);
+  }
+
+  return curve;
+}
+
+function renderTakes() {
+  const allTakes = getAllTakes();
+  els.takesList.innerHTML = allTakes.length
+    ? allTakes
+    .map(
+      (take, index) => {
+        const isPlaying = take.id === state.currentTakeId || state.sessionPlayingTakeIds.has(take.id);
+        return `
+        <div class="take-item">
+          <div>
+            <strong>${getTakeTitle(take, index)}</strong>
+            <small>${getTakeSubtitle(take)}</small>
+          </div>
+          <div class="take-controls">
+            <button class="mini-button ${isPlaying ? "active" : ""}" type="button" data-play-take="${take.id}">
+              ${isPlaying ? "Pause" : "Play"}
+            </button>
+            <a href="${take.url}" download="${makeTakeFilename(take)}">Save</a>
+            <button class="mini-button danger" type="button" data-delete-take="${take.id}">Del</button>
+          </div>
+        </div>
+      `;
+      },
+    )
+    .join("")
+    : `<span class="empty-takes">No takes yet</span>`;
+
+  els.takesList.querySelectorAll("[data-play-take]").forEach((button) => {
+    button.addEventListener("click", () => {
+      playTake(button.dataset.playTake);
+    });
+  });
+
+  els.takesList.querySelectorAll("[data-delete-take]").forEach((button) => {
+    button.addEventListener("click", () => {
+      deleteTake(button.dataset.deleteTake);
+    });
+  });
+
+  updateQueueButton();
+  updateExportButtons();
+  renderVocalPanel();
+}
+
+function downloadLatestTake() {
+  if (!state.latestTake) {
+    return;
+  }
+
+  const link = document.createElement("a");
+  link.href = state.latestTake.url;
+  link.download = makeTakeFilename(state.latestTake);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
+
+async function exportFullMix() {
+  if (state.isExportingMix) {
+    return;
+  }
+
+  const audibleTakes = getAudibleTakes();
+  if (!state.beatArrayBuffer && !audibleTakes.length) {
+    els.sessionState.textContent = "No audible mix";
+    return;
+  }
+
+  state.isExportingMix = true;
+  updateExportButtons();
+  stopTakeQueue(false);
+  stopSessionPlayback(false);
+  stopCurrentTake(false);
+  els.sessionState.textContent = "Rendering mix";
+
+  try {
+    const sampleRate = state.audioContext?.sampleRate || 48000;
+    const decodeContext = new OfflineAudioContext(2, 1, sampleRate);
+    const beatBuffer = state.beatArrayBuffer
+      ? await decodeContext.decodeAudioData(state.beatArrayBuffer.slice(0))
+      : null;
+    const takeBuffers = await Promise.all(
+      audibleTakes.map(async (take) => ({
+        take,
+        track: findTrack(take.trackId),
+        buffer: await decodeContext.decodeAudioData(await take.blob.arrayBuffer()),
+      })),
+    );
+    const endPosition = Math.max(
+      beatBuffer?.duration || 0,
+      ...takeBuffers.map(({ take, buffer }) => (take.startTime || 0) + buffer.duration),
+      0.1,
+    );
+    const frameCount = Math.ceil(endPosition * sampleRate);
+    const renderContext = new OfflineAudioContext(2, frameCount, sampleRate);
+
+    if (beatBuffer) {
+      scheduleBuffer(renderContext, beatBuffer, 0, 1, 0);
+    }
+
+    takeBuffers.forEach(({ take, track, buffer }) => {
+      scheduleBuffer(renderContext, buffer, take.startTime || 0, getTrackOutputVolume(track), track.pan);
+    });
+
+    const rendered = await renderContext.startRendering();
+    const wavBlob = encodeWav(rendered);
+    downloadBlob(wavBlob, makeMixFilename());
+    els.sessionState.textContent = "Mix exported";
+  } catch (error) {
+    els.sessionState.textContent = "Export failed";
+    console.error(error);
+  } finally {
+    state.isExportingMix = false;
+    updateExportButtons();
+  }
+}
+
+function scheduleBuffer(context, buffer, startTime, volume, pan) {
+  const source = context.createBufferSource();
+  const gain = context.createGain();
+  const panner = context.createStereoPanner ? context.createStereoPanner() : null;
+
+  source.buffer = buffer;
+  gain.gain.value = volume;
+  source.connect(gain);
+
+  if (panner) {
+    panner.pan.value = pan;
+    gain.connect(panner).connect(context.destination);
+  } else {
+    gain.connect(context.destination);
+  }
+
+  source.start(Math.max(0, startTime));
+}
+
+function encodeWav(audioBuffer) {
+  return window.PunchLabAudio.encodeWav(audioBuffer);
+}
+
+function writeString(view, offset, text) {
+  for (let index = 0; index < text.length; index += 1) {
+    view.setUint8(offset + index, text.charCodeAt(index));
+  }
+}
+
+function downloadBlob(blob, filename) {
+  window.PunchLabAudio.downloadBlob(blob, filename);
+}
+
+function deleteTake(takeId) {
+  const track = tracks.find((item) => item.takes.some((take) => take.id === takeId));
+  if (!track) {
+    return;
+  }
+
+  stopSessionPlayback(false);
+  stopTakeQueue(false);
+  if (state.currentTakeId === takeId) {
+    stopCurrentTake(false);
+  }
+
+  const take = track.takes.find((item) => item.id === takeId);
+  URL.revokeObjectURL(take.url);
+  track.takes = track.takes.filter((item) => item.id !== takeId);
+  state.latestTake = getAllTakes().at(-1) || null;
+  if (state.selectedVocalTakeId === takeId) {
+    state.selectedVocalTakeId = state.latestTake?.id || null;
+  }
+  els.downloadLatestButton.disabled = !state.latestTake;
+  els.sessionState.textContent = "Take deleted";
+  renderTracks();
+  renderArmTracks();
+  renderTakes();
+  updateExportButtons();
+}
+
+function updateTimer() {
+  if (state.isRecording) {
+    els.clock.textContent = formatDuration((performance.now() - state.recordStart) / 1000);
+  } else if (state.isSessionPlaying) {
+    els.clock.textContent = formatDuration(getCurrentSessionPosition());
+  } else if (els.beatAudio && !els.beatAudio.paused) {
+    els.clock.textContent = formatDuration(els.beatAudio.currentTime);
+  }
+
+  state.timerFrame = requestAnimationFrame(updateTimer);
+}
+
+function formatDuration(seconds) {
+  const safeSeconds = Math.max(0, seconds || 0);
+  const minutes = Math.floor(safeSeconds / 60);
+  const secs = Math.floor(safeSeconds % 60);
+  const tenths = Math.floor((safeSeconds % 1) * 10);
+  return `${String(minutes).padStart(2, "0")}:${String(secs).padStart(2, "0")}.${tenths}`;
+}
+
+function formatGainDb(gain) {
+  const db = 20 * Math.log10(gain);
+  return `${db >= 0 ? "+" : ""}${db.toFixed(1)} dB`;
+}
+
+function formatSigned(value) {
+  return `${value >= 0 ? "+" : ""}${value}`;
+}
+
+function frequencyToMidi(frequency) {
+  return 69 + 12 * Math.log2(frequency / 440);
+}
+
+function midiToFrequency(midi) {
+  return 440 * Math.pow(2, (midi - 69) / 12);
+}
+
+function formatMidiNote(midi) {
+  const rounded = Math.round(midi);
+  const note = NOTE_NAMES[positiveModulo(rounded, 12)];
+  const octave = Math.floor(rounded / 12) - 1;
+  return `${note}${octave}`;
+}
+
+function getWeightedMedian(pitches) {
+  const sorted = [...pitches].sort((a, b) => a.midi - b.midi);
+  const totalWeight = sorted.reduce((sum, item) => sum + item.weight, 0);
+  let running = 0;
+
+  for (const item of sorted) {
+    running += item.weight;
+    if (running >= totalWeight / 2) {
+      return item.midi;
+    }
+  }
+
+  return sorted.at(-1).midi;
+}
+
+function positiveModulo(value, divisor) {
+  return ((value % divisor) + divisor) % divisor;
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function findTake(takeId) {
+  return tracks.flatMap((track) => track.takes).find((take) => take.id === takeId);
+}
+
+function findTrack(trackId) {
+  return tracks.find((track) => track.id === trackId);
+}
+
+function getAllTakes() {
+  return tracks
+    .flatMap((track) => track.takes)
+    .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+}
+
+function getSelectedPreset() {
+  return presets.find((preset) => preset.id === state.selectedPresetId) || presets[0];
+}
+
+function getTuneSettings() {
+  return {
+    retuneSpeed: Number(els.retuneSpeedSlider?.value) || 0,
+    humanize: Number(els.humanizeSlider?.value) || 0,
+    formant: Number(els.formantSlider?.value) || 0,
+  };
+}
+
+function getSelectedVocalTake() {
+  return state.selectedVocalTakeId ? findTake(state.selectedVocalTakeId) : null;
+}
+
+function getComparisonPair(take) {
+  if (!take) {
+    return null;
+  }
+
+  if (take.processed && take.sourceTakeId) {
+    const source = findTake(take.sourceTakeId);
+    return source ? { source, processed: take } : null;
+  }
+
+  const processed = getLatestProcessedTakeForSource(take.id);
+  return processed ? { source: take, processed } : null;
+}
+
+function getLatestProcessedTakeForSource(sourceTakeId) {
+  return getAllTakes()
+    .filter((take) => take.processed && take.sourceTakeId === sourceTakeId)
+    .sort((a, b) => {
+      const versionDelta = (a.version || 1) - (b.version || 1);
+      return versionDelta || a.createdAt.getTime() - b.createdAt.getTime();
+    })
+    .at(-1);
+}
+
+function getNextProcessedVersion(sourceTakeId, presetId) {
+  const currentMax = getAllTakes()
+    .filter((take) => take.processed && take.sourceTakeId === sourceTakeId && take.presetId === presetId)
+    .reduce((max, take) => Math.max(max, Number(take.version) || 1), 0);
+  return currentMax + 1;
+}
+
+function getBatchTargets(selectedTake) {
+  const rawTakes = getAllTakes().filter((take) => !take.processed);
+  if (els.batchScopeSelect.value === "all") {
+    return rawTakes;
+  }
+
+  const trackId = selectedTake?.trackId || state.armedTrackId;
+  return rawTakes.filter((take) => take.trackId === trackId);
+}
+
+function getAudibleTakes() {
+  return getAllTakes().filter((take) => getTrackOutputVolume(findTrack(take.trackId)) > 0);
+}
+
+function getCurrentSessionPosition() {
+  if (state.isSessionPlaying) {
+    return state.sessionOrigin + (performance.now() - state.sessionStartedAt) / 1000;
+  }
+
+  if (els.beatAudio.src) {
+    return els.beatAudio.currentTime;
+  }
+
+  return 0;
+}
+
+function getSessionEndPosition() {
+  const beatEnd = els.beatAudio.src && Number.isFinite(els.beatAudio.duration) ? els.beatAudio.duration : 0;
+  const takeEnd = getAllTakes().reduce((end, take) => Math.max(end, (take.startTime || 0) + take.duration), 0);
+  return Math.max(beatEnd, takeEnd);
+}
+
+function hasSoloTrack() {
+  return tracks.some((track) => track.solo);
+}
+
+function isTrackAudible(track) {
+  if (!track) {
+    return false;
+  }
+
+  return hasSoloTrack() ? track.solo && !track.muted : !track.muted;
+}
+
+function getTrackOutputVolume(track) {
+  return isTrackAudible(track) ? track.volume : 0;
+}
+
+function setTrackVolume(trackId, value) {
+  const track = findTrack(trackId);
+  if (!track) {
+    return;
+  }
+
+  track.volume = Number(value);
+  updateActiveSessionMix();
+  updateExportButtons();
+  renderTracks();
+}
+
+function setTrackPan(trackId, value) {
+  const track = findTrack(trackId);
+  if (!track) {
+    return;
+  }
+
+  track.pan = Number(value);
+  updateActiveSessionMix();
+  updateExportButtons();
+  renderTracks();
+}
+
+function toggleTrackMute(trackId) {
+  const track = findTrack(trackId);
+  if (!track) {
+    return;
+  }
+
+  track.muted = !track.muted;
+  updateActiveSessionMix();
+  updateExportButtons();
+  renderTracks();
+}
+
+function toggleTrackSolo(trackId) {
+  const track = findTrack(trackId);
+  if (!track) {
+    return;
+  }
+
+  track.solo = !track.solo;
+  updateActiveSessionMix();
+  updateExportButtons();
+  renderTracks();
+}
+
+function updateQueueButton() {
+  if (!els.playQueueButton) {
+    return;
+  }
+
+  const allTakes = getAllTakes();
+  const label = els.playQueueButton.querySelector(".button-label");
+  els.playQueueButton.disabled = !state.isQueuePlaying && allTakes.length === 0;
+  els.playQueueButton.classList.toggle("queue-active", state.isQueuePlaying);
+  if (label) {
+    label.textContent = state.isQueuePlaying ? "Stop all" : "Play all";
+  }
+}
+
+function updateExportButtons() {
+  if (!els.exportMixButton) {
+    return;
+  }
+
+  const hasAudibleSources = Boolean(state.beatArrayBuffer) || getAudibleTakes().length > 0;
+  const label = els.exportMixButton.querySelector(".button-label");
+  els.exportMixButton.disabled = state.isExportingMix || !hasAudibleSources;
+  els.exportMixButton.classList.toggle("rendering", state.isExportingMix);
+  if (label) {
+    label.textContent = state.isExportingMix ? "Rendering" : "Full mix";
+  }
+}
+
+function formatPercent(value) {
+  return `${Math.round(value * 100)}%`;
+}
+
+function formatPan(value) {
+  if (Math.abs(value) < 0.01) {
+    return "C";
+  }
+
+  return value < 0 ? `L${Math.round(Math.abs(value) * 100)}` : `R${Math.round(value * 100)}`;
+}
+
+function makeTakeFilename(take) {
+  const slug = take.trackName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const preset = take.presetName ? `-${take.presetName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}` : "";
+  const version = take.processed ? `-v${take.version || 1}` : "";
+  return `punchlab-${slug}${preset}${version}-${take.id.slice(0, 8)}.${take.extension}`;
+}
+
+function makeMixFilename() {
+  const source = state.beatFileName || "session";
+  const slug = source.toLowerCase().replace(/\.[^.]+$/, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return `punchlab-${slug || "session"}-mix.wav`;
+}
+
+function getTakeTitle(take, index) {
+  return take.processed ? `${take.trackName} ${take.presetName} v${take.version || 1}` : `${take.trackName} take ${index + 1}`;
+}
+
+function getTakeSubtitle(take) {
+  if (take.processed) {
+    return `processed v${take.version || 1} / ${getTuneSignature(take.tuneSettings)} / ${formatDuration(take.duration)} @ ${formatDuration(take.startTime || 0)}`;
+  }
+
+  return `raw / ${formatDuration(take.duration)} @ ${formatDuration(take.startTime || 0)}`;
+}
+
+function getTakeShortName(take) {
+  return take.processed ? `${take.trackName} ${take.presetName} v${take.version || 1}` : `${take.trackName} raw`;
+}
+
+function getTuneSignature(settings = {}) {
+  settings ||= {};
+  const retuneSpeed = Number(settings.retuneSpeed ?? 0);
+  const humanize = Number(settings.humanize ?? 0);
+  const formant = Number(settings.formant ?? 0);
+  return `R${retuneSpeed} H${humanize} F${formatSigned(formant)}`;
+}
+
+init();

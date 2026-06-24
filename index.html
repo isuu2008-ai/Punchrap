@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PunchLab</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="./styles.css?v=20260624-9" />
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
+    <script src="./src/dsp.js?v=20260624-9" defer></script>
+    <script src="./src/audio.js?v=20260624-9" defer></script>
+    <script src="./src/project.js?v=20260624-9" defer></script>
+    <script src="./app.js?v=20260624-9" defer></script>
+  </head>
+  <body>
+    <main class="studio-shell">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark">PL</div>
+          <div>
+            <h1>PunchLab</h1>
+            <p>Rap booth recorder</p>
+          </div>
+        </div>
+
+        <nav class="view-tabs" aria-label="Studio views">
+          <button class="view-tab active" type="button" data-view="record">Record</button>
+          <button class="view-tab" type="button" data-view="mix">Mix</button>
+          <button class="view-tab" type="button" data-view="vocal">Vocal</button>
+          <button class="view-tab" type="button" data-view="takes">Takes</button>
+          <button class="view-tab" type="button" data-view="lyrics">Lyrics</button>
+        </nav>
+
+        <div class="project-actions" aria-label="Project actions">
+          <button id="saveProjectButton" class="mini-icon-button" type="button" title="Save project">
+            <i data-lucide="save"></i>
+            <span>Save</span>
+          </button>
+          <label class="mini-icon-button file-action" title="Open project">
+            <input id="projectInput" type="file" accept=".json,.punchlab.json,application/json" />
+            <i data-lucide="folder-open"></i>
+            <span>Open</span>
+          </label>
+        </div>
+
+        <div class="session-readout">
+          <span id="sessionState">Idle</span>
+          <strong id="clock">00:00.0</strong>
+        </div>
+      </header>
+
+      <section class="view-shell">
+        <section class="view-panel active" data-view-panel="record">
+          <div class="record-grid">
+            <aside class="panel">
+              <div class="panel-heading">
+                <span>Session</span>
+                <span class="status-dot" id="micStatus"></span>
+              </div>
+
+              <label class="file-drop">
+                <input id="beatInput" type="file" accept="audio/*" />
+                <span class="file-title">Drop beat</span>
+                <small id="beatName">MP3, WAV, M4A</small>
+              </label>
+
+              <div class="control-stack">
+                <label>
+                  BPM
+                  <input id="bpmInput" type="number" min="60" max="220" value="140" />
+                </label>
+                <label>
+                  Count in
+                  <select id="countInSelect">
+                    <option value="0">Off</option>
+                    <option value="1">1 bar</option>
+                    <option value="2">2 bars</option>
+                  </select>
+                </label>
+                <label>
+                  Key
+                  <select id="keySelect">
+                    <option>C minor</option>
+                    <option>C# minor</option>
+                    <option>D minor</option>
+                    <option>D# minor</option>
+                    <option>E minor</option>
+                    <option>F minor</option>
+                    <option>F# minor</option>
+                    <option>G minor</option>
+                    <option>G# minor</option>
+                    <option>A minor</option>
+                    <option>A# minor</option>
+                    <option>B minor</option>
+                  </select>
+                </label>
+                <label class="gain-control">
+                  <span class="label-row">
+                    <span>Input gain</span>
+                    <strong id="inputGainText">+6.0 dB</strong>
+                  </span>
+                  <input id="inputGainSlider" type="range" min="0.5" max="4" step="0.1" value="2" />
+                </label>
+              </div>
+
+              <div class="transport">
+                <button id="micButton" class="icon-button wide" type="button" title="Enable microphone">
+                  <i data-lucide="mic"></i>
+                  Mic
+                </button>
+                <button id="playButton" class="icon-button" type="button" title="Play mix">
+                  <i data-lucide="play"></i>
+                </button>
+                <button id="stopButton" class="icon-button" type="button" title="Stop">
+                  <i data-lucide="square"></i>
+                </button>
+                <button id="recordButton" class="icon-button record" type="button" title="Record">
+                  <i data-lucide="circle"></i>
+                </button>
+              </div>
+            </aside>
+
+            <section class="center-panel recorder-panel">
+              <div class="meter-row">
+                <div>
+                  <span class="eyebrow">Input dBFS</span>
+                  <strong id="inputLevelText">-inf dBFS</strong>
+                </div>
+                <div class="meter">
+                  <span id="inputMeter"></span>
+                </div>
+                <div>
+                  <span class="eyebrow">Armed</span>
+                  <strong id="armedTrackName">Main</strong>
+                </div>
+              </div>
+
+              <div class="wave-wrap">
+                <canvas id="waveCanvas" width="1200" height="320"></canvas>
+                <div class="countdown" id="countdown" hidden>4</div>
+              </div>
+
+              <div class="arm-strip" id="armTrackList"></div>
+            </section>
+
+            <aside class="panel punch-panel">
+              <div class="panel-heading">
+                <span>Punch</span>
+                <span id="punchStatus">Off</span>
+              </div>
+
+              <div class="mode-row">
+                <button id="punchToggle" class="mode-button" type="button" aria-pressed="false">
+                  Punch in
+                </button>
+                <button id="loopToggle" class="mode-button" type="button" aria-pressed="false">
+                  Loop
+                </button>
+              </div>
+
+              <div class="punch-grid">
+                <label>
+                  In
+                  <input id="punchInInput" type="number" min="0" step="0.1" value="0.0" />
+                </label>
+                <label>
+                  Out
+                  <input id="punchOutInput" type="number" min="0.1" step="0.1" value="4.0" />
+                </label>
+              </div>
+
+              <div class="mode-row">
+                <button id="setPunchInButton" class="mini-button" type="button">Set In</button>
+                <button id="setPunchOutButton" class="mini-button" type="button">Set Out</button>
+              </div>
+
+              <div class="punch-readout">
+                <span>Window</span>
+                <strong id="punchWindowText">00:00.0 - 00:04.0</strong>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section class="view-panel" data-view-panel="mix">
+          <section class="center-panel full-panel">
+            <div class="panel-heading padded">
+              <span>Track mixer</span>
+              <span>Mute / Solo / Vol / Pan</span>
+            </div>
+            <div class="track-list" id="trackList"></div>
+          </section>
+        </section>
+
+        <section class="view-panel" data-view-panel="takes">
+          <section class="bottom-console full-panel">
+            <div class="console-section">
+              <span class="eyebrow">Takes</span>
+              <div id="takesList" class="takes-list"></div>
+            </div>
+            <div class="console-section narrow">
+              <span class="eyebrow">Export</span>
+              <button id="playQueueButton" class="icon-button wide" type="button" title="Play all takes in order" disabled>
+                <i data-lucide="list-music"></i>
+                <span class="button-label">Play all</span>
+              </button>
+              <button id="exportMixButton" class="icon-button wide" type="button" title="Export full mix" disabled>
+                <i data-lucide="file-audio"></i>
+                <span class="button-label">Full mix</span>
+              </button>
+              <button id="downloadLatestButton" class="icon-button wide" type="button" title="Download latest take" disabled>
+                <i data-lucide="download"></i>
+                Latest take
+              </button>
+            </div>
+          </section>
+        </section>
+
+        <section class="view-panel" data-view-panel="vocal">
+          <section class="vocal-grid">
+            <aside class="panel">
+              <div class="panel-heading">
+                <span>Source</span>
+                <span id="vocalStatus">No take</span>
+              </div>
+
+              <label>
+                Take
+                <select id="vocalTakeSelect"></select>
+              </label>
+
+              <div class="selected-take-card" id="selectedTakeMeta">
+                <span class="eyebrow">Record a take first</span>
+              </div>
+
+              <div class="vocal-action-row">
+                <button id="previewVocalButton" class="icon-button wide" type="button" disabled>
+                  <i data-lucide="headphones"></i>
+                  Preview
+                </button>
+                <button id="analyzeVocalButton" class="icon-button wide" type="button" disabled>
+                  <i data-lucide="activity"></i>
+                  <span class="button-label">Analyze</span>
+                </button>
+                <button id="renderVocalButton" class="icon-button wide" type="button" disabled>
+                  <i data-lucide="wand-sparkles"></i>
+                  <span class="button-label">Render</span>
+                </button>
+              </div>
+
+              <div class="compare-card">
+                <div class="panel-heading compact">
+                  <span>A/B compare</span>
+                  <span id="compareStatus">No pair</span>
+                </div>
+                <div class="compare-actions">
+                  <button id="compareSourceButton" class="mini-button compare-button" type="button" disabled>
+                    <span class="compare-letter">A</span>
+                    Raw
+                  </button>
+                  <button id="compareProcessedButton" class="mini-button compare-button" type="button" disabled>
+                    <span class="compare-letter">B</span>
+                    Tuned
+                  </button>
+                </div>
+                <small id="compareMeta">Render a take to enable comparison.</small>
+              </div>
+            </aside>
+
+            <section class="center-panel vocal-panel">
+              <div class="panel-heading padded">
+                <span>Vocal chain</span>
+                <span id="presetName">Trap Hard</span>
+              </div>
+
+              <div class="vocal-panel-body">
+                <div class="preset-grid" id="presetGrid"></div>
+
+                <div class="chain-display">
+                  <div><span>Retune</span><strong id="retuneValue">88</strong></div>
+                  <div><span>Comp</span><strong id="compValue">72</strong></div>
+                  <div><span>Space</span><strong id="spaceValue">18</strong></div>
+                  <div><span>Width</span><strong id="widthValue">42</strong></div>
+                </div>
+
+                <div class="tune-controls">
+                  <label class="tune-control">
+                    <span class="label-row">
+                      <span>Retune speed</span>
+                      <strong id="retuneSpeedText">88</strong>
+                    </span>
+                    <input id="retuneSpeedSlider" type="range" min="0" max="100" step="1" value="88" />
+                  </label>
+                  <label class="tune-control">
+                    <span class="label-row">
+                      <span>Humanize</span>
+                      <strong id="humanizeText">10</strong>
+                    </span>
+                    <input id="humanizeSlider" type="range" min="0" max="100" step="1" value="10" />
+                  </label>
+                  <label class="tune-control">
+                    <span class="label-row">
+                      <span>Formant</span>
+                      <strong id="formantText">+10</strong>
+                    </span>
+                    <input id="formantSlider" type="range" min="-50" max="50" step="1" value="10" />
+                  </label>
+                </div>
+
+                <div class="chain-route">
+                  <span>Tune</span>
+                  <span>High-pass</span>
+                  <span>Comp</span>
+                  <span>Sat</span>
+                  <span>Delay</span>
+                  <span>Limiter</span>
+                </div>
+              </div>
+            </section>
+
+            <aside class="panel">
+              <div class="panel-heading">
+                <span>Pitch map</span>
+                <span id="pitchKeyText">C minor</span>
+              </div>
+              <div class="pitch-stat-grid">
+                <div><span>Detected</span><strong id="pitchDetectedText">--</strong></div>
+                <div><span>Target</span><strong id="pitchTargetText">--</strong></div>
+                <div><span>Correction</span><strong id="pitchCorrectionText">--</strong></div>
+                <div><span>Key fit</span><strong id="pitchConfidenceText">--</strong></div>
+              </div>
+
+              <div class="batch-card">
+                <div class="panel-heading compact">
+                  <span>Batch render</span>
+                  <span id="batchStatus">No raw</span>
+                </div>
+                <label>
+                  Scope
+                  <select id="batchScopeSelect">
+                    <option value="track">Current track raw takes</option>
+                    <option value="all">All raw vocal takes</option>
+                  </select>
+                </label>
+                <button id="batchRenderButton" class="icon-button wide" type="button" disabled>
+                  <i data-lucide="layers"></i>
+                  <span class="button-label">Render batch</span>
+                </button>
+                <small id="batchMeta">Render a raw take first.</small>
+              </div>
+            </aside>
+          </section>
+        </section>
+
+        <section class="view-panel" data-view-panel="lyrics">
+          <section class="lyrics-grid solo">
+            <aside class="panel">
+              <label class="lyrics-pad">
+                Lyrics
+                <textarea id="lyricsInput" spellcheck="false" placeholder="Paste verse here..."></textarea>
+              </label>
+            </aside>
+          </section>
+        </section>
+      </section>
+    </main>
+
+    <audio id="beatAudio"></audio>
+  </body>
+</html>
