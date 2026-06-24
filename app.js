@@ -65,9 +65,6 @@ const presets = [
   { id: "lofi-demo", name: "Lo-Fi Demo", retune: 36, humanize: 55, formant: -18, comp: 54, space: 22, width: 12 },
 ];
 
-const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-const MINOR_SCALE = [0, 2, 3, 5, 7, 8, 10];
-
 const els = {
   viewTabs: document.querySelectorAll("[data-view]"),
   viewPanels: document.querySelectorAll("[data-view-panel]"),
@@ -1696,140 +1693,8 @@ async function renderVocalBuffer(sourceBuffer, preset, pitchPlan = null, tuneSet
   return window.PunchLabDSP.renderVocalBuffer(sourceBuffer, preset, pitchPlan, tuneSettings);
 }
 
-function createTunedBuffer(context, sourceBuffer, pitchPlan, amount, humanize) {
-  const frames = pitchPlan?.frames || [];
-  if (!frames.length || amount < 0.04) {
-    return sourceBuffer;
-  }
-
-  const channelCount = sourceBuffer.numberOfChannels;
-  const output = context.createBuffer(channelCount, sourceBuffer.length, sourceBuffer.sampleRate);
-  const frameSize = 2048;
-  const wet = clamp(0.32 + amount * 0.66 - humanize * 0.24, 0.12, 0.98);
-  const usableFrames = frames.filter((frame) => Math.abs(frame.correctionSemitones) > 0.04);
-
-  if (!usableFrames.length) {
-    return sourceBuffer;
-  }
-
-  for (let channel = 0; channel < channelCount; channel += 1) {
-    const input = sourceBuffer.getChannelData(channel);
-    const outputData = output.getChannelData(channel);
-    const tunedSum = new Float32Array(input.length);
-    const weight = new Float32Array(input.length);
-
-    outputData.set(input);
-    usableFrames.forEach((frame) => {
-      const deadband = humanize * 0.18;
-      const frameCorrection = Math.abs(frame.correctionSemitones) < deadband ? 0 : frame.correctionSemitones;
-      const confidenceScale = clamp(0.52 + frame.confidence * 0.48 - humanize * 0.18, 0.35, 1);
-      const correction = clamp(frameCorrection, -4, 4) * amount * (1 - humanize * 0.58) * confidenceScale;
-      const pitchRatio = Math.pow(2, correction / 12);
-      const start = Math.max(0, Math.min(input.length - frameSize, Math.round(frame.start)));
-      const center = (frameSize - 1) / 2;
-
-      for (let index = 0; index < frameSize; index += 1) {
-        const outputIndex = start + index;
-        const sourcePosition = start + center + (index - center) * pitchRatio;
-        const windowValue = hannWindow(index, frameSize);
-        tunedSum[outputIndex] += sampleLinear(input, sourcePosition) * windowValue;
-        weight[outputIndex] += windowValue;
-      }
-    });
-
-    for (let index = 0; index < outputData.length; index += 1) {
-      if (weight[index] <= 0.001) {
-        continue;
-      }
-
-      const tuned = tunedSum[index] / weight[index];
-      outputData[index] = input[index] * (1 - wet) + tuned * wet;
-    }
-  }
-
-  return output;
-}
-
-function sampleLinear(input, position) {
-  if (position <= 0) {
-    return input[0];
-  }
-
-  if (position >= input.length - 1) {
-    return input[input.length - 1];
-  }
-
-  const left = Math.floor(position);
-  const right = left + 1;
-  const mix = position - left;
-  return input[left] * (1 - mix) + input[right] * mix;
-}
-
-function hannWindow(index, size) {
-  return 0.5 - 0.5 * Math.cos((2 * Math.PI * index) / (size - 1));
-}
-
 function analyzePitchBuffer(audioBuffer) {
   return window.PunchLabDSP.analyzePitchBuffer(audioBuffer);
-}
-
-function getMonoChannel(audioBuffer) {
-  const length = audioBuffer.length;
-  const mono = new Float32Array(length);
-  const channels = audioBuffer.numberOfChannels;
-
-  for (let channel = 0; channel < channels; channel += 1) {
-    const data = audioBuffer.getChannelData(channel);
-    for (let index = 0; index < length; index += 1) {
-      mono[index] += data[index] / channels;
-    }
-  }
-
-  return mono;
-}
-
-function getFrameRms(data, start, size) {
-  let sum = 0;
-  for (let index = 0; index < size; index += 1) {
-    const sample = data[start + index];
-    sum += sample * sample;
-  }
-
-  return Math.sqrt(sum / size);
-}
-
-function detectFramePitch(data, start, size, minLag, maxLag, sampleRate) {
-  let bestLag = 0;
-  let bestCorrelation = 0;
-
-  for (let lag = minLag; lag <= maxLag; lag += 1) {
-    let sum = 0;
-    let sumA = 0;
-    let sumB = 0;
-
-    for (let index = 0; index < size; index += 1) {
-      const a = data[start + index];
-      const b = data[start + index + lag];
-      sum += a * b;
-      sumA += a * a;
-      sumB += b * b;
-    }
-
-    const correlation = sum / Math.sqrt(sumA * sumB || 1);
-    if (correlation > bestCorrelation) {
-      bestCorrelation = correlation;
-      bestLag = lag;
-    }
-  }
-
-  if (!bestLag) {
-    return null;
-  }
-
-  return {
-    frequency: sampleRate / bestLag,
-    confidence: bestCorrelation,
-  };
 }
 
 function renderPitchPanel(analysis) {
@@ -1847,81 +1712,6 @@ function renderPitchPanel(analysis) {
 
 function getPitchPlan(analysis) {
   return window.PunchLabDSP.getPitchPlan(analysis, els.keySelect.value);
-}
-
-function parseKey(value) {
-  const rootName = value.split(" ")[0];
-  return { root: NOTE_NAMES.indexOf(rootName) >= 0 ? NOTE_NAMES.indexOf(rootName) : 0 };
-}
-
-function getNearestScaleMidi(midi, root) {
-  const rounded = Math.round(midi);
-  let best = rounded;
-  let bestDistance = Infinity;
-
-  for (let candidate = rounded - 12; candidate <= rounded + 12; candidate += 1) {
-    if (!isScalePitchClass(candidate, root)) {
-      continue;
-    }
-
-    const distance = Math.abs(candidate - midi);
-    if (distance < bestDistance) {
-      best = candidate;
-      bestDistance = distance;
-    }
-  }
-
-  return best;
-}
-
-function isScalePitchClass(midi, root) {
-  return MINOR_SCALE.includes(positiveModulo(midi - root, 12));
-}
-
-function getScaleFit(noteClassCounts, root) {
-  const total = noteClassCounts.reduce((sum, count) => sum + count, 0);
-  if (!total) {
-    return 0;
-  }
-
-  const inScale = noteClassCounts.reduce(
-    (sum, count, noteClass) => sum + (isScalePitchClass(noteClass, root) ? count : 0),
-    0,
-  );
-  return inScale / total;
-}
-
-function connectDelayTap(context, source, destination, delayTime, pan, gainValue) {
-  if (gainValue <= 0.001) {
-    return;
-  }
-
-  const delay = context.createDelay(1);
-  const gain = context.createGain();
-  const panner = context.createStereoPanner ? context.createStereoPanner() : null;
-
-  delay.delayTime.value = delayTime;
-  gain.gain.value = gainValue;
-  source.connect(delay).connect(gain);
-  if (panner) {
-    panner.pan.value = pan;
-    gain.connect(panner).connect(destination);
-  } else {
-    gain.connect(destination);
-  }
-}
-
-function makeSaturationCurve(amount) {
-  const samples = 2048;
-  const curve = new Float32Array(samples);
-  const drive = 1 + amount * 12;
-
-  for (let index = 0; index < samples; index += 1) {
-    const x = (index * 2) / samples - 1;
-    curve[index] = Math.tanh(x * drive) / Math.tanh(drive);
-  }
-
-  return curve;
 }
 
 function renderTakes() {
@@ -2064,12 +1854,6 @@ function encodeWav(audioBuffer) {
   return window.PunchLabAudio.encodeWav(audioBuffer);
 }
 
-function writeString(view, offset, text) {
-  for (let index = 0; index < text.length; index += 1) {
-    view.setUint8(offset + index, text.charCodeAt(index));
-  }
-}
-
 function downloadBlob(blob, filename) {
   window.PunchLabAudio.downloadBlob(blob, filename);
 }
@@ -2128,44 +1912,6 @@ function formatGainDb(gain) {
 
 function formatSigned(value) {
   return `${value >= 0 ? "+" : ""}${value}`;
-}
-
-function frequencyToMidi(frequency) {
-  return 69 + 12 * Math.log2(frequency / 440);
-}
-
-function midiToFrequency(midi) {
-  return 440 * Math.pow(2, (midi - 69) / 12);
-}
-
-function formatMidiNote(midi) {
-  const rounded = Math.round(midi);
-  const note = NOTE_NAMES[positiveModulo(rounded, 12)];
-  const octave = Math.floor(rounded / 12) - 1;
-  return `${note}${octave}`;
-}
-
-function getWeightedMedian(pitches) {
-  const sorted = [...pitches].sort((a, b) => a.midi - b.midi);
-  const totalWeight = sorted.reduce((sum, item) => sum + item.weight, 0);
-  let running = 0;
-
-  for (const item of sorted) {
-    running += item.weight;
-    if (running >= totalWeight / 2) {
-      return item.midi;
-    }
-  }
-
-  return sorted.at(-1).midi;
-}
-
-function positiveModulo(value, divisor) {
-  return ((value % divisor) + divisor) % divisor;
-}
-
-function clamp(value, min, max) {
-  return Math.min(max, Math.max(min, value));
 }
 
 function findTake(takeId) {
