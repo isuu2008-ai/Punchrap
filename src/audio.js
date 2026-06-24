@@ -1,13 +1,15 @@
 (() => {
-  function encodeWav(audioBuffer, metadata = null) {
+  function encodeWav(audioBuffer, metadata = null, options = {}) {
     const channels = Math.min(2, audioBuffer.numberOfChannels);
     const sampleRate = audioBuffer.sampleRate;
     const sampleCount = audioBuffer.length;
-    const bytesPerSample = 2;
+    const bitDepth = normalizeWavBitDepth(options?.bitDepth);
+    const bytesPerSample = bitDepth / 8;
     const blockAlign = channels * bytesPerSample;
     const dataBytes = sampleCount * blockAlign;
+    const dataPadding = dataBytes % 2;
     const infoChunk = makeInfoChunk(metadata);
-    const buffer = new ArrayBuffer(44 + dataBytes + infoChunk.length);
+    const buffer = new ArrayBuffer(44 + dataBytes + dataPadding + infoChunk.length);
     const view = new DataView(buffer);
     const channelData = Array.from({ length: channels }, (_, index) => audioBuffer.getChannelData(index));
 
@@ -21,7 +23,7 @@
     view.setUint32(24, sampleRate, true);
     view.setUint32(28, sampleRate * blockAlign, true);
     view.setUint16(32, blockAlign, true);
-    view.setUint16(34, 16, true);
+    view.setUint16(34, bitDepth, true);
     writeString(view, 36, "data");
     view.setUint32(40, dataBytes, true);
 
@@ -29,13 +31,42 @@
     for (let i = 0; i < sampleCount; i += 1) {
       for (let channel = 0; channel < channels; channel += 1) {
         const sample = Math.max(-1, Math.min(1, channelData[channel][i]));
-        view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true);
+        if (bitDepth === 24) {
+          writeInt24(view, offset, sampleToPcm(sample, 24));
+        } else {
+          view.setInt16(offset, sampleToPcm(sample, 16), true);
+        }
         offset += bytesPerSample;
       }
     }
 
+    offset += dataPadding;
     new Uint8Array(buffer).set(infoChunk, offset);
     return new Blob([buffer], { type: "audio/wav" });
+  }
+
+  function normalizeWavBitDepth(bitDepth) {
+    return Number(bitDepth) === 24 ? 24 : 16;
+  }
+
+  function sampleToPcm(sample, bitDepth) {
+    if (bitDepth === 24) {
+      return sample < 0
+        ? Math.max(-0x800000, Math.round(sample * 0x800000))
+        : Math.min(0x7fffff, Math.round(sample * 0x7fffff));
+    }
+
+    return sample < 0
+      ? Math.max(-0x8000, Math.round(sample * 0x8000))
+      : Math.min(0x7fff, Math.round(sample * 0x7fff));
+  }
+
+  function writeInt24(view, offset, value) {
+    const clamped = Math.max(-0x800000, Math.min(0x7fffff, value));
+    const unsigned = clamped < 0 ? clamped + 0x1000000 : clamped;
+    view.setUint8(offset, unsigned & 0xff);
+    view.setUint8(offset + 1, (unsigned >> 8) & 0xff);
+    view.setUint8(offset + 2, (unsigned >> 16) & 0xff);
   }
 
   function makeInfoChunk(metadata) {

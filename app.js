@@ -253,6 +253,7 @@ const els = {
   exportList: document.querySelector("#exportList"),
   exportArtistInput: document.querySelector("#exportArtistInput"),
   exportTitleInput: document.querySelector("#exportTitleInput"),
+  exportBitDepthSelect: document.querySelector("#exportBitDepthSelect"),
   exportNormalizeInput: document.querySelector("#exportNormalizeInput"),
   exportLoudnessNormalizeInput: document.querySelector("#exportLoudnessNormalizeInput"),
   lyricsInput: document.querySelector("#lyricsInput"),
@@ -440,6 +441,7 @@ function bindEvents() {
   els.analyzeLoudnessButton.addEventListener("click", analyzeLoudness);
   els.exportArtistInput.addEventListener("input", updateExportMetadata);
   els.exportTitleInput.addEventListener("input", updateExportMetadata);
+  els.exportBitDepthSelect.addEventListener("change", updateExportMetadata);
   els.exportNormalizeInput.addEventListener("change", updateExportMetadata);
   els.exportLoudnessNormalizeInput.addEventListener("change", updateExportMetadata);
   els.lyricsInput.addEventListener("input", updateProjectLyrics);
@@ -1046,6 +1048,7 @@ function getProjectSettings() {
     selectedPresetId: state.selectedPresetId,
     tune: getTuneSettings(),
     exportMetadata: getExportMetadata(),
+    exportBitDepth: getExportBitDepth(),
     exportNormalize: els.exportNormalizeInput.checked,
     exportLoudnessNormalize: els.exportLoudnessNormalizeInput.checked,
     lyrics: els.lyricsInput.value,
@@ -1068,6 +1071,7 @@ function applyProjectSettings(settings = {}) {
   state.customScaleIntervals = normalizeScaleIntervals(settings.customScaleIntervals);
   els.exportArtistInput.value = settings.exportMetadata?.artist || "";
   els.exportTitleInput.value = settings.exportMetadata?.title || "";
+  els.exportBitDepthSelect.value = String(normalizeExportBitDepth(settings.exportBitDepth));
   els.exportNormalizeInput.checked = settings.exportNormalize !== false;
   els.exportLoudnessNormalizeInput.checked = Boolean(settings.exportLoudnessNormalize);
   els.lyricsInput.value = settings.lyrics || "";
@@ -3359,6 +3363,7 @@ function renderExportPanel() {
     { label: "Dry vocals", count: getAllTakes().filter((take) => !take.processed).length, unit: "source" },
     { label: "Tuned vocals", count: getAllTakes().filter((take) => take.processed).length, unit: "source" },
     { label: "Metadata", count: [metadata.artist, metadata.title, metadata.bpm, metadata.key].filter(Boolean).length, unit: "field" },
+    { label: "WAV depth", count: `${getExportBitDepth()}-bit`, unit: "" },
     { label: "Loudness target", count: els.exportLoudnessNormalizeInput.checked ? `-14 LUFS ${formatGainDb(state.lastExportLoudnessGain)}` : "Off", unit: "" },
     { label: "Normalize", count: els.exportNormalizeInput.checked ? `On ${formatGainDb(state.lastExportNormalizeGain)}` : "Off", unit: "" },
   ];
@@ -3515,6 +3520,20 @@ function getExportMetadata() {
     bpm: String(Number(els.bpmInput.value) || 140),
     key: getPitchModeLabel(),
     software: "PunchLab",
+  };
+}
+
+function getExportBitDepth() {
+  return normalizeExportBitDepth(els.exportBitDepthSelect?.value);
+}
+
+function normalizeExportBitDepth(bitDepth) {
+  return Number(bitDepth) === 24 ? 24 : 16;
+}
+
+function getExportWavOptions() {
+  return {
+    bitDepth: getExportBitDepth(),
   };
 }
 
@@ -4176,7 +4195,7 @@ function exportFullMix() {
 }
 
 async function renderFullMixBlob() {
-  return encodeWav(applyExportFinalize(await renderFullMixBuffer()), getExportMetadata());
+  return encodeWav(applyExportFinalize(await renderFullMixBuffer()), getExportMetadata(), getExportWavOptions());
 }
 
 async function renderFullMixBuffer() {
@@ -4480,7 +4499,7 @@ async function renderTakeMixBlob(takes, includeBeat = false) {
     takes: takeBuffers.map(makeMixTakeSource),
   });
 
-  return encodeWav(applyExportFinalize(renderedBuffer), getExportMetadata());
+  return encodeWav(applyExportFinalize(renderedBuffer), getExportMetadata(), getExportWavOptions());
 }
 
 function makeMixTakeSource({ take, track, buffer }) {
@@ -4590,8 +4609,8 @@ function getAudioBufferPeak(audioBuffer) {
   return peak;
 }
 
-function encodeWav(audioBuffer, metadata = null) {
-  return window.PunchLabEngine.encodeWav(audioBuffer, metadata);
+function encodeWav(audioBuffer, metadata = null, options = {}) {
+  return window.PunchLabEngine.encodeWav(audioBuffer, metadata, options);
 }
 
 function downloadBlob(blob, filename) {
