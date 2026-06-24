@@ -32,6 +32,7 @@ node .\scripts\check.mjs
 - Rap vocal chain preset UI
 - Vocal chain parameter manifest for automation/native/plugin mapping
 - Processed take chain snapshots include plugin-style automation parameter state
+- Project zip manifests include processed-take automation state summaries
 - Pitch analysis against the selected minor key or chromatic mode
 - Adaptive pitch detection with low-level thresholding, lag refinement, and octave-jump smoothing
 - Frame-level pitch correction and offline vocal chain render to a new processed WAV take

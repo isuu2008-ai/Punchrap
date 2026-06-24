@@ -1008,6 +1008,7 @@ async function buildProjectZipFiles(bundle, projectFilename) {
       duration: getTakeVisibleDuration(take),
       sourceOffset: getTakeSourceOffset(take),
       sourceDuration: getTakeSourceDuration(take),
+      automationState: summarizeAutomationState(take.chainSnapshot?.automationState),
       bytes: data.byteLength,
     });
   }
@@ -1027,6 +1028,7 @@ async function buildProjectZipFiles(bundle, projectFilename) {
     `${projectFilename} is the full PunchLab project bundle used by the current web app.`,
     "preview.html is a read-only browser preview for quick review after extracting the zip.",
     "manifest.json lists extracted audio assets for backup, transfer, and manual inspection.",
+    "Processed takes include automationState when a chain snapshot is available.",
     "assets/beat contains the loaded beat when available.",
     "assets/takes contains recorded and processed take audio files.",
   ].join("\n");
@@ -1100,6 +1102,7 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
               <div><dt>Start</dt><dd>${escapeHtml(formatDuration(take.startTime))}</dd></div>
               <div><dt>Length</dt><dd>${escapeHtml(formatDuration(take.duration))}</dd></div>
               <div><dt>Gain</dt><dd>${escapeHtml(formatPreviewGain(take.volume, take.clipGain))}</dd></div>
+              <div><dt>Chain</dt><dd>${escapeHtml(formatAutomationStateSummary(take.automationState))}</dd></div>
             </dl>
             <audio controls src="${escapeHtml(take.path)}"></audio>
           </article>`,
@@ -1138,7 +1141,7 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
       .preview-controls button.secondary { color: var(--text); background: #0b0f0d; border-color: var(--line); }
       #previewStatus { color: var(--cyan); font-size: 13px; font-weight: 800; }
       audio { width: 100%; }
-      dl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0; }
+      dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(78px, 1fr)); gap: 8px; margin: 0; }
       dt { color: var(--muted); font-size: 10px; text-transform: uppercase; }
       dd { margin: 3px 0 0; font-size: 13px; font-weight: 800; }
       table { width: 100%; border-collapse: collapse; }
@@ -1285,6 +1288,27 @@ function formatFileSize(bytes) {
 function formatPreviewGain(volume, clipGain) {
   const gain = Math.max(0, Number(volume || 0) * Number(clipGain || 1));
   return `${Math.round(gain * 100)}%`;
+}
+
+function summarizeAutomationState(automationState) {
+  if (!automationState?.parameters?.length) {
+    return null;
+  }
+
+  return {
+    version: Number(automationState.version || 1),
+    metadata: { ...(automationState.metadata || {}) },
+    parameters: automationState.parameters.map((parameter) => ({
+      automationId: String(parameter.automationId || ""),
+      id: String(parameter.id || ""),
+      value: Number(parameter.value || 0),
+    })),
+  };
+}
+
+function formatAutomationStateSummary(automationState) {
+  const count = automationState?.parameters?.length || 0;
+  return count ? `${count} params` : "None";
 }
 
 function escapeScriptJson(value) {

@@ -31,6 +31,8 @@
 - `src/chain-params.js`에 automation/native/plugin 파라미터 ID, 범위, 기본값을 분리
 - Chain automation state 1차
 - processed take `chainSnapshot`에 plugin-style automation parameter state 저장
+- Zip automation manifest 1차
+- project zip `manifest.json`에 processed take automation state 요약 포함
 - `.punchlab.json` 로컬 프로젝트 저장/복원
 - processed take `v1`, `v2` 버전 관리
 - processed take 버전/체인 정보 저장 포맷 포함
