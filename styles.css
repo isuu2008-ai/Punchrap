@@ -593,7 +593,7 @@ textarea:focus {
 
 .transport {
   display: grid;
-  grid-template-columns: minmax(54px, 1fr) repeat(3, 44px);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -652,6 +652,12 @@ textarea:focus {
 }
 
 .icon-button.session-active {
+  color: #050706;
+  background: var(--cyan);
+  border-color: var(--cyan);
+}
+
+.icon-button.monitor-active {
   color: #050706;
   background: var(--cyan);
   border-color: var(--cyan);
@@ -1374,6 +1380,6 @@ textarea:focus {
   }
 
   .transport {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }

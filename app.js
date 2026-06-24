@@ -4,6 +4,8 @@ const state = {
   processedStream: null,
   analyser: null,
   gainNode: null,
+  monitorGain: null,
+  monitorConnected: false,
   recorderDestination: null,
   mediaRecorder: null,
   chunks: [],
@@ -25,6 +27,7 @@ const state = {
   beatFileName: "",
   mimeType: "",
   inputGain: 2,
+  monitorEnabled: false,
   isExportingMix: false,
   isExportingAssets: false,
   isRenderingVocal: false,
@@ -93,6 +96,7 @@ const els = {
   inputGainSlider: document.querySelector("#inputGainSlider"),
   inputGainText: document.querySelector("#inputGainText"),
   micButton: document.querySelector("#micButton"),
+  monitorButton: document.querySelector("#monitorButton"),
   playButton: document.querySelector("#playButton"),
   stopButton: document.querySelector("#stopButton"),
   recordButton: document.querySelector("#recordButton"),
@@ -197,6 +201,7 @@ function bindEvents() {
     button.addEventListener("click", () => setActiveView(button.dataset.view));
   });
   els.micButton.addEventListener("click", enableMic);
+  els.monitorButton.addEventListener("click", toggleInputMonitor);
   els.playButton.addEventListener("click", toggleSessionPlayback);
   els.stopButton.addEventListener("click", stopAll);
   els.recordButton.addEventListener("click", toggleRecord);
@@ -339,23 +344,74 @@ async function enableMic() {
     const source = state.audioContext.createMediaStreamSource(state.stream);
     state.gainNode = state.audioContext.createGain();
     state.analyser = state.audioContext.createAnalyser();
+    state.monitorGain = state.audioContext.createGain();
     state.recorderDestination = state.audioContext.createMediaStreamDestination();
 
     state.analyser.fftSize = 2048;
     state.gainNode.gain.value = state.inputGain;
+    state.monitorGain.gain.value = 0.35;
     source.connect(state.gainNode);
     state.gainNode.connect(state.analyser);
     state.gainNode.connect(state.recorderDestination);
     state.processedStream = state.recorderDestination.stream;
+    syncMonitorRouting();
 
     els.micStatus.classList.add("ready");
     els.sessionState.textContent = "Mic ready";
+    updateMonitorButton();
     updateInputGain();
     startMeter();
   } catch (error) {
     els.sessionState.textContent = "Mic blocked";
     console.error(error);
   }
+}
+
+async function toggleInputMonitor() {
+  state.monitorEnabled = !state.monitorEnabled;
+  if (!state.stream) {
+    await enableMic();
+    if (!state.stream) {
+      state.monitorEnabled = false;
+      updateMonitorButton();
+      return;
+    }
+  }
+
+  syncMonitorRouting();
+  updateMonitorButton();
+  els.sessionState.textContent = state.monitorEnabled ? "Monitor on" : "Monitor off";
+}
+
+function syncMonitorRouting() {
+  if (!state.gainNode || !state.monitorGain || !state.audioContext) {
+    return;
+  }
+
+  if (state.monitorEnabled && !state.monitorConnected) {
+    state.gainNode.connect(state.monitorGain).connect(state.audioContext.destination);
+    state.monitorConnected = true;
+    return;
+  }
+
+  if (!state.monitorEnabled && state.monitorConnected) {
+    try {
+      state.gainNode.disconnect(state.monitorGain);
+      state.monitorGain.disconnect();
+    } catch {
+      // The node may already be disconnected by the browser.
+    }
+    state.monitorConnected = false;
+  }
+}
+
+function updateMonitorButton() {
+  if (!els.monitorButton) {
+    return;
+  }
+
+  els.monitorButton.classList.toggle("monitor-active", state.monitorEnabled);
+  els.monitorButton.setAttribute("aria-pressed", String(state.monitorEnabled));
 }
 
 async function loadBeat(event) {

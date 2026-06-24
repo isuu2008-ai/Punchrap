@@ -33,6 +33,8 @@
 - Recording latency compensation
 - 새 take 저장 시 latency ms만큼 start time 자동 보정
 - latency 설정 프로젝트 저장/복원
+- Input monitoring toggle
+- 마이크 신호를 monitor gain node를 통해 destination으로 라우팅
 
 ## 결론부터
 
