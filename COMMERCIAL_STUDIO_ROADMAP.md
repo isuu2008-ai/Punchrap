@@ -71,6 +71,8 @@
 - Recording latency compensation
 - 새 take 저장 시 latency ms만큼 start time 자동 보정
 - latency 설정 프로젝트 저장/복원
+- Latency metadata visibility 1차
+- take subtitle, record review, zip manifest에 적용된 latency ms 표시/보존
 - Input monitoring toggle
 - 마이크 신호를 monitor gain node를 통해 destination으로 라우팅
 - Audio input device selector 1차

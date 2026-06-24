@@ -1020,6 +1020,7 @@ async function buildProjectZipFiles(bundle, projectFilename) {
       volume: getTrackOutputVolume(track),
       pan: Number(track?.pan || 0),
       clipGain: getTakeClipGain(take),
+      recordLatencyMs: Number(take.recordLatencyMs || 0),
       startTime: take.startTime || 0,
       duration: getTakeVisibleDuration(take),
       sourceOffset: getTakeSourceOffset(take),
@@ -3647,6 +3648,7 @@ async function renderProcessedTake(sourceTake, preset, tuneSettings) {
     fadeIn: sourceTake.fadeIn || 0,
     fadeOut: sourceTake.fadeOut || 0,
     bestTake: false,
+    recordLatencyMs: sourceTake.recordLatencyMs || 0,
     processed: true,
     sourceTakeId: sourceTake.id,
     presetId: preset.id,
@@ -6493,11 +6495,12 @@ function getTakeTitle(take, index) {
 function getTakeSubtitle(take) {
   const compTag = take.compSelected ? "comp / " : "";
   const bestTag = take.bestTake ? "best / " : "";
+  const latencyTag = formatTakeLatencyTag(take);
   if (take.processed) {
-    return `${bestTag}${compTag}processed v${take.version || 1} / ${getTuneSignature(take.tuneSettings)} / ${formatDuration(take.duration)} @ ${formatDuration(take.startTime || 0)}`;
+    return `${bestTag}${compTag}processed v${take.version || 1} / ${getTuneSignature(take.tuneSettings)} / ${formatDuration(take.duration)} @ ${formatDuration(take.startTime || 0)}${latencyTag}`;
   }
 
-  return `${bestTag}${compTag}raw / ${formatDuration(take.duration)} @ ${formatDuration(take.startTime || 0)}`;
+  return `${bestTag}${compTag}raw / ${formatDuration(take.duration)} @ ${formatDuration(take.startTime || 0)}${latencyTag}`;
 }
 
 function getTakeShortName(take) {
@@ -6506,6 +6509,11 @@ function getTakeShortName(take) {
   }
 
   return take.processed ? `${take.trackName} ${take.presetName || "Processed"} v${take.version || 1}` : `${take.trackName} raw`;
+}
+
+function formatTakeLatencyTag(take) {
+  const latencyMs = Number(take?.recordLatencyMs || 0);
+  return latencyMs > 0 ? ` / latency -${Math.round(latencyMs)}ms` : "";
 }
 
 function getTuneSignature(settings = {}) {
