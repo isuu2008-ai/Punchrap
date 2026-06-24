@@ -21,6 +21,11 @@ const state = {
   latestTake: null,
   activeView: "record",
   armedTrackId: "main",
+  trackFolderCollapsed: {
+    lead: false,
+    adlibs: false,
+    hook: false,
+  },
   selectedPresetId: "trap-hard",
   selectedVocalTakeId: null,
   isAnalyzingVocal: false,
@@ -91,6 +96,12 @@ const tracks = [
   { id: "adlib-l", name: "Adlib L", color: "#ffb74a", volume: 0.68, pan: -0.45, muted: false, solo: false, takes: [] },
   { id: "adlib-r", name: "Adlib R", color: "#7db2ff", volume: 0.68, pan: 0.45, muted: false, solo: false, takes: [] },
   { id: "hook", name: "Hook", color: "#ff4f64", volume: 0.82, pan: 0, muted: false, solo: false, takes: [] },
+];
+
+const TRACK_FOLDERS = [
+  { id: "lead", name: "Lead stack", trackIds: ["main", "double"], color: "#c8ff4d" },
+  { id: "adlibs", name: "Adlib stack", trackIds: ["adlib-l", "adlib-r"], color: "#ffb74a" },
+  { id: "hook", name: "Hook stack", trackIds: ["hook"], color: "#ff4f64" },
 ];
 
 const presets = [
@@ -1084,6 +1095,7 @@ function getProjectSettings() {
     customScaleIntervals: [...state.customScaleIntervals],
     inputGain: state.inputGain,
     armedTrackId: state.armedTrackId,
+    trackFolderCollapsed: normalizeTrackFolderCollapsed(state.trackFolderCollapsed),
     selectedPresetId: state.selectedPresetId,
     tune: getTuneSettings(),
     exportMetadata: getExportMetadata(),
@@ -1121,6 +1133,7 @@ function applyProjectSettings(settings = {}) {
   state.armedTrackId = tracks.some((track) => track.id === settings.armedTrackId)
     ? settings.armedTrackId
     : tracks[0]?.id || "main";
+  state.trackFolderCollapsed = normalizeTrackFolderCollapsed(settings.trackFolderCollapsed);
   state.punchEnabled = Boolean(settings.punchEnabled);
   state.loopEnabled = Boolean(settings.loopEnabled);
   state.metronomeEnabled = Boolean(settings.metronomeEnabled);
@@ -2239,53 +2252,25 @@ function drawGrid(ctx, width, height) {
 }
 
 function renderTracks() {
-  els.trackList.innerHTML = tracks
-    .map((track) => {
-      const isArmed = track.id === state.armedTrackId;
-      const isAudible = isTrackAudible(track);
-      const pills = track.takes
-        .map((take, index) => {
-          const isPlaying = take.id === state.currentTakeId || state.sessionPlayingTakeIds.has(take.id);
-          return `
-            <div class="take-chip">
-              <button class="take-pill ${isPlaying ? "playing" : ""}" type="button" data-play-take="${take.id}">
-                ${isPlaying ? "Pause" : "Play"} T${index + 1} ${formatDuration(take.duration)} @${formatDuration(take.startTime || 0)}
-              </button>
-              <button class="take-delete" type="button" data-delete-take="${take.id}" title="Delete take">Del</button>
-            </div>
-          `;
-        })
-        .join("");
-
-      return `
-        <div class="track-row ${isArmed ? "armed" : ""} ${isAudible ? "" : "muted"}" style="--track-color: ${track.color}">
-          <div class="track-name">
-            <span class="track-color"></span>
-            <span class="track-name-fields">
-              <input class="track-name-input" type="text" value="${escapeHtml(track.name)}" data-track-name="${track.id}" aria-label="${escapeHtml(track.name)} track name" />
-              <small>${formatPercent(track.volume)} ${formatPan(track.pan)}</small>
-            </span>
-          </div>
-          <div class="take-strip">${pills || `<span class="eyebrow">No takes</span>`}</div>
-          <div class="track-actions">
-            <button class="track-toggle ${track.muted ? "active" : ""}" type="button" data-track-mute="${track.id}" title="Mute ${track.name}">M</button>
-            <button class="track-toggle ${track.solo ? "active" : ""}" type="button" data-track-solo="${track.id}" title="Solo ${track.name}">S</button>
-            <label class="mini-slider">
-              <span>Vol</span>
-              <input type="range" min="0" max="1" step="0.01" value="${track.volume}" data-track-volume="${track.id}" />
-            </label>
-            <label class="mini-slider">
-              <span>Pan</span>
-              <input type="range" min="-1" max="1" step="0.05" value="${track.pan}" data-track-pan="${track.id}" />
-            </label>
-            <button class="icon-button" type="button" data-arm="${track.id}" title="Arm ${track.name}">
-              Arm
-            </button>
-          </div>
-        </div>
-      `;
-    })
+  const folderedTrackIds = new Set(TRACK_FOLDERS.flatMap((folder) => folder.trackIds));
+  const folderSections = TRACK_FOLDERS.map(renderTrackFolder).join("");
+  const orphanRows = tracks
+    .filter((track) => !folderedTrackIds.has(track.id))
+    .map(renderTrackRow)
     .join("");
+  els.trackList.innerHTML = folderSections + orphanRows;
+
+  els.trackList.querySelectorAll("[data-folder-toggle]").forEach((button) => {
+    button.addEventListener("click", () => toggleTrackFolder(button.dataset.folderToggle));
+  });
+
+  els.trackList.querySelectorAll("[data-folder-mute]").forEach((button) => {
+    button.addEventListener("click", () => toggleTrackFolderMute(button.dataset.folderMute));
+  });
+
+  els.trackList.querySelectorAll("[data-folder-solo]").forEach((button) => {
+    button.addEventListener("click", () => toggleTrackFolderSolo(button.dataset.folderSolo));
+  });
 
   els.trackList.querySelectorAll("[data-arm]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -2344,6 +2329,83 @@ function renderTracks() {
       }
     });
   });
+}
+
+function renderTrackFolder(folder) {
+  const folderTracks = getTrackFolderTracks(folder.id);
+  const isCollapsed = Boolean(state.trackFolderCollapsed[folder.id]);
+  const takeCount = folderTracks.reduce((sum, track) => sum + track.takes.length, 0);
+  const allMuted = folderTracks.length > 0 && folderTracks.every((track) => track.muted);
+  const anySolo = folderTracks.some((track) => track.solo);
+  const rows = isCollapsed ? "" : folderTracks.map(renderTrackRow).join("");
+
+  return `
+    <section class="track-folder ${isCollapsed ? "collapsed" : ""}" style="--track-color: ${folder.color}">
+      <header class="track-folder-row">
+        <button class="track-folder-toggle" type="button" data-folder-toggle="${folder.id}" aria-expanded="${String(!isCollapsed)}">
+          ${isCollapsed ? "Show" : "Hide"}
+        </button>
+        <div class="track-folder-title">
+          <span class="track-color"></span>
+          <div>
+            <strong>${escapeHtml(folder.name)}</strong>
+            <small>${folderTracks.length} tracks / ${takeCount} takes</small>
+          </div>
+        </div>
+        <div class="track-folder-actions">
+          <button class="track-toggle ${allMuted ? "active" : ""}" type="button" data-folder-mute="${folder.id}" title="Mute ${folder.name}">M</button>
+          <button class="track-toggle ${anySolo ? "active" : ""}" type="button" data-folder-solo="${folder.id}" title="Solo ${folder.name}">S</button>
+        </div>
+      </header>
+      ${rows}
+    </section>
+  `;
+}
+
+function renderTrackRow(track) {
+  const isArmed = track.id === state.armedTrackId;
+  const isAudible = isTrackAudible(track);
+  const pills = track.takes
+    .map((take, index) => {
+      const isPlaying = take.id === state.currentTakeId || state.sessionPlayingTakeIds.has(take.id);
+      return `
+        <div class="take-chip">
+          <button class="take-pill ${isPlaying ? "playing" : ""}" type="button" data-play-take="${take.id}">
+            ${isPlaying ? "Pause" : "Play"} T${index + 1} ${formatDuration(take.duration)} @${formatDuration(take.startTime || 0)}
+          </button>
+          <button class="take-delete" type="button" data-delete-take="${take.id}" title="Delete take">Del</button>
+        </div>
+      `;
+    })
+    .join("");
+
+  return `
+    <div class="track-row ${isArmed ? "armed" : ""} ${isAudible ? "" : "muted"}" style="--track-color: ${track.color}">
+      <div class="track-name">
+        <span class="track-color"></span>
+        <span class="track-name-fields">
+          <input class="track-name-input" type="text" value="${escapeHtml(track.name)}" data-track-name="${track.id}" aria-label="${escapeHtml(track.name)} track name" />
+          <small>${formatPercent(track.volume)} ${formatPan(track.pan)}</small>
+        </span>
+      </div>
+      <div class="take-strip">${pills || `<span class="eyebrow">No takes</span>`}</div>
+      <div class="track-actions">
+        <button class="track-toggle ${track.muted ? "active" : ""}" type="button" data-track-mute="${track.id}" title="Mute ${track.name}">M</button>
+        <button class="track-toggle ${track.solo ? "active" : ""}" type="button" data-track-solo="${track.id}" title="Solo ${track.name}">S</button>
+        <label class="mini-slider">
+          <span>Vol</span>
+          <input type="range" min="0" max="1" step="0.01" value="${track.volume}" data-track-volume="${track.id}" />
+        </label>
+        <label class="mini-slider">
+          <span>Pan</span>
+          <input type="range" min="-1" max="1" step="0.05" value="${track.pan}" data-track-pan="${track.id}" />
+        </label>
+        <button class="icon-button" type="button" data-arm="${track.id}" title="Arm ${track.name}">
+          Arm
+        </button>
+      </div>
+    </div>
+  `;
 }
 
 function renderArmTracks() {
@@ -5243,6 +5305,64 @@ function toggleTrackSolo(trackId) {
   updateExportButtons();
   renderTracks();
   scheduleAutosave();
+}
+
+function toggleTrackFolder(folderId) {
+  if (!TRACK_FOLDERS.some((folder) => folder.id === folderId)) {
+    return;
+  }
+
+  state.trackFolderCollapsed = normalizeTrackFolderCollapsed(state.trackFolderCollapsed);
+  state.trackFolderCollapsed[folderId] = !state.trackFolderCollapsed[folderId];
+  renderTracks();
+  scheduleAutosave();
+}
+
+function toggleTrackFolderMute(folderId) {
+  const folderTracks = getTrackFolderTracks(folderId);
+  if (!folderTracks.length) {
+    return;
+  }
+
+  const nextMuted = !folderTracks.every((track) => track.muted);
+  folderTracks.forEach((track) => {
+    track.muted = nextMuted;
+  });
+  updateActiveSessionMix();
+  updateExportButtons();
+  renderTracks();
+  scheduleAutosave();
+}
+
+function toggleTrackFolderSolo(folderId) {
+  const folderTracks = getTrackFolderTracks(folderId);
+  if (!folderTracks.length) {
+    return;
+  }
+
+  const nextSolo = !folderTracks.every((track) => track.solo);
+  folderTracks.forEach((track) => {
+    track.solo = nextSolo;
+  });
+  updateActiveSessionMix();
+  updateExportButtons();
+  renderTracks();
+  scheduleAutosave();
+}
+
+function getTrackFolderTracks(folderId) {
+  const folder = TRACK_FOLDERS.find((item) => item.id === folderId);
+  if (!folder) {
+    return [];
+  }
+
+  return folder.trackIds
+    .map((trackId) => findTrack(trackId))
+    .filter(Boolean);
+}
+
+function normalizeTrackFolderCollapsed(value = {}) {
+  return Object.fromEntries(TRACK_FOLDERS.map((folder) => [folder.id, Boolean(value?.[folder.id])]));
 }
 
 function updateQueueButton() {

@@ -53,6 +53,7 @@ node .\scripts\check.mjs
 - Timeline view with marker management and take region start/nudge controls
 - BPM-based timeline grid with optional beat/bar snap for markers and region starts
 - Region rename, color, clip gain, and fade in/out controls persisted in project files
+- Track folder headers for lead, adlib, and hook stacks with group mute/solo
 - Timeline undo/redo for marker and region edits
 - Export tab for track stems, beat stem, vocal stem, dry vocals, and tuned vocals
 - Export queue with sequential job status for mix, stems, beat stem, vocal stem, dry vocals, and tuned vocals
