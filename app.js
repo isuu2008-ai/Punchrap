@@ -3172,7 +3172,7 @@ function drawGrid(ctx, width, height) {
 }
 
 function renderTracks() {
-  const folderedTrackIds = new Set(TRACK_FOLDERS.flatMap((folder) => folder.trackIds));
+  const folderedTrackIds = window.PunchLabTracks.getFolderedTrackIds(TRACK_FOLDERS);
   const folderSections = TRACK_FOLDERS.map(renderTrackFolder).join("");
   const orphanRows = tracks
     .filter((track) => !folderedTrackIds.has(track.id))
@@ -6504,19 +6504,15 @@ function getSessionEndPosition() {
 }
 
 function hasSoloTrack() {
-  return tracks.some((track) => track.solo);
+  return window.PunchLabTracks.hasSoloTrack(tracks);
 }
 
 function isTrackAudible(track) {
-  if (!track) {
-    return false;
-  }
-
-  return hasSoloTrack() ? track.solo && !track.muted : !track.muted;
+  return window.PunchLabTracks.isTrackAudible(track, tracks);
 }
 
 function getTrackOutputVolume(track) {
-  return isTrackAudible(track) ? track.volume : 0;
+  return window.PunchLabTracks.getTrackOutputVolume(track, tracks);
 }
 
 function normalizeTakeTrim(take) {
@@ -6567,14 +6563,7 @@ function setTrackName(trackId, value) {
 }
 
 function getDefaultTrackName(trackId) {
-  const fallbackNames = {
-    main: "Main",
-    double: "Double",
-    "adlib-l": "Adlib L",
-    "adlib-r": "Adlib R",
-    hook: "Hook",
-  };
-  return fallbackNames[trackId] || "Track";
+  return window.PunchLabTracks.getDefaultTrackName(trackId);
 }
 
 function getTakeClipGain(take) {
@@ -6694,7 +6683,7 @@ function toggleTrackSolo(trackId) {
 }
 
 function toggleTrackFolder(folderId) {
-  if (!TRACK_FOLDERS.some((folder) => folder.id === folderId)) {
+  if (!window.PunchLabTracks.hasTrackFolder(folderId, TRACK_FOLDERS)) {
     return;
   }
 
@@ -6737,18 +6726,11 @@ function toggleTrackFolderSolo(folderId) {
 }
 
 function getTrackFolderTracks(folderId) {
-  const folder = TRACK_FOLDERS.find((item) => item.id === folderId);
-  if (!folder) {
-    return [];
-  }
-
-  return folder.trackIds
-    .map((trackId) => findTrack(trackId))
-    .filter(Boolean);
+  return window.PunchLabTracks.getTrackFolderTracks(folderId, TRACK_FOLDERS, tracks);
 }
 
 function normalizeTrackFolderCollapsed(value = {}) {
-  return Object.fromEntries(TRACK_FOLDERS.map((folder) => [folder.id, Boolean(value?.[folder.id])]));
+  return window.PunchLabTracks.normalizeTrackFolderCollapsed(value, TRACK_FOLDERS);
 }
 
 function updateQueueButton() {

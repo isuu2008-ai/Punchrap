@@ -7,6 +7,7 @@ const syntaxFiles = [
   "app.js",
   "src/chain-params.js",
   "src/presets.js",
+  "src/tracks.js",
   "src/audio.js",
   "src/export-mastering.js",
   "src/export-plan.js",
@@ -36,6 +37,7 @@ const syntaxFiles = [
 const requiredScripts = [
   "src/chain-params.js",
   "src/presets.js",
+  "src/tracks.js",
   "src/dsp.js",
   "src/audio.js",
   "src/export-mastering.js",
@@ -323,6 +325,11 @@ if (!formatSource.includes("window.PunchLabFormat") || !formatSource.includes("f
 const presetsSource = readFileSync("src/presets.js", "utf8");
 if (!presetsSource.includes("window.PunchLabPresets") || !presetsSource.includes("normalizePreset") || !presetsSource.includes("createCustomPresetSnapshot") || !presetsSource.includes("getTuneSettingsForPreset") || !presetsSource.includes("getDefaultCompThreshold") || !presetsSource.includes("getDefaultCompRatio") || !presetsSource.includes("getDefaultCompRelease") || !appSource.includes("PunchLabPresets.normalizePreset") || !appSource.includes("PunchLabPresets.createCustomPresetSnapshot") || !appSource.includes("PunchLabPresets.getTuneSettingsForPreset") || !appSource.includes("PunchLabPresets.getDefaultCompThreshold") || !appSource.includes("PunchLabPresets.getDefaultCompRatio") || !appSource.includes("PunchLabPresets.getDefaultCompRelease")) {
   console.error("Vocal preset normalization, custom preset snapshots, tune settings, and compressor defaults must live in src/presets.js and be used by app.js.");
+  failed = true;
+}
+const tracksSource = readFileSync("src/tracks.js", "utf8");
+if (!tracksSource.includes("window.PunchLabTracks") || !tracksSource.includes("getDefaultTrackName") || !tracksSource.includes("getFolderedTrackIds") || !tracksSource.includes("getTrackFolderTracks") || !tracksSource.includes("getTrackOutputVolume") || !tracksSource.includes("hasSoloTrack") || !tracksSource.includes("hasTrackFolder") || !tracksSource.includes("isTrackAudible") || !tracksSource.includes("normalizeTrackFolderCollapsed") || !appSource.includes("PunchLabTracks.getDefaultTrackName") || !appSource.includes("PunchLabTracks.getFolderedTrackIds") || !appSource.includes("PunchLabTracks.getTrackFolderTracks") || !appSource.includes("PunchLabTracks.getTrackOutputVolume") || !appSource.includes("PunchLabTracks.hasSoloTrack") || !appSource.includes("PunchLabTracks.hasTrackFolder") || !appSource.includes("PunchLabTracks.isTrackAudible") || !appSource.includes("PunchLabTracks.normalizeTrackFolderCollapsed")) {
+  console.error("Track folder, default-name, solo/mute, and output-volume policy must live in src/tracks.js and be used by app.js.");
   failed = true;
 }
 if (!indexHtml.includes("quickTakeList") || !appSource.includes("data-quick-play-take") || !appSource.includes("data-quick-vocal-take") || !appSource.includes("sendTakeToVocal")) {

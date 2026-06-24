@@ -244,6 +244,8 @@
 - batch render scope별 target 선별과 이미 렌더된 chain duplicate guard를 `src/takes.js`로 분리
 - Preset policy module split 1차
 - preset 정규화, custom preset snapshot, compressor 기본값 계산을 `src/presets.js`로 분리
+- Track policy module split 1차
+- track folder membership, 기본 이름, solo/mute audibility, output volume 계산을 `src/tracks.js`로 분리
 - Format utility module split 1차
 - duration, gain/dB, LUFS, pan, percent, semitone, HTML escape 표시 포맷을 `src/format.js`로 분리
 - Native display formatter split 1차
