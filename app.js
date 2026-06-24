@@ -5802,12 +5802,11 @@ async function exportBeatStem() {
 
   await exportRenderGroups(
     [
-      {
+      buildSingleExportGroup({
         name: "Beat stem",
-        filename: `${makeExportBaseSlug()}-beat-stem.wav`,
-        takes: [],
+        suffix: "beat-stem",
         includeBeat: true,
-      },
+      }),
     ],
     "Beat stem",
   );
@@ -5816,12 +5815,12 @@ async function exportBeatStem() {
 async function exportVocalStem() {
   await exportRenderGroups(
     [
-      {
+      buildSingleExportGroup({
         name: "Vocal stem",
-        filename: `${makeExportBaseSlug()}-vocal-stem.wav`,
+        suffix: "vocal-stem",
         takes: getAudibleTakes(),
         includeBeat: false,
-      },
+      }),
     ],
     "Vocal stem",
   );
@@ -5830,12 +5829,12 @@ async function exportVocalStem() {
 async function exportCompVocal() {
   await exportRenderGroups(
     [
-      {
+      buildSingleExportGroup({
         name: "Comp vocal",
-        filename: `${makeExportBaseSlug()}-comp-vocal.wav`,
+        suffix: "comp-vocal",
         takes: getCompTakes(),
         includeBeat: false,
-      },
+      }),
     ],
     "Comp vocal",
   );
@@ -5845,12 +5844,12 @@ async function exportDryVocals() {
   const takes = getAudibleTakes().filter((take) => !take.processed);
   await exportRenderGroups(
     [
-      {
+      buildSingleExportGroup({
         name: "Dry vocals",
-        filename: `${makeExportBaseSlug()}-dry-vocals.wav`,
+        suffix: "dry-vocals",
         takes,
         includeBeat: false,
-      },
+      }),
     ],
     "Dry vocals",
   );
@@ -5860,12 +5859,12 @@ async function exportTunedVocals() {
   const takes = getAudibleTakes().filter((take) => take.processed);
   await exportRenderGroups(
     [
-      {
+      buildSingleExportGroup({
         name: "Tuned vocals",
-        filename: `${makeExportBaseSlug()}-tuned-vocals.wav`,
+        suffix: "tuned-vocals",
         takes,
         includeBeat: false,
-      },
+      }),
     ],
     "Tuned vocals",
   );
@@ -6223,6 +6222,13 @@ function getStemExportGroups() {
     beatAvailable: Boolean(state.beatArrayBuffer),
     getTrackVolume: getTrackOutputVolume,
     tracks,
+  });
+}
+
+function buildSingleExportGroup(options = {}) {
+  return window.PunchLabExportPlan.buildSingleExportGroup({
+    baseSlug: makeExportBaseSlug(),
+    ...options,
   });
 }
 

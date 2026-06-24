@@ -37,6 +37,17 @@
     return groups;
   }
 
+  function buildSingleExportGroup({ name = "Export", suffix = "", takes = [], includeBeat = false, baseSlug = "" } = {}) {
+    const exportBase = baseSlug || "punchlab-session";
+    const safeSuffix = slugify(suffix || name || "export") || "export";
+    return {
+      name,
+      filename: `${exportBase}-${safeSuffix}.wav`,
+      takes,
+      includeBeat: Boolean(includeBeat),
+    };
+  }
+
   function normalizeCompressedFormat(format) {
     return String(format || "").toLowerCase() === "m4a" ? "m4a" : "mp3";
   }
@@ -60,6 +71,7 @@
   }
 
   window.PunchLabExportPlan = {
+    buildSingleExportGroup,
     buildStemExportGroups,
     formatExportJobDetail,
     makeExportBaseSlug,
