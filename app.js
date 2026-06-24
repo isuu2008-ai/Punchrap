@@ -1160,6 +1160,7 @@ async function buildProjectZipFiles(bundle, projectFilename) {
     automationManifest: summarizeAutomationParameterManifest(),
     nativeAudio: summarizeNativeAudioEnvironment(),
     desktopReadiness: summarizeDesktopReadinessEnvironment(),
+    presets: summarizePresetManifest(bundle.presets || presets, bundle.settings?.selectedPresetId),
     beat: null,
     markers: [],
     takes: [],
@@ -1248,6 +1249,7 @@ async function buildProjectZipFiles(bundle, projectFilename) {
     "manifest.json includes automationManifest for plugin-style vocal chain parameter interpretation.",
     "manifest.json includes nativeAudio for driver, buffer, and latency environment context.",
     "manifest.json includes desktopReadiness for wrapper, native audio, and plugin host handoff context.",
+    "manifest.json includes presets for vocal chain backup and transfer review.",
     "Processed takes include automationState when a chain snapshot is available.",
     "assets/beat contains the loaded beat when available.",
     "assets/takes contains recorded and processed take audio files.",
@@ -1267,6 +1269,7 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
   const automationManifest = manifest.automationManifest || {};
   const nativeAudio = manifest.nativeAudio || {};
   const desktopReadiness = manifest.desktopReadiness || {};
+  const presetManifest = Array.isArray(manifest.presets) ? manifest.presets : [];
   const takes = [...manifest.takes].sort(
     (left, right) => (left.startTime || 0) - (right.startTime || 0) || String(left.trackName).localeCompare(String(right.trackName)),
   );
@@ -1355,6 +1358,7 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
     : `<li>No desktop handoff snapshot.</li>`;
   const pluginHostRows = buildPreviewPluginHostRows(pluginHost);
   const automationSchemaRows = buildPreviewAutomationSchemaRows(automationManifest);
+  const presetRows = buildPreviewPresetManifestRows(presetManifest);
 
   return `<!doctype html>
 <html lang="en">
@@ -1409,6 +1413,7 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
           <span>${escapeHtml(formatPreviewPluginHostScan(pluginHost))}</span>
           <span>${escapeHtml(formatPreviewNativeAudio(nativeAudio))}</span>
           <span>${escapeHtml(formatPreviewDesktopReadiness(desktopReadiness))}</span>
+          <span>${presetManifest.length} presets</span>
           <span>${takes.length} takes</span>
           <span>${manifest.markers.length} markers</span>
         </div>
@@ -1432,6 +1437,10 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
       <section>
         <h2>Automation Schema</h2>
         <div class="grid">${automationSchemaRows}</div>
+      </section>
+      <section>
+        <h2>Presets</h2>
+        <div class="grid">${presetRows}</div>
       </section>
       ${beatSection}
       <section>
@@ -1546,6 +1555,56 @@ function formatFileSize(bytes) {
   return `${(safeBytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function summarizePresetManifest(presetList = [], selectedPresetId = "") {
+  return (Array.isArray(presetList) ? presetList : [])
+    .map(normalizePreset)
+    .map((preset) => {
+      const tuneSettings = getTuneSettingsForPreset(preset);
+      return {
+        id: preset.id,
+        name: preset.name,
+        custom: Boolean(preset.custom),
+        selected: preset.id === selectedPresetId,
+        retune: preset.retune,
+        humanize: preset.humanize,
+        comp: preset.comp,
+        saturation: preset.saturation,
+        space: preset.space,
+        delay: preset.delay,
+        reverb: preset.reverb,
+        width: preset.width,
+        lowEq: preset.lowEq,
+        midEq: preset.midEq,
+        airEq: preset.airEq,
+        limiterCeiling: preset.limiterCeiling,
+        tuneSignature: getTuneSignature(tuneSettings),
+      };
+    });
+}
+
+function getTuneSettingsForPreset(preset) {
+  return {
+    retuneSpeed: preset.retune,
+    humanize: preset.humanize,
+    vibrato: preset.vibrato,
+    formant: preset.formant,
+    gate: preset.gate,
+    deEss: preset.deEss,
+    comp: preset.comp,
+    compThreshold: preset.compThreshold,
+    compRatio: preset.compRatio,
+    saturation: preset.saturation,
+    space: preset.space,
+    delay: preset.delay,
+    reverb: preset.reverb,
+    width: preset.width,
+    lowEq: preset.lowEq,
+    midEq: preset.midEq,
+    airEq: preset.airEq,
+    limiterCeiling: preset.limiterCeiling,
+  };
+}
+
 function formatPreviewGain(volume, clipGain) {
   const gain = Math.max(0, Number(volume || 0) * Number(clipGain || 1));
   return `${Math.round(gain * 100)}%`;
@@ -1651,6 +1710,33 @@ function buildPreviewAutomationSchemaRows(automationManifest = {}) {
           <div><dt>Range</dt><dd>${escapeHtml(`${parameter.min} to ${parameter.max}${parameter.unit ? ` ${parameter.unit}` : ""}`)}</dd></div>
           <div><dt>Default</dt><dd>${escapeHtml(String(parameter.defaultValue ?? ""))}</dd></div>
           <div><dt>Step</dt><dd>${escapeHtml(String(parameter.step ?? ""))}</dd></div>
+        </dl>
+      </article>`)
+    .join("");
+}
+
+function buildPreviewPresetManifestRows(presetManifest = []) {
+  if (!presetManifest.length) {
+    return `<article class="asset-card"><strong>No presets</strong><small>The project bundle did not include vocal chain presets.</small></article>`;
+  }
+
+  return presetManifest
+    .map((preset) => `
+      <article class="asset-card">
+        <div class="asset-heading">
+          <div>
+            <strong>${escapeHtml(preset.name || preset.id)}</strong>
+            <small>${escapeHtml(preset.tuneSignature || "No tune signature")}</small>
+          </div>
+          <span>${escapeHtml(preset.selected ? "Selected" : preset.custom ? "Custom" : "Built-in")}</span>
+        </div>
+        <dl>
+          <div><dt>Retune</dt><dd>${escapeHtml(String(preset.retune ?? ""))}</dd></div>
+          <div><dt>Humanize</dt><dd>${escapeHtml(String(preset.humanize ?? ""))}</dd></div>
+          <div><dt>Comp</dt><dd>${escapeHtml(String(preset.comp ?? ""))}</dd></div>
+          <div><dt>Space</dt><dd>${escapeHtml(String(preset.space ?? ""))}</dd></div>
+          <div><dt>EQ</dt><dd>${escapeHtml(`${formatDb(Number(preset.lowEq || 0))}/${formatDb(Number(preset.midEq || 0))}/${formatDb(Number(preset.airEq || 0))}`)}</dd></div>
+          <div><dt>Limiter</dt><dd>${escapeHtml(formatDb(Number(preset.limiterCeiling ?? -3)))}</dd></div>
         </dl>
       </article>`)
     .join("");

@@ -138,6 +138,8 @@
 - project zip `preview.html` take 카드에 latency compensation, trim, fade metadata 표시
 - Zip take region metadata preview 1차
 - project zip `preview.html` take 카드에 region group/color metadata 표시
+- Zip preset manifest/preview 1차
+- project zip `manifest.json`과 `preview.html`에 vocal chain preset summary 표시
 - Recording quick take handoff 1차
 - 녹음 화면 최근 take 리스트에서 바로 듣기와 Vocal 탭 전송 제공
 - Desktop package manifest 1차

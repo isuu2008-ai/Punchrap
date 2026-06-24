@@ -218,6 +218,10 @@ if (!appSource.includes("automationManifest: summarizeAutomationParameterManifes
   console.error("Project zip manifest must include the vocal chain automation parameter schema.");
   failed = true;
 }
+if (!appSource.includes("presets: summarizePresetManifest") || !appSource.includes("buildPreviewPresetManifestRows") || !appSource.includes("manifest.json includes presets")) {
+  console.error("Project zip manifest and preview must expose vocal chain preset summaries.");
+  failed = true;
+}
 if (!appSource.includes("Automation Schema") || !appSource.includes("buildPreviewAutomationSchemaRows")) {
   console.error("Project zip preview must display the vocal chain automation parameter schema.");
   failed = true;
