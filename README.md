@@ -68,6 +68,7 @@ node .\scripts\check.mjs
 - Desktop wrapper manifest for shell size, permission, bridge, and handoff-stage planning
 - Desktop wrapper contract check for shell, permission, bridge, plugin, and handoff-stage requirements
 - Native project save/open handoff through optional `saveProjectFile` and `openProjectFile`
+- Desktop readiness reports native project file open/save handoff availability
 - Desktop readiness exposes wrapper handoff-stage progress for browser, desktop, native engine, and plugin host
 - Plugin host manifest separates VST3/AU scan, chain role, and automation contract planning
 - Native engine adapter exposes plugin-host scanning through `scanPluginHosts`

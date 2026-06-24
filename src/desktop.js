@@ -81,6 +81,8 @@
     const missingCapabilities = window.PunchLabEngineContract?.getMissingCapabilities?.(capabilities, requiredCapabilities) || [];
     const missingLatencyMethods = getMissingOptionalMethods(bridgeStatus, ["getLatencyStats", "setBufferSize"]);
     const hasLatencyControl = missingLatencyMethods.length === 0;
+    const missingProjectFileMethods = getMissingOptionalMethods(bridgeStatus, ["openProjectFile", "saveProjectFile"]);
+    const hasProjectFileHandoff = missingProjectFileMethods.length === 0;
     const missingPluginMethods = getMissingOptionalMethods(bridgeStatus, ["scanPluginHosts"]);
     const hasPluginScan = missingPluginMethods.length === 0;
     const handoffStages = getWrapperHandoffStages(bridgeStatus, capabilities);
@@ -97,6 +99,14 @@
         "File access",
         window.PunchLabFiles?.supportsFileSystemAccess?.() ? "ready" : "fallback",
         window.PunchLabFiles?.supportsFileSystemAccess?.() ? "OS file picker available." : "Download/input fallback active.",
+      ),
+      makeCheck(
+        "project-file-handoff",
+        "Project file handoff",
+        hasProjectFileHandoff ? "ready" : "fallback",
+        hasProjectFileHandoff
+          ? "Native host can open and save project files."
+          : "Project files use browser picker/download fallback until native openProjectFile and saveProjectFile are available.",
       ),
       makeCheck(
         "service-worker",
@@ -146,6 +156,11 @@
       latencyControl: {
         available: hasLatencyControl,
         missingMethods: missingLatencyMethods,
+      },
+      projectFiles: {
+        nativeAvailable: hasProjectFileHandoff,
+        missingMethods: missingProjectFileMethods,
+        browserFileSystemAccess: Boolean(window.PunchLabFiles?.supportsFileSystemAccess?.()),
       },
       pluginHost: {
         scanAvailable: hasPluginScan,
