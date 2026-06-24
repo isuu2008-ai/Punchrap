@@ -100,21 +100,25 @@
     const channels = Math.min(2, audioBuffer.numberOfChannels);
     const sampleRate = audioBuffer.sampleRate;
     const sampleCount = audioBuffer.length;
-    const wholeEnergy = getMeanSquare(audioBuffer, 0, sampleCount, channels);
-    const peak = getPeak(audioBuffer, channels);
+    const weightedChannels = getKWeightedChannels(audioBuffer, channels);
+    const wholeEnergy = getMeanSquare(weightedChannels, 0, sampleCount);
+    const samplePeak = getPeak(audioBuffer, channels);
+    const truePeak = getTruePeak(audioBuffer, channels);
     const clippingSamples = countClippingSamples(audioBuffer, channels);
-    const blocks = getLoudnessBlocks(audioBuffer, channels, sampleRate);
+    const blocks = getLoudnessBlocks(weightedChannels, sampleRate);
     const gatedBlocks = getGatedBlocks(blocks);
     const integratedEnergy = mean(gatedBlocks.map((block) => block.energy), wholeEnergy);
     const integratedLufs = energyToLufs(integratedEnergy);
-    const peakDbfs = amplitudeToDb(peak);
+    const peakDbfs = amplitudeToDb(samplePeak);
+    const truePeakDbfs = amplitudeToDb(truePeak);
     const rmsDbfs = energyToDb(wholeEnergy);
 
     return {
       integratedLufs,
       peakDbfs,
+      truePeakDbfs,
       rmsDbfs,
-      dynamicRange: Number.isFinite(integratedLufs) && Number.isFinite(peakDbfs) ? peakDbfs - integratedLufs : 0,
+      dynamicRange: Number.isFinite(integratedLufs) && Number.isFinite(truePeakDbfs) ? truePeakDbfs - integratedLufs : 0,
       recommendedGainDb: Number.isFinite(integratedLufs) ? -14 - integratedLufs : 0,
       clippingSamples,
       duration: sampleCount / sampleRate,
@@ -124,18 +128,19 @@
     };
   }
 
-  function getLoudnessBlocks(audioBuffer, channels, sampleRate) {
+  function getLoudnessBlocks(channelData, sampleRate) {
     const blockSize = Math.max(1, Math.round(sampleRate * 0.4));
     const hopSize = Math.max(1, Math.round(sampleRate * 0.1));
+    const sampleCount = channelData[0]?.length || 0;
     const blocks = [];
 
-    for (let start = 0; start < audioBuffer.length; start += hopSize) {
-      const end = Math.min(audioBuffer.length, start + blockSize);
+    for (let start = 0; start < sampleCount; start += hopSize) {
+      const end = Math.min(sampleCount, start + blockSize);
       if (end <= start) {
         continue;
       }
 
-      const energy = getMeanSquare(audioBuffer, start, end, channels);
+      const energy = getMeanSquare(channelData, start, end);
       blocks.push({ energy, lufs: energyToLufs(energy) });
     }
 
@@ -153,11 +158,11 @@
     return absoluteGated.filter((block) => block.lufs > gate);
   }
 
-  function getMeanSquare(audioBuffer, start, end, channels) {
+  function getMeanSquare(channelData, start, end) {
     let sum = 0;
     let count = 0;
-    for (let channel = 0; channel < channels; channel += 1) {
-      const data = audioBuffer.getChannelData(channel);
+    for (let channel = 0; channel < channelData.length; channel += 1) {
+      const data = channelData[channel];
       for (let index = start; index < end; index += 1) {
         sum += data[index] * data[index];
         count += 1;
@@ -166,12 +171,101 @@
     return count ? sum / count : 0;
   }
 
+  function getKWeightedChannels(audioBuffer, channels) {
+    const highPass = makeHighPassCoefficients(audioBuffer.sampleRate, 60, 0.5);
+    const highShelf = makeHighShelfCoefficients(audioBuffer.sampleRate, 1500, 4, 0.707);
+    return Array.from({ length: channels }, (_, channel) => {
+      const input = audioBuffer.getChannelData(channel);
+      return applyBiquad(applyBiquad(input, highPass), highShelf);
+    });
+  }
+
+  function makeHighPassCoefficients(sampleRate, frequency, q) {
+    const omega = (2 * Math.PI * frequency) / sampleRate;
+    const cos = Math.cos(omega);
+    const alpha = Math.sin(omega) / (2 * q);
+    const b0 = (1 + cos) / 2;
+    const b1 = -(1 + cos);
+    const b2 = (1 + cos) / 2;
+    const a0 = 1 + alpha;
+    const a1 = -2 * cos;
+    const a2 = 1 - alpha;
+    return normalizeBiquad({ b0, b1, b2, a0, a1, a2 });
+  }
+
+  function makeHighShelfCoefficients(sampleRate, frequency, gainDb, q) {
+    const amplitude = Math.pow(10, gainDb / 40);
+    const omega = (2 * Math.PI * frequency) / sampleRate;
+    const cos = Math.cos(omega);
+    const alpha = Math.sin(omega) / (2 * q);
+    const sqrtA = Math.sqrt(amplitude);
+    const b0 = amplitude * ((amplitude + 1) + (amplitude - 1) * cos + 2 * sqrtA * alpha);
+    const b1 = -2 * amplitude * ((amplitude - 1) + (amplitude + 1) * cos);
+    const b2 = amplitude * ((amplitude + 1) + (amplitude - 1) * cos - 2 * sqrtA * alpha);
+    const a0 = (amplitude + 1) - (amplitude - 1) * cos + 2 * sqrtA * alpha;
+    const a1 = 2 * ((amplitude - 1) - (amplitude + 1) * cos);
+    const a2 = (amplitude + 1) - (amplitude - 1) * cos - 2 * sqrtA * alpha;
+    return normalizeBiquad({ b0, b1, b2, a0, a1, a2 });
+  }
+
+  function normalizeBiquad(coefficients) {
+    return {
+      b0: coefficients.b0 / coefficients.a0,
+      b1: coefficients.b1 / coefficients.a0,
+      b2: coefficients.b2 / coefficients.a0,
+      a1: coefficients.a1 / coefficients.a0,
+      a2: coefficients.a2 / coefficients.a0,
+    };
+  }
+
+  function applyBiquad(input, coefficients) {
+    const output = new Float32Array(input.length);
+    let x1 = 0;
+    let x2 = 0;
+    let y1 = 0;
+    let y2 = 0;
+
+    for (let index = 0; index < input.length; index += 1) {
+      const x0 = input[index];
+      const y0 = coefficients.b0 * x0 + coefficients.b1 * x1 + coefficients.b2 * x2 - coefficients.a1 * y1 - coefficients.a2 * y2;
+      output[index] = y0;
+      x2 = x1;
+      x1 = x0;
+      y2 = y1;
+      y1 = y0;
+    }
+
+    return output;
+  }
+
   function getPeak(audioBuffer, channels) {
     let peak = 0;
     for (let channel = 0; channel < channels; channel += 1) {
       const data = audioBuffer.getChannelData(channel);
       for (let index = 0; index < data.length; index += 1) {
         peak = Math.max(peak, Math.abs(data[index]));
+      }
+    }
+    return peak;
+  }
+
+  function getTruePeak(audioBuffer, channels) {
+    let peak = 0;
+    for (let channel = 0; channel < channels; channel += 1) {
+      const data = audioBuffer.getChannelData(channel);
+      if (!data.length) {
+        continue;
+      }
+
+      peak = Math.max(peak, Math.abs(data[0]));
+      for (let index = 1; index < data.length; index += 1) {
+        const previous = data[index - 1];
+        const current = data[index];
+        peak = Math.max(peak, Math.abs(current));
+        for (let step = 1; step < 4; step += 1) {
+          const t = step / 4;
+          peak = Math.max(peak, Math.abs(previous + (current - previous) * t));
+        }
       }
     }
     return peak;

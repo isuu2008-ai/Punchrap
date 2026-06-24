@@ -2930,8 +2930,8 @@ function renderLoudnessReport() {
         <small>${formatLufs(report.integratedLufs)}${stale ? " / stale" : ""}</small>
       </div>
       <div class="export-row">
-        <strong>Peak</strong>
-        <small>${formatDb(report.peakDbfs)} dBFS</small>
+        <strong>True peak</strong>
+        <small>${formatDb(report.truePeakDbfs ?? report.peakDbfs)} dBTP / sample ${formatDb(report.peakDbfs)}</small>
       </div>
       <div class="export-row">
         <strong>Target gain</strong>
