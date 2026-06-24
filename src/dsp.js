@@ -33,6 +33,7 @@
     const compRelease = clamp(Number(tuneSettings.compRelease ?? preset.compRelease ?? defaultCompRelease * 1000), 30, 500) / 1000;
     const retuneAmount = (tuneSettings.retuneSpeed || 0) / 100;
     const humanizeAmount = (tuneSettings.humanize || 0) / 100;
+    const vibratoAmount = clamp(Number(tuneSettings.vibrato ?? preset.vibrato ?? 55), 0, 100) / 100;
     const formantAmount = (tuneSettings.formant || 0) / 50;
     const gateAmount = (tuneSettings.gate || 0) / 100;
     const deEssAmount = (tuneSettings.deEss || 0) / 100;
@@ -45,8 +46,8 @@
     const reverbAmount = reverbSetting / 100;
     const widthAmount = preset.width / 100;
     const gatedBuffer = createNoiseGateBuffer(context, sourceBuffer, gateAmount);
-    const tunedBuffer = createTunedBuffer(context, gatedBuffer, pitchPlan, retuneAmount, humanizeAmount);
-    const correctionStats = getCorrectionStats(pitchPlan, retuneAmount, humanizeAmount);
+    const tunedBuffer = createTunedBuffer(context, gatedBuffer, pitchPlan, retuneAmount, humanizeAmount, vibratoAmount);
+    const correctionStats = getCorrectionStats(pitchPlan, retuneAmount, humanizeAmount, vibratoAmount);
     const formantPreserve = clamp(
       retuneAmount * (0.35 + correctionStats.averageAbsSemitones / 4) * (1 - humanizeAmount * 0.45),
       0,
@@ -138,7 +139,7 @@
     return context.startRendering();
   }
 
-  function createTunedBuffer(context, sourceBuffer, pitchPlan, amount, humanize) {
+  function createTunedBuffer(context, sourceBuffer, pitchPlan, amount, humanize, vibrato = 0.55) {
     const frames = pitchPlan?.frames || [];
     if (!frames.length || amount < 0.04) {
       return sourceBuffer;
@@ -148,7 +149,7 @@
     const output = context.createBuffer(channelCount, sourceBuffer.length, sourceBuffer.sampleRate);
     const frameSize = 2048;
     const wet = clamp(0.32 + amount * 0.66 - humanize * 0.24, 0.12, 0.98);
-    const correctionFrames = getCorrectionFrames(frames, amount, humanize, frameSize);
+    const correctionFrames = getCorrectionFrames(frames, amount, humanize, vibrato, frameSize);
 
     if (!correctionFrames.length) {
       return sourceBuffer;
@@ -188,9 +189,9 @@
     return output;
   }
 
-  function getCorrectionStats(pitchPlan, amount, humanize) {
+  function getCorrectionStats(pitchPlan, amount, humanize, vibrato = 0.55) {
     const frames = pitchPlan?.frames || [];
-    const correctionFrames = getCorrectionFrames(frames, amount, humanize);
+    const correctionFrames = getCorrectionFrames(frames, amount, humanize, vibrato);
     let weightedCorrection = 0;
     let weightedAbsCorrection = 0;
     let totalWeight = 0;
@@ -216,10 +217,11 @@
     };
   }
 
-  function getCorrectionFrames(frames, amount, humanize, frameSize = 2048) {
+  function getCorrectionFrames(frames, amount, humanize, vibrato = 0.55, frameSize = 2048) {
     const output = [];
-    const deadband = humanize * 0.18;
-    const smoothing = clamp(0.12 + humanize * 0.42 + (1 - amount) * 0.16, 0.1, 0.64);
+    const vibratoAmount = clamp(Number(vibrato) || 0, 0, 1);
+    const deadband = humanize * 0.14 + vibratoAmount * 0.22;
+    const smoothing = clamp(0.04 + humanize * 0.34 + vibratoAmount * 0.38 + (1 - amount) * 0.12, 0.04, 0.72);
     const follow = 1 - smoothing;
     let smoothedCorrection = 0;
     let previousStart = null;
@@ -232,7 +234,13 @@
 
       const rawCorrection = Math.abs(frame.correctionSemitones) < deadband ? 0 : frame.correctionSemitones;
       const confidenceScale = clamp(0.52 + frame.confidence * 0.48 - humanize * 0.18, 0.35, 1);
-      const correction = clamp(rawCorrection, -4, 4) * amount * (1 - humanize * 0.58) * confidenceScale;
+      const clampedCorrection = clamp(rawCorrection, -4, 4);
+      const correctionMagnitude = Math.abs(clampedCorrection);
+      const vibratoRange = 0.14 + vibratoAmount * 0.72;
+      const vibratoPreserve = correctionMagnitude < vibratoRange
+        ? 1 - vibratoAmount * (1 - correctionMagnitude / vibratoRange) * 0.58
+        : 1;
+      const correction = clampedCorrection * amount * (1 - humanize * 0.58) * confidenceScale * vibratoPreserve;
       const gap = previousStart !== null && frame.start - previousStart > frameSize * 1.75;
 
       smoothedCorrection = !hasPrevious || gap

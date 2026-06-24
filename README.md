@@ -31,6 +31,7 @@ node .\scripts\check.mjs
 - Pitch analysis against the selected minor key or chromatic mode
 - Frame-level pitch correction and offline vocal chain render to a new processed WAV take
 - Note-transition smoothing for frame-level pitch correction
+- Vibrato preserve/remove control for rendered vocal takes
 - Retune speed, humanize, and formant controls for rendered vocal takes
 - Correction-aware formant compensation for pitch-shifted vocal renders
 - User-adjustable compressor, space, and width controls for vocal renders and custom presets

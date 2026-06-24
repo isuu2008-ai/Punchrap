@@ -32,6 +32,7 @@
   function getEffectivePreset(preset, tuneSettings = {}) {
     return {
       ...preset,
+      vibrato: Number(tuneSettings.vibrato ?? preset.vibrato ?? 55),
       comp: Number(tuneSettings.comp ?? preset.comp),
       compThreshold: Number(tuneSettings.compThreshold ?? preset.compThreshold ?? -30),
       compRatio: Number(tuneSettings.compRatio ?? preset.compRatio ?? 6),
