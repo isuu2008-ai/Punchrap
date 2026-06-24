@@ -31,6 +31,7 @@
       requiredNativeMethods,
       optionalNativeMethods: [...OPTIONAL_NATIVE_METHODS],
       contracts: {
+        chainParams: "src/chain-params.js",
         engine: "src/engine-contract.js",
         bridge: "src/native-bridge.js",
         nativeFixture: "src/native-fixture.js",

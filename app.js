@@ -5675,7 +5675,7 @@ function getSelectedPreset() {
 }
 
 function getTuneSettings() {
-  return {
+  const settings = {
     retuneSpeed: Number(els.retuneSpeedSlider?.value) || 0,
     humanize: Number(els.humanizeSlider?.value) || 0,
     vibrato: Number(els.vibratoSlider?.value) || 0,
@@ -5697,6 +5697,7 @@ function getTuneSettings() {
     airEq: Number(els.airEqSlider?.value) || 0,
     limiterCeiling: Number(els.limiterCeilingSlider?.value) || 0,
   };
+  return window.PunchLabChainParams?.coerceSettings?.(settings) || settings;
 }
 
 function getSelectedVocalTake() {

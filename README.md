@@ -30,6 +30,7 @@ node .\scripts\check.mjs
 - Main, Double, Adlib L, Adlib R, and Hook tracks
 - Take recording and download
 - Rap vocal chain preset UI
+- Vocal chain parameter manifest for automation/native/plugin mapping
 - Pitch analysis against the selected minor key or chromatic mode
 - Adaptive pitch detection with low-level thresholding, lag refinement, and octave-jump smoothing
 - Frame-level pitch correction and offline vocal chain render to a new processed WAV take

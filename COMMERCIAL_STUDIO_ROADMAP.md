@@ -27,6 +27,8 @@
 - `src/native-adapter.js`가 native host bridge를 swappable engine interface로 연결
 - Native fixture mode 1차
 - `?nativeFixture=1`로 native adapter/engine 선택 경로를 브라우저에서 검증
+- Vocal chain parameter manifest 1차
+- `src/chain-params.js`에 automation/native/plugin 파라미터 ID, 범위, 기본값을 분리
 - `.punchlab.json` 로컬 프로젝트 저장/복원
 - processed take `v1`, `v2` 버전 관리
 - processed take 버전/체인 정보 저장 포맷 포함

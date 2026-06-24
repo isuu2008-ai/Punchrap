@@ -4,6 +4,7 @@ import { existsSync, readFileSync } from "node:fs";
 const syntaxFiles = [
   "server.mjs",
   "app.js",
+  "src/chain-params.js",
   "src/audio.js",
   "src/dsp.js",
   "src/files.js",
@@ -24,6 +25,7 @@ const syntaxFiles = [
 ];
 
 const requiredScripts = [
+  "src/chain-params.js",
   "src/dsp.js",
   "src/audio.js",
   "src/files.js",
