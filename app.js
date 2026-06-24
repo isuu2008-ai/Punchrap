@@ -4756,12 +4756,11 @@ function canExportCompressedAudio() {
 }
 
 function normalizeCompressedFormat(format) {
-  return String(format || "").toLowerCase() === "m4a" ? "m4a" : "mp3";
+  return window.PunchLabExportPlan?.normalizeCompressedFormat?.(format) || "mp3";
 }
 
 function replaceAudioExtension(fileName, extension) {
-  const base = String(fileName || "punchlab-export.wav").replace(/\.[a-z0-9]+$/i, "");
-  return `${base}.${normalizeCompressedFormat(extension)}`;
+  return window.PunchLabExportPlan?.replaceAudioExtension?.(fileName, extension) || `punchlab-export.${normalizeCompressedFormat(extension)}`;
 }
 
 function blobToDataUrl(blob) {
@@ -6053,8 +6052,8 @@ function getExportJobStatusLabel(status) {
 }
 
 function formatExportJobDetail(job = {}) {
-  const detail = job.previewName || job.detail || getExportJobStatusLabel(job.status);
-  return [detail, job.compressedStatus].filter(Boolean).join(" / ");
+  return window.PunchLabExportPlan?.formatExportJobDetail?.(job, getExportJobStatusLabel(job.status))
+    || [job.previewName || job.detail || getExportJobStatusLabel(job.status), job.compressedStatus].filter(Boolean).join(" / ");
 }
 
 async function renderTakeMixBlob(takes, includeBeat = false) {
@@ -6099,31 +6098,12 @@ function makeMixTakeSource({ take, track, buffer }) {
 }
 
 function getStemExportGroups() {
-  const groups = [];
-  if (state.beatArrayBuffer) {
-    groups.push({
-      name: "Beat",
-      filename: `${makeExportBaseSlug()}-beat-stem.wav`,
-      takes: [],
-      includeBeat: true,
-    });
-  }
-
-  tracks.forEach((track) => {
-    const volume = getTrackOutputVolume(track);
-    if (volume <= 0 || !track.takes.length) {
-      return;
-    }
-
-    groups.push({
-      name: track.name,
-      filename: `${makeExportBaseSlug()}-${slugify(track.name)}-stem.wav`,
-      takes: track.takes,
-      includeBeat: false,
-    });
+  return window.PunchLabExportPlan.buildStemExportGroups({
+    baseSlug: makeExportBaseSlug(),
+    beatAvailable: Boolean(state.beatArrayBuffer),
+    getTrackVolume: getTrackOutputVolume,
+    tracks,
   });
-
-  return groups;
 }
 
 function applyExportNormalize(audioBuffer) {
@@ -6978,13 +6958,14 @@ function makeTakeFilename(take) {
 }
 
 function makeMixFilename() {
-  return `${makeExportBaseSlug()}-mix.wav`;
+  return window.PunchLabExportPlan.makeMixFilename({ baseSlug: makeExportBaseSlug() });
 }
 
 function makeExportBaseSlug() {
-  const metadata = getExportMetadata();
-  const source = [metadata.artist, metadata.title].filter(Boolean).join("-") || state.beatFileName || "session";
-  return `punchlab-${slugify(source.replace(/\.[^.]+$/, "")) || "session"}`;
+  return window.PunchLabExportPlan.makeExportBaseSlug({
+    beatFileName: state.beatFileName,
+    metadata: getExportMetadata(),
+  });
 }
 
 function slugify(value) {

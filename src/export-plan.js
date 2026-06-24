@@ -1,0 +1,71 @@
+(() => {
+  function makeExportBaseSlug({ metadata = {}, beatFileName = "" } = {}) {
+    const source = [metadata.artist, metadata.title].filter(Boolean).join("-") || beatFileName || "session";
+    return `punchlab-${slugify(source.replace(/\.[^.]+$/, "")) || "session"}`;
+  }
+
+  function makeMixFilename({ baseSlug = "" } = {}) {
+    return `${baseSlug || "punchlab-session"}-mix.wav`;
+  }
+
+  function buildStemExportGroups({ tracks = [], beatAvailable = false, baseSlug = "", getTrackVolume = null } = {}) {
+    const exportBase = baseSlug || "punchlab-session";
+    const groups = [];
+    if (beatAvailable) {
+      groups.push({
+        name: "Beat",
+        filename: `${exportBase}-beat-stem.wav`,
+        takes: [],
+        includeBeat: true,
+      });
+    }
+
+    tracks.forEach((track) => {
+      const volume = typeof getTrackVolume === "function" ? getTrackVolume(track) : Number(track?.volume ?? 1);
+      if (volume <= 0 || !track?.takes?.length) {
+        return;
+      }
+
+      groups.push({
+        name: track.name,
+        filename: `${exportBase}-${slugify(track.name)}-stem.wav`,
+        takes: track.takes,
+        includeBeat: false,
+      });
+    });
+
+    return groups;
+  }
+
+  function normalizeCompressedFormat(format) {
+    return String(format || "").toLowerCase() === "m4a" ? "m4a" : "mp3";
+  }
+
+  function replaceAudioExtension(fileName, extension) {
+    const base = String(fileName || "punchlab-export.wav").replace(/\.[a-z0-9]+$/i, "");
+    return `${base}.${normalizeCompressedFormat(extension)}`;
+  }
+
+  function formatExportJobDetail(job = {}, fallbackStatus = "Idle") {
+    const detail = job.previewName || job.detail || fallbackStatus;
+    return [detail, job.compressedStatus].filter(Boolean).join(" / ");
+  }
+
+  function slugify(value) {
+    return String(value || "session")
+      .toLowerCase()
+      .replace(/\.[^.]+$/, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+  }
+
+  window.PunchLabExportPlan = {
+    buildStemExportGroups,
+    formatExportJobDetail,
+    makeExportBaseSlug,
+    makeMixFilename,
+    normalizeCompressedFormat,
+    replaceAudioExtension,
+    slugify,
+  };
+})();

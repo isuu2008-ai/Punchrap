@@ -8,6 +8,7 @@ const syntaxFiles = [
   "src/chain-params.js",
   "src/audio.js",
   "src/export-mastering.js",
+  "src/export-plan.js",
   "src/dsp.js",
   "src/files.js",
   "src/templates.js",
@@ -33,6 +34,7 @@ const requiredScripts = [
   "src/dsp.js",
   "src/audio.js",
   "src/export-mastering.js",
+  "src/export-plan.js",
   "src/files.js",
   "src/templates.js",
   "src/devices.js",
@@ -170,6 +172,10 @@ if (!indexHtml.includes("src/export-mastering.js") || !readFileSync("sw.js", "ut
   console.error("Export mastering module must be loaded by index.html and cached by the service worker.");
   failed = true;
 }
+if (!indexHtml.includes("src/export-plan.js") || !readFileSync("sw.js", "utf8").includes("./src/export-plan.js")) {
+  console.error("Export plan module must be loaded by index.html and cached by the service worker.");
+  failed = true;
+}
 if (!tauriBridgeSource.includes("window.__TAURI__?.core?.invoke") || !tauriBridgeSource.includes("get_punchlab_bridge_status") || !tauriBridgeSource.includes("nativeBridgeReady")) {
   console.error("Tauri bridge adapter must probe Tauri invoke and gate native activation on nativeBridgeReady.");
   failed = true;
@@ -264,6 +270,11 @@ if (!exportMasteringSource.includes("window.PunchLabExportMastering") || !export
 }
 if (!appSource.includes("data-compress-export") || !appSource.includes("exportCompressedJob") || !appSource.includes("PunchLabEngine.exportCompressedAudio")) {
   console.error("Completed export jobs must expose native compressed MP3/M4A handoff when supported.");
+  failed = true;
+}
+const exportPlanSource = readFileSync("src/export-plan.js", "utf8");
+if (!exportPlanSource.includes("window.PunchLabExportPlan") || !exportPlanSource.includes("buildStemExportGroups") || !appSource.includes("PunchLabExportPlan.buildStemExportGroups")) {
+  console.error("Export filename, stem group, and compressed format planning must be separated from the app controller.");
   failed = true;
 }
 if (!indexHtml.includes("quickTakeList") || !appSource.includes("data-quick-play-take") || !appSource.includes("data-quick-vocal-take") || !appSource.includes("sendTakeToVocal")) {

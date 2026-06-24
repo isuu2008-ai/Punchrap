@@ -208,6 +208,8 @@
 - project zip preview header의 export, plugin scan, native audio, desktop readiness summary formatter를 `src/project-zip.js`로 분리
 - Export mastering module split 1차
 - WAV export 직전 loudness normalize, peak normalize, true-peak ceiling finalize 로직을 `src/export-mastering.js`로 분리
+- Export plan module split 1차
+- export filename, stem group, compressed format, queue detail planning을 `src/export-plan.js`로 분리
 - Project zip asset/timeline formatter split 1차
 - project zip preview의 beat section, marker rows, comp lane rows를 `src/project-zip.js`로 분리
 - Project zip take card formatter split 1차
