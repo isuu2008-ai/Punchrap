@@ -29,6 +29,7 @@ node .\scripts\check.mjs
 - Take recording and download
 - Rap vocal chain preset UI
 - Pitch analysis against the selected minor key or chromatic mode
+- Adaptive pitch detection with low-level thresholding, lag refinement, and octave-jump smoothing
 - Frame-level pitch correction and offline vocal chain render to a new processed WAV take
 - Transient-preserving dry blend for pitch-corrected vocal renders
 - Note-transition smoothing for frame-level pitch correction

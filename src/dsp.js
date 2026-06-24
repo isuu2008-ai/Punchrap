@@ -313,42 +313,53 @@
     const sampleRate = audioBuffer.sampleRate;
     const frameSize = 2048;
     const hopSize = 1024;
-    const minLag = Math.floor(sampleRate / 620);
-    const maxLag = Math.floor(sampleRate / 70);
+    const minLag = Math.floor(sampleRate / 720);
+    const maxLag = Math.floor(sampleRate / 55);
+    const rmsProfile = getFrameRmsProfile(mono, frameSize, hopSize, maxLag);
+    const rmsThreshold = getAdaptiveRmsThreshold(rmsProfile.map((frame) => frame.rms));
     const pitches = [];
     const frames = [];
     const noteClassCounts = Array.from({ length: 12 }, () => 0);
     let voicedFrames = 0;
     let totalConfidence = 0;
 
-    for (let start = 0; start + frameSize + maxLag < mono.length; start += hopSize) {
-      const rms = getFrameRms(mono, start, frameSize);
-      if (rms < 0.012) {
-        continue;
+    rmsProfile.forEach(({ start, rms }) => {
+      if (rms < rmsThreshold) {
+        return;
       }
 
       const result = detectFramePitch(mono, start, frameSize, minLag, maxLag, sampleRate);
-      if (!result || result.confidence < 0.58) {
-        continue;
+      const confidenceThreshold = rms < rmsThreshold * 1.7 ? 0.62 : 0.52;
+      if (!result || result.confidence < confidenceThreshold) {
+        return;
       }
 
       const midi = frequencyToMidi(result.frequency);
       if (!Number.isFinite(midi)) {
-        continue;
+        return;
       }
 
-      pitches.push({ midi, confidence: result.confidence, weight: rms * result.confidence });
       frames.push({
         start,
         time: start / sampleRate,
         midi,
         confidence: result.confidence,
         rms,
+        refined: result.refined,
       });
-      noteClassCounts[positiveModulo(Math.round(midi), 12)] += 1;
+    });
+
+    const stableFrames = stabilizePitchFrames(frames);
+    stableFrames.forEach((frame) => {
+      pitches.push({
+        midi: frame.midi,
+        confidence: frame.confidence,
+        weight: frame.rms * frame.confidence * clamp(frame.rms / rmsThreshold, 0.7, 2),
+      });
+      noteClassCounts[positiveModulo(Math.round(frame.midi), 12)] += 1;
       voicedFrames += 1;
-      totalConfidence += result.confidence;
-    }
+      totalConfidence += frame.confidence;
+    });
 
     if (!pitches.length) {
       return {
@@ -367,9 +378,61 @@
       detectedHz: midiToFrequency(detectedMidi),
       confidence: totalConfidence / voicedFrames,
       voicedFrames,
-      frames,
+      frames: stableFrames,
       noteClassCounts,
     };
+  }
+
+  function getFrameRmsProfile(data, frameSize, hopSize, maxLag) {
+    const profile = [];
+    for (let start = 0; start + frameSize + maxLag < data.length; start += hopSize) {
+      profile.push({ start, rms: getFrameRms(data, start, frameSize) });
+    }
+    return profile;
+  }
+
+  function getAdaptiveRmsThreshold(rmsValues) {
+    const voiced = rmsValues
+      .filter((value) => Number.isFinite(value) && value > 0.0005)
+      .sort((left, right) => left - right);
+    if (!voiced.length) {
+      return 0.006;
+    }
+
+    const lowerMid = voiced[Math.floor(voiced.length * 0.35)];
+    const upperMid = voiced[Math.floor(voiced.length * 0.65)] || lowerMid;
+    return clamp(lowerMid * 0.42 + upperMid * 0.18, 0.0035, 0.014);
+  }
+
+  function stabilizePitchFrames(frames) {
+    let previousMidi = null;
+    return frames.map((frame) => {
+      let midi = frame.midi;
+      if (previousMidi !== null) {
+        let bestMidi = midi;
+        let bestDistance = Math.abs(midi - previousMidi);
+        for (let shift = -24; shift <= 24; shift += 12) {
+          const candidate = midi + shift;
+          const distance = Math.abs(candidate - previousMidi);
+          if (distance < bestDistance) {
+            bestMidi = candidate;
+            bestDistance = distance;
+          }
+        }
+
+        const originalDistance = Math.abs(midi - previousMidi);
+        if (originalDistance > 7 && bestDistance < 4.5) {
+          midi = bestMidi;
+        }
+      }
+
+      previousMidi = previousMidi === null ? midi : previousMidi * 0.72 + midi * 0.28;
+      return {
+        ...frame,
+        midi,
+        octaveAdjusted: Math.abs(midi - frame.midi) > 0.01,
+      };
+    });
   }
 
   function getPitchPlan(analysis, keyValue = "C minor", scaleMode = "minor", customScale = MINOR_SCALE, targetMidiValue = null) {
@@ -519,6 +582,7 @@
   function detectFramePitch(data, start, size, minLag, maxLag, sampleRate) {
     let bestLag = 0;
     let bestCorrelation = 0;
+    const correlations = new Float32Array(maxLag + 1);
 
     for (let lag = minLag; lag <= maxLag; lag += 1) {
       let sum = 0;
@@ -534,6 +598,7 @@
       }
 
       const correlation = sum / Math.sqrt(sumA * sumB || 1);
+      correlations[lag] = correlation;
       if (correlation > bestCorrelation) {
         bestCorrelation = correlation;
         bestLag = lag;
@@ -544,10 +609,38 @@
       return null;
     }
 
+    const selectedLag = getStablePitchLag(correlations, bestLag, minLag);
+    const refinedLag = refineLagPeak(correlations, selectedLag);
     return {
-      frequency: sampleRate / bestLag,
-      confidence: bestCorrelation,
+      frequency: sampleRate / refinedLag,
+      confidence: correlations[selectedLag],
+      refined: Math.abs(refinedLag - selectedLag) > 0.001,
     };
+  }
+
+  function getStablePitchLag(correlations, bestLag, minLag) {
+    const bestCorrelation = correlations[bestLag];
+    for (let lag = minLag; lag < bestLag; lag += 1) {
+      const ratio = bestLag / lag;
+      const harmonicMatch = Math.abs(ratio - 2) < 0.16 || Math.abs(ratio - 3) < 0.16;
+      if (harmonicMatch && correlations[lag] >= bestCorrelation * 0.86) {
+        return lag;
+      }
+    }
+
+    return bestLag;
+  }
+
+  function refineLagPeak(correlations, lag) {
+    const center = correlations[lag];
+    const left = correlations[lag - 1] ?? center;
+    const right = correlations[lag + 1] ?? center;
+    const denominator = left - 2 * center + right;
+    if (Math.abs(denominator) < 0.000001) {
+      return lag;
+    }
+
+    return lag + clamp((left - right) / (2 * denominator), -0.5, 0.5);
   }
 
   function parseKey(value) {
