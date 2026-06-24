@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PunchLab</title>
     <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="./styles.css?v=20260624-31" />
+    <link rel="stylesheet" href="./styles.css?v=20260624-32" />
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
-    <script src="./src/dsp.js?v=20260624-31" defer></script>
-    <script src="./src/audio.js?v=20260624-31" defer></script>
-    <script src="./src/mix.js?v=20260624-31" defer></script>
-    <script src="./src/project.js?v=20260624-31" defer></script>
-    <script src="./src/storage.js?v=20260624-31" defer></script>
-    <script src="./app.js?v=20260624-31" defer></script>
+    <script src="./src/dsp.js?v=20260624-32" defer></script>
+    <script src="./src/audio.js?v=20260624-32" defer></script>
+    <script src="./src/mix.js?v=20260624-32" defer></script>
+    <script src="./src/project.js?v=20260624-32" defer></script>
+    <script src="./src/storage.js?v=20260624-32" defer></script>
+    <script src="./app.js?v=20260624-32" defer></script>
   </head>
   <body>
     <main class="studio-shell">
@@ -505,6 +505,27 @@
                       <strong id="deEssText">28</strong>
                     </span>
                     <input id="deEssSlider" type="range" min="0" max="100" step="1" value="28" />
+                  </label>
+                  <label class="tune-control">
+                    <span class="label-row">
+                      <span>Compressor</span>
+                      <strong id="compText">72</strong>
+                    </span>
+                    <input id="compSlider" type="range" min="0" max="100" step="1" value="72" />
+                  </label>
+                  <label class="tune-control">
+                    <span class="label-row">
+                      <span>Space</span>
+                      <strong id="spaceText">18</strong>
+                    </span>
+                    <input id="spaceSlider" type="range" min="0" max="100" step="1" value="18" />
+                  </label>
+                  <label class="tune-control">
+                    <span class="label-row">
+                      <span>Width</span>
+                      <strong id="widthText">42</strong>
+                    </span>
+                    <input id="widthSlider" type="range" min="0" max="100" step="1" value="42" />
                   </label>
                 </div>
 

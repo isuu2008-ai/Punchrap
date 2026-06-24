@@ -155,6 +155,12 @@ const els = {
   gateText: document.querySelector("#gateText"),
   deEssSlider: document.querySelector("#deEssSlider"),
   deEssText: document.querySelector("#deEssText"),
+  compSlider: document.querySelector("#compSlider"),
+  compText: document.querySelector("#compText"),
+  spaceSlider: document.querySelector("#spaceSlider"),
+  spaceText: document.querySelector("#spaceText"),
+  widthSlider: document.querySelector("#widthSlider"),
+  widthText: document.querySelector("#widthText"),
   vocalTakeSelect: document.querySelector("#vocalTakeSelect"),
   selectedTakeMeta: document.querySelector("#selectedTakeMeta"),
   vocalStatus: document.querySelector("#vocalStatus"),
@@ -290,6 +296,18 @@ function bindEvents() {
     scheduleAutosave();
   });
   els.deEssSlider.addEventListener("input", () => {
+    updateTuneControls();
+    scheduleAutosave();
+  });
+  els.compSlider.addEventListener("input", () => {
+    updateTuneControls();
+    scheduleAutosave();
+  });
+  els.spaceSlider.addEventListener("input", () => {
+    updateTuneControls();
+    scheduleAutosave();
+  });
+  els.widthSlider.addEventListener("input", () => {
     updateTuneControls();
     scheduleAutosave();
   });
@@ -897,6 +915,9 @@ function applyProjectSettings(settings = {}) {
     els.formantSlider.value = settings.tune.formant ?? els.formantSlider.value;
     els.gateSlider.value = settings.tune.gate ?? els.gateSlider.value;
     els.deEssSlider.value = settings.tune.deEss ?? els.deEssSlider.value;
+    els.compSlider.value = settings.tune.comp ?? els.compSlider.value;
+    els.spaceSlider.value = settings.tune.space ?? els.spaceSlider.value;
+    els.widthSlider.value = settings.tune.width ?? els.widthSlider.value;
     updateTuneControls();
   }
 
@@ -2042,7 +2063,6 @@ function renderPresets() {
 }
 
 function saveCustomPreset() {
-  const basePreset = getSelectedPreset();
   const tuneSettings = getTuneSettings();
   const name = els.customPresetNameInput.value.trim() || `Custom ${presets.filter((preset) => preset.custom).length + 1}`;
   const preset = {
@@ -2053,9 +2073,9 @@ function saveCustomPreset() {
     formant: tuneSettings.formant,
     gate: tuneSettings.gate,
     deEss: tuneSettings.deEss,
-    comp: basePreset.comp,
-    space: basePreset.space,
-    width: basePreset.width,
+    comp: tuneSettings.comp,
+    space: tuneSettings.space,
+    width: tuneSettings.width,
     custom: true,
   };
 
@@ -2096,6 +2116,9 @@ function applyPreset(id) {
   els.formantSlider.value = preset.formant;
   els.gateSlider.value = preset.gate || 0;
   els.deEssSlider.value = preset.deEss || 0;
+  els.compSlider.value = preset.comp;
+  els.spaceSlider.value = preset.space;
+  els.widthSlider.value = preset.width;
   updateTuneControls();
 
   els.presetGrid.querySelectorAll("[data-preset]").forEach((button) => {
@@ -2178,12 +2201,23 @@ function updateTuneControls() {
   els.formantText.textContent = formatSigned(settings.formant);
   els.gateText.textContent = String(settings.gate);
   els.deEssText.textContent = String(settings.deEss);
+  els.compText.textContent = String(settings.comp);
+  els.spaceText.textContent = String(settings.space);
+  els.widthText.textContent = String(settings.width);
+  els.compValue.textContent = String(settings.comp);
+  els.spaceValue.textContent = String(settings.space);
+  els.widthValue.textContent = String(settings.width);
 }
 
 function setTuneControlsDisabled(isDisabled) {
   els.retuneSpeedSlider.disabled = isDisabled;
   els.humanizeSlider.disabled = isDisabled;
   els.formantSlider.disabled = isDisabled;
+  els.gateSlider.disabled = isDisabled;
+  els.deEssSlider.disabled = isDisabled;
+  els.compSlider.disabled = isDisabled;
+  els.spaceSlider.disabled = isDisabled;
+  els.widthSlider.disabled = isDisabled;
 }
 
 function isVocalBusy() {
@@ -2365,7 +2399,8 @@ async function renderProcessedTake(sourceTake, preset, tuneSettings) {
   sourceTake.pitchAnalysis ||= analyzePitchBuffer(sourceBuffer);
   const pitchPlan = getPitchPlan(sourceTake.pitchAnalysis, sourceTake);
   sourceTake.pitchPlan = pitchPlan;
-  const rendered = await renderVocalBuffer(sourceBuffer, preset, pitchPlan, tuneSettings);
+  const renderPreset = getEffectivePreset(preset, tuneSettings);
+  const rendered = await renderVocalBuffer(sourceBuffer, renderPreset, pitchPlan, tuneSettings);
   const renderedAnalysis = analyzePitchBuffer(rendered);
   const blob = encodeWav(rendered);
   const url = URL.createObjectURL(blob);
@@ -2391,7 +2426,7 @@ async function renderProcessedTake(sourceTake, preset, tuneSettings) {
     version,
     renderLabel: `${preset.name} v${version}`,
     chainSnapshot: {
-      preset: { ...preset },
+      preset: { ...renderPreset },
       tuneSettings: { ...tuneSettings },
       key: els.keySelect.value,
       scaleMode: els.scaleModeSelect.value,
@@ -2410,6 +2445,15 @@ async function renderProcessedTake(sourceTake, preset, tuneSettings) {
 
 async function renderVocalBuffer(sourceBuffer, preset, pitchPlan = null, tuneSettings = getTuneSettings()) {
   return window.PunchLabDSP.renderVocalBuffer(sourceBuffer, preset, pitchPlan, tuneSettings);
+}
+
+function getEffectivePreset(preset, tuneSettings = getTuneSettings()) {
+  return {
+    ...preset,
+    comp: Number(tuneSettings.comp ?? preset.comp),
+    space: Number(tuneSettings.space ?? preset.space),
+    width: Number(tuneSettings.width ?? preset.width),
+  };
 }
 
 function analyzePitchBuffer(audioBuffer) {
@@ -3967,6 +4011,9 @@ function getTuneSettings() {
     formant: Number(els.formantSlider?.value) || 0,
     gate: Number(els.gateSlider?.value) || 0,
     deEss: Number(els.deEssSlider?.value) || 0,
+    comp: Number(els.compSlider?.value) || 0,
+    space: Number(els.spaceSlider?.value) || 0,
+    width: Number(els.widthSlider?.value) || 0,
   };
 }
 
@@ -4284,7 +4331,10 @@ function getTuneSignature(settings = {}) {
   const formant = Number(settings.formant ?? 0);
   const gate = Number(settings.gate ?? 0);
   const deEss = Number(settings.deEss ?? 0);
-  return `R${retuneSpeed} H${humanize} F${formatSigned(formant)} G${gate} D${deEss}`;
+  const comp = Number(settings.comp ?? 0);
+  const space = Number(settings.space ?? 0);
+  const width = Number(settings.width ?? 0);
+  return `R${retuneSpeed} H${humanize} F${formatSigned(formant)} G${gate} D${deEss} C${comp} S${space} W${width}`;
 }
 
 function escapeHtml(value) {
