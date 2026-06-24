@@ -98,6 +98,7 @@ node .\scripts\check.mjs
 - Desktop contract check validates Tauri shell buffer preference handoff while native audio latency remains gated
 - Desktop readiness separates latency method availability from measured native latency readiness
 - Desktop readiness separates native output-routing method availability from audioOutputRouting capability readiness
+- Desktop readiness preserves project file open/save handoff state and browser fallback context
 - Desktop readiness separates compressed export method availability from compressedAudioExport capability readiness
 - Desktop readiness separates plugin scan method availability from pluginHost capability readiness
 - Desktop contract check validates selected Tauri capabilities and local-only main-window permissions

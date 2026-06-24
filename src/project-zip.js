@@ -442,6 +442,7 @@
     const takeRows = buildProjectZipPreviewTakeRows(takes, automationManifest);
     const compRows = buildProjectZipPreviewCompRows(compTakes);
     const handoffStageRows = buildProjectZipPreviewHandoffRows(desktopReadiness);
+    const projectFileRows = buildProjectZipPreviewProjectFileRows(desktopReadiness.projectFiles || {});
     const pluginHostRows = buildProjectZipPreviewPluginHostRows(pluginHost);
     const sessionRows = buildProjectZipPreviewSessionRows(sessionManifest);
     const automationSchemaRows = buildProjectZipPreviewAutomationSchemaRows(automationManifest);
@@ -496,6 +497,10 @@ ${getProjectZipPreviewStyles()}
       </section>
       <section>
         <h2>Desktop Handoff</h2>
+        <article class="asset-card">
+          <h3>Project Files</h3>
+          <dl>${projectFileRows}</dl>
+        </article>
         <ol>${handoffStageRows}</ol>
       </section>
       <section>
@@ -814,6 +819,16 @@ ${getProjectZipPreviewPlayerScript()}
     ]);
   }
 
+  function buildProjectZipPreviewProjectFileRows(projectFiles = {}) {
+    return buildDescriptionListRows([
+      ["Open/Save", projectFiles.nativeAvailable ? "Native" : projectFiles.browserFileSystemAccess ? "Browser picker" : "Download/input"],
+      ["Ready", projectFiles.ready ? "Yes" : "Fallback"],
+      ["Native Method", projectFiles.methodAvailable ? "Available" : "Missing"],
+      ["Fallback", projectFiles.nativeAvailable ? "Native" : projectFiles.browserFileSystemAccess ? "Browser" : "Download/input"],
+      ["Summary", projectFiles.summary || "Project file readiness snapshot unavailable"],
+    ]);
+  }
+
   function buildProjectZipPreviewNotesRows(notesManifest = {}, markers = []) {
     const rows = [];
     const scratchLyrics = String(notesManifest.scratchLyrics || "");
@@ -932,11 +947,13 @@ ${getProjectZipPreviewPlayerScript()}
     const nativeAudio = desktopReadiness.nativeAudioEngine || {};
     const inputMonitoring = desktopReadiness.inputMonitoring || {};
     const compressedExport = desktopReadiness.compressedExport || {};
+    const projectFiles = desktopReadiness.projectFiles || {};
     const pluginHost = desktopReadiness.pluginHost || {};
     const parts = [desktopReadiness.desktopReady ? "Desktop ready" : "Desktop pending"];
     parts.push(nativeAudio.ready ? "Native audio ready" : "Native audio pending");
     parts.push(inputMonitoring.ready ? "Native monitor ready" : inputMonitoring.methodAvailable ? "Monitor handoff pending" : "Web monitor fallback");
     parts.push(compressedExport.ready ? "Compressed export ready" : compressedExport.methodAvailable ? "Compressed handoff pending" : "WAV only");
+    parts.push(projectFiles.nativeAvailable ? "Native project files" : projectFiles.browserFileSystemAccess ? "Browser project files" : "Download project files");
     parts.push(pluginHost.ready ? "Plugin host ready" : pluginHost.scanAvailable ? "Plugin scan ready" : "Plugin scan pending");
     return parts.join(" / ");
   }

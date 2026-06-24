@@ -481,6 +481,10 @@ if (!readFileSync("src/desktop.js", "utf8").includes("methodAvailable: hasOutput
   console.error("Desktop readiness must separate output-routing method availability from audioOutputRouting capability.");
   failed = true;
 }
+if (!readFileSync("src/desktop.js", "utf8").includes("methodAvailable: hasProjectFileHandoff") || !readFileSync("src/desktop.js", "utf8").includes("browserProjectFileAccess") || !appSource.includes("projectFiles: readiness.projectFiles") || !projectZipSource.includes("buildProjectZipPreviewProjectFileRows(desktopReadiness.projectFiles || {})") || !projectZipSource.includes("Native project files")) {
+  console.error("Desktop readiness and zip previews must preserve project file handoff readiness.");
+  failed = true;
+}
 if (!readFileSync("src/desktop.js", "utf8").includes("const compressedExportReady = hasCompressedExportMethod && capabilities.compressedAudioExport === true") || !readFileSync("src/desktop.js", "utf8").includes("ready: compressedExportReady")) {
   console.error("Desktop readiness must separate compressed export method availability from compressedAudioExport capability.");
   failed = true;

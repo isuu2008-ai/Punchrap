@@ -285,6 +285,9 @@ if (!desktopSource.includes("methodAvailable: hasLatencyMethods") || !desktopSou
 if (!desktopSource.includes("methodAvailable: hasOutputRoutingMethod") || !desktopSource.includes("capabilityReady: capabilities.audioOutputRouting === true") || !desktopSource.includes("nativeOutputRoutingReady")) {
   fail("Desktop readiness must separate output-routing method availability from audioOutputRouting capability.");
 }
+if (!desktopSource.includes("methodAvailable: hasProjectFileHandoff") || !desktopSource.includes("browserProjectFileAccess") || !appSource.includes("projectFiles: readiness.projectFiles")) {
+  fail("Desktop readiness must separate native project file handoff from browser file picker fallback.");
+}
 if (!desktopSource.includes("getNativeBridgeDetail") || !desktopSource.includes("full audio engine waits for nativeBridgeReady")) {
   fail("Desktop readiness must explain nativeBridgeReady pending state separately from missing native methods.");
 }

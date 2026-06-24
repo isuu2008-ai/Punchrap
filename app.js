@@ -1591,6 +1591,16 @@ function summarizeDesktopReadinessEnvironment() {
         capabilityReady: Boolean(readiness.compressedExport.capabilityReady),
       }
       : null,
+    projectFiles: readiness.projectFiles
+      ? {
+        methodAvailable: Boolean(readiness.projectFiles.methodAvailable),
+        ready: Boolean(readiness.projectFiles.ready),
+        nativeAvailable: Boolean(readiness.projectFiles.nativeAvailable),
+        browserFileSystemAccess: Boolean(readiness.projectFiles.browserFileSystemAccess),
+        browserFallback: Boolean(readiness.projectFiles.browserFallback),
+        summary: readiness.projectFiles.summary || null,
+      }
+      : null,
     pluginHost: readiness.pluginHost
       ? {
         scanAvailable: Boolean(readiness.pluginHost.scanAvailable),

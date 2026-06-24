@@ -156,6 +156,8 @@
     const browserOutputRoutingReady = canUseBrowserOutputRouting();
     const missingProjectFileMethods = getMissingOptionalMethods(bridgeStatus, ["openProjectFile", "saveProjectFile"]);
     const hasProjectFileHandoff = missingProjectFileMethods.length === 0;
+    const browserProjectFileAccess = Boolean(window.PunchLabFiles?.supportsFileSystemAccess?.());
+    const projectFilesReady = hasProjectFileHandoff || browserProjectFileAccess;
     const missingCompressedExportMethods = getMissingOptionalMethods(bridgeStatus, ["exportCompressedAudio"]);
     const hasCompressedExportMethod = missingCompressedExportMethods.length === 0;
     const compressedExportReady = hasCompressedExportMethod && capabilities.compressedAudioExport === true;
@@ -187,7 +189,9 @@
         hasProjectFileHandoff ? "ready" : "fallback",
         hasProjectFileHandoff
           ? "Native host can open and save project files."
-          : "Project files use browser picker/download fallback until native openProjectFile and saveProjectFile are available.",
+          : browserProjectFileAccess
+            ? "Browser File System Access picker is active until native openProjectFile and saveProjectFile are available."
+            : "Project files use download/input fallback until native openProjectFile and saveProjectFile are available.",
       ),
       makeCheck(
         "output-routing",
@@ -313,9 +317,17 @@
         browserAudioContextOutput: Boolean(window.PunchLabDevices?.canSetAudioContextOutput?.()),
       },
       projectFiles: {
+        methodAvailable: hasProjectFileHandoff,
         nativeAvailable: hasProjectFileHandoff,
+        ready: projectFilesReady,
         missingMethods: missingProjectFileMethods,
-        browserFileSystemAccess: Boolean(window.PunchLabFiles?.supportsFileSystemAccess?.()),
+        browserFileSystemAccess: browserProjectFileAccess,
+        browserFallback: !hasProjectFileHandoff,
+        summary: hasProjectFileHandoff
+          ? "Native project file open/save ready."
+          : browserProjectFileAccess
+            ? "Browser project file picker fallback active."
+            : "Download/input project file fallback active.",
       },
       compressedExport: {
         methodAvailable: hasCompressedExportMethod,
