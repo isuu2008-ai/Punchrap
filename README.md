@@ -42,6 +42,7 @@ Then open `http://localhost:4173`.
 - Vocal gate and de-ess controls in the offline render chain
 - Chromatic pitch-correction mode for rap-style hard tune without key locking
 - Manual pitch lane edits for analyzed vocal frames, persisted in project files
+- Custom scale editor with 12 pitch-class toggles
 
 ## Planning
 
@@ -52,4 +53,4 @@ See [COMMERCIAL_STUDIO_ROADMAP.md](./COMMERCIAL_STUDIO_ROADMAP.md) for the comme
 - Custom scale editing
 - Formant-aware pitch shifting
 - Better EQ, compressor, delay, reverb, and limiter controls
-- Custom scale editor
+- Take comping

@@ -240,7 +240,7 @@
     };
   }
 
-  function getPitchPlan(analysis, keyValue = "C minor", scaleMode = "minor") {
+  function getPitchPlan(analysis, keyValue = "C minor", scaleMode = "minor", customScale = MINOR_SCALE) {
     if (!analysis || analysis.detectedMidi === null) {
       return {
         detectedLabel: "--",
@@ -253,11 +253,12 @@
     }
 
     const key = parseKey(keyValue);
-    const targetMidi = getNearestTargetMidi(analysis.detectedMidi, key.root, scaleMode);
+    const scale = getTargetScale(scaleMode, customScale);
+    const targetMidi = getNearestTargetMidi(analysis.detectedMidi, key.root, scaleMode, scale);
     const correctionSemitones = targetMidi - analysis.detectedMidi;
-    const scaleFit = scaleMode === "chromatic" ? 1 : getScaleFit(analysis.noteClassCounts, key.root);
+    const scaleFit = scaleMode === "chromatic" ? 1 : getScaleFit(analysis.noteClassCounts, key.root, scale);
     const frames = (analysis.frames || []).map((frame) => {
-      const frameTargetMidi = getNearestTargetMidi(frame.midi, key.root, scaleMode);
+      const frameTargetMidi = getNearestTargetMidi(frame.midi, key.root, scaleMode, scale);
       return {
         ...frame,
         targetMidi: frameTargetMidi,
@@ -394,13 +395,13 @@
     return { root: NOTE_NAMES.indexOf(rootName) >= 0 ? NOTE_NAMES.indexOf(rootName) : 0 };
   }
 
-  function getNearestScaleMidi(midi, root) {
+  function getNearestScaleMidi(midi, root, scale = MINOR_SCALE) {
     const rounded = Math.round(midi);
     let best = rounded;
     let bestDistance = Infinity;
 
     for (let candidate = rounded - 12; candidate <= rounded + 12; candidate += 1) {
-      if (!isScalePitchClass(candidate, root)) {
+      if (!isScalePitchClass(candidate, root, scale)) {
         continue;
       }
 
@@ -414,29 +415,43 @@
     return best;
   }
 
-  function getNearestTargetMidi(midi, root, scaleMode) {
+  function getNearestTargetMidi(midi, root, scaleMode, scale) {
     if (scaleMode === "chromatic") {
       return Math.round(midi);
     }
 
-    return getNearestScaleMidi(midi, root);
+    return getNearestScaleMidi(midi, root, scale);
   }
 
-  function isScalePitchClass(midi, root) {
-    return MINOR_SCALE.includes(positiveModulo(midi - root, 12));
+  function isScalePitchClass(midi, root, scale = MINOR_SCALE) {
+    return scale.includes(positiveModulo(midi - root, 12));
   }
 
-  function getScaleFit(noteClassCounts, root) {
+  function getScaleFit(noteClassCounts, root, scale = MINOR_SCALE) {
     const total = noteClassCounts.reduce((sum, count) => sum + count, 0);
     if (!total) {
       return 0;
     }
 
     const inScale = noteClassCounts.reduce(
-      (sum, count, noteClass) => sum + (isScalePitchClass(noteClass, root) ? count : 0),
+      (sum, count, noteClass) => sum + (isScalePitchClass(noteClass, root, scale) ? count : 0),
       0,
     );
     return inScale / total;
+  }
+
+  function getTargetScale(scaleMode, customScale) {
+    if (scaleMode !== "custom") {
+      return MINOR_SCALE;
+    }
+
+    const normalized = [...new Set(
+      (Array.isArray(customScale) ? customScale : MINOR_SCALE)
+        .map((value) => Number(value))
+        .filter((value) => Number.isFinite(value))
+        .map((value) => positiveModulo(Math.round(value), 12)),
+    )].sort((left, right) => left - right);
+    return normalized.length ? normalized : MINOR_SCALE;
   }
 
   function frequencyToMidi(frequency) {

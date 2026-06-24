@@ -1,3 +1,5 @@
+const DEFAULT_CUSTOM_SCALE_INTERVALS = [0, 2, 3, 5, 7, 8, 10];
+
 const state = {
   audioContext: null,
   stream: null,
@@ -65,6 +67,7 @@ const state = {
     { id: "marker-verse", type: "Verse", time: 16 },
     { id: "marker-hook", type: "Hook", time: 48 },
   ],
+  customScaleIntervals: [...DEFAULT_CUSTOM_SCALE_INTERVALS],
   timelineUndoStack: [],
   timelineRedoStack: [],
 };
@@ -162,6 +165,9 @@ const els = {
   pitchLane: document.querySelector("#pitchLane"),
   pitchLaneMeta: document.querySelector("#pitchLaneMeta"),
   resetPitchLaneButton: document.querySelector("#resetPitchLaneButton"),
+  customScaleEditor: document.querySelector("#customScaleEditor"),
+  customScaleGrid: document.querySelector("#customScaleGrid"),
+  customScaleMeta: document.querySelector("#customScaleMeta"),
   batchScopeSelect: document.querySelector("#batchScopeSelect"),
   batchRenderButton: document.querySelector("#batchRenderButton"),
   batchStatus: document.querySelector("#batchStatus"),
@@ -276,6 +282,7 @@ function bindEvents() {
   els.compareProcessedButton.addEventListener("click", () => playComparisonTake("processed"));
   els.pitchLane.addEventListener("click", handlePitchLaneClick);
   els.resetPitchLaneButton.addEventListener("click", clearManualPitchLane);
+  els.customScaleGrid.addEventListener("click", handleCustomScaleClick);
   els.batchScopeSelect.addEventListener("change", renderVocalPanel);
   els.batchRenderButton.addEventListener("click", renderBatchVocalTakes);
   els.saveProjectButton.addEventListener("click", saveProject);
@@ -693,6 +700,7 @@ function getProjectSettings() {
     countIn: els.countInSelect.value,
     key: els.keySelect.value,
     scaleMode: els.scaleModeSelect.value,
+    customScaleIntervals: [...state.customScaleIntervals],
     inputGain: state.inputGain,
     armedTrackId: state.armedTrackId,
     selectedPresetId: state.selectedPresetId,
@@ -711,6 +719,7 @@ function applyProjectSettings(settings = {}) {
   els.countInSelect.value = settings.countIn || "0";
   els.keySelect.value = settings.key || "C minor";
   els.scaleModeSelect.value = settings.scaleMode || "minor";
+  state.customScaleIntervals = normalizeScaleIntervals(settings.customScaleIntervals);
   els.inputGainSlider.value = settings.inputGain || 2;
   state.armedTrackId = tracks.some((track) => track.id === settings.armedTrackId)
     ? settings.armedTrackId
@@ -1863,6 +1872,7 @@ function renderVocalPanel() {
   els.analyzeVocalButton.querySelector(".button-label").textContent = state.isAnalyzingVocal ? "Analyzing" : "Analyze";
   els.renderVocalButton.querySelector(".button-label").textContent = state.isRenderingVocal ? "Rendering" : "Render";
   els.batchRenderButton.querySelector(".button-label").textContent = state.isBatchRendering ? "Rendering" : "Render batch";
+  renderCustomScaleEditor();
   renderPitchPanel(selectedTake);
   renderBatchPanel(batchTargets);
 
@@ -2107,6 +2117,7 @@ async function renderProcessedTake(sourceTake, preset, tuneSettings) {
       tuneSettings: { ...tuneSettings },
       key: els.keySelect.value,
       scaleMode: els.scaleModeSelect.value,
+      customScaleIntervals: [...state.customScaleIntervals],
     },
     pitchAnalysis: renderedAnalysis,
     pitchPlan: getPitchPlan(renderedAnalysis),
@@ -2127,6 +2138,92 @@ function analyzePitchBuffer(audioBuffer) {
   return window.PunchLabDSP.analyzePitchBuffer(audioBuffer);
 }
 
+function renderCustomScaleEditor() {
+  if (!els.customScaleEditor || !els.customScaleGrid) {
+    return;
+  }
+
+  const isCustom = els.scaleModeSelect.value === "custom";
+  els.customScaleEditor.classList.toggle("hidden", !isCustom);
+  if (!isCustom) {
+    return;
+  }
+
+  state.customScaleIntervals = normalizeScaleIntervals(state.customScaleIntervals);
+  const root = getKeyRootClass(els.keySelect.value);
+  const activeIntervals = new Set(state.customScaleIntervals);
+  els.customScaleMeta.textContent = `${activeIntervals.size} notes`;
+  els.customScaleGrid.innerHTML = Array.from({ length: 12 }, (_, interval) => {
+    const isActive = activeIntervals.has(interval);
+    const noteName = window.PunchLabDSP.NOTE_NAMES[window.PunchLabDSP.positiveModulo(root + interval, 12)];
+    return `
+      <button
+        class="scale-note-button ${isActive ? "active" : ""}"
+        type="button"
+        data-scale-interval="${interval}"
+        ${isActive && activeIntervals.size === 1 ? "disabled" : ""}
+      >
+        ${noteName}
+      </button>
+    `;
+  }).join("");
+}
+
+function handleCustomScaleClick(event) {
+  const button = event.target.closest("[data-scale-interval]");
+  if (!button) {
+    return;
+  }
+
+  const interval = Number(button.dataset.scaleInterval);
+  if (!Number.isFinite(interval)) {
+    return;
+  }
+
+  const intervals = normalizeScaleIntervals(state.customScaleIntervals);
+  const hasInterval = intervals.includes(interval);
+  if (hasInterval && intervals.length === 1) {
+    return;
+  }
+
+  state.customScaleIntervals = normalizeScaleIntervals(
+    hasInterval ? intervals.filter((item) => item !== interval) : [...intervals, interval],
+  );
+  els.sessionState.textContent = "Scale updated";
+  renderVocalPanel();
+  scheduleAutosave();
+}
+
+function normalizeScaleIntervals(intervals) {
+  const source = Array.isArray(intervals) ? intervals : DEFAULT_CUSTOM_SCALE_INTERVALS;
+  const normalized = [...new Set(
+    source
+      .map((value) => Number(value))
+      .filter((value) => Number.isFinite(value))
+      .map((value) => window.PunchLabDSP.positiveModulo(Math.round(value), 12)),
+  )].sort((left, right) => left - right);
+
+  return normalized.length ? normalized : [...DEFAULT_CUSTOM_SCALE_INTERVALS];
+}
+
+function getKeyRootClass(keyValue) {
+  const rootName = String(keyValue || "C minor").split(" ")[0];
+  const root = window.PunchLabDSP.NOTE_NAMES.indexOf(rootName);
+  return root >= 0 ? root : 0;
+}
+
+function getPitchModeLabel() {
+  if (els.scaleModeSelect.value === "chromatic") {
+    return "Chromatic";
+  }
+
+  if (els.scaleModeSelect.value === "custom") {
+    return "Custom";
+  }
+
+  return els.keySelect.value;
+}
+
 function renderPitchPanel(take) {
   if (!els.pitchDetectedText) {
     return;
@@ -2134,7 +2231,7 @@ function renderPitchPanel(take) {
 
   const analysis = take?.pitchAnalysis || null;
   const plan = getPitchPlan(analysis, take);
-  els.pitchKeyText.textContent = els.scaleModeSelect.value === "chromatic" ? "Chromatic" : els.keySelect.value;
+  els.pitchKeyText.textContent = getPitchModeLabel();
   els.pitchDetectedText.textContent = plan.detectedLabel;
   els.pitchTargetText.textContent = plan.manualCount ? `${plan.manualCount} edits` : plan.targetLabel;
   els.pitchCorrectionText.textContent = plan.manualCount
@@ -2149,7 +2246,12 @@ function getPitchPlan(analysis, take = null) {
 }
 
 function getBasePitchPlan(analysis) {
-  return window.PunchLabDSP.getPitchPlan(analysis, els.keySelect.value, els.scaleModeSelect.value);
+  return window.PunchLabDSP.getPitchPlan(
+    analysis,
+    els.keySelect.value,
+    els.scaleModeSelect.value,
+    state.customScaleIntervals,
+  );
 }
 
 function applyManualPitchTargets(plan, take) {
