@@ -162,6 +162,8 @@
 - project zip `preview.html` 전체 shell 조립을 `src/project-zip.js`로 분리하고 app controller는 archive context만 전달
 - Project zip archive asset policy split 1차
 - project zip file map, asset path reservation, beat/take manifest entry builder를 `src/project-zip.js`로 분리
+- Project zip marker manifest split 1차
+- project zip marker manifest entry와 lyric line count 계산을 `src/project-zip.js`로 분리
 - Recording quick take handoff 1차
 - 녹음 화면 최근 take 리스트에서 바로 듣기와 Vocal 탭 전송 제공
 - Desktop package manifest 1차

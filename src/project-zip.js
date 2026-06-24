@@ -165,6 +165,22 @@
     };
   }
 
+  function createProjectZipMarkerManifestEntries(markers = []) {
+    return (Array.isArray(markers) ? markers : [])
+      .map((marker) => {
+        const lyrics = String(marker.lyrics || "");
+        return {
+          id: marker.id,
+          type: marker.type || "Marker",
+          time: Math.max(0, Number(marker.time) || 0),
+          comment: String(marker.comment || ""),
+          lyrics,
+          lyricLines: getLyricLineCount(lyrics),
+        };
+      })
+      .sort((left, right) => left.time - right.time);
+  }
+
   function getProjectZipFileExtension(fileName, fallback = "bin") {
     const match = /\.([a-z0-9]{1,8})$/i.exec(fileName || "");
     return (match?.[1] || fallback).toLowerCase();
@@ -901,6 +917,7 @@ ${getProjectZipPreviewPlayerScript()}
     createProjectZipTakeAssetPath,
     createProjectZipBeatManifestEntry,
     createProjectZipTakeManifestEntry,
+    createProjectZipMarkerManifestEntries,
     sortProjectZipPreviewTakes,
     sortProjectZipPreviewCompTakes,
     buildProjectZipPreviewPlaybackData,

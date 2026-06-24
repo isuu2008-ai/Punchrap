@@ -254,6 +254,10 @@ if (!projectZipSource.includes("createProjectZipBeatManifestEntry") || !projectZ
   console.error("Project zip beat and take manifest entry policy must live in src/project-zip.js.");
   failed = true;
 }
+if (!projectZipSource.includes("createProjectZipMarkerManifestEntries") || !appSource.includes("window.PunchLabProjectZip.createProjectZipMarkerManifestEntries") || appSource.includes("manifest.markers = normalizeMarkers(bundle.markers).map")) {
+  console.error("Project zip marker manifest entry policy must live in src/project-zip.js.");
+  failed = true;
+}
 if (!projectZipSource.includes("buildProjectZipPreviewPlaybackData") || !projectZipSource.includes("buildProjectZipPreviewPlaybackData(manifest, takes)") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewHtml")) {
   console.error("Project zip preview playback data policy must live in src/project-zip.js and be used by app.js.");
   failed = true;

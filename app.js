@@ -1209,14 +1209,7 @@ async function buildProjectZipFiles(bundle, projectFilename) {
     }));
   }
 
-  manifest.markers = normalizeMarkers(bundle.markers).map((marker) => ({
-    id: marker.id,
-    type: marker.type,
-    time: marker.time,
-    comment: marker.comment,
-    lyrics: marker.lyrics,
-    lyricLines: getLyricLineCount(marker.lyrics),
-  }));
+  manifest.markers = window.PunchLabProjectZip.createProjectZipMarkerManifestEntries(bundle.markers);
   files["preview.html"] = buildProjectZipPreviewHtml(manifest, bundle, projectFilename);
   files["manifest.json"] = JSON.stringify(manifest, null, 2);
   files["README.txt"] = window.PunchLabProjectZip.buildProjectZipReadme(projectFilename);
