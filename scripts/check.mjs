@@ -17,6 +17,7 @@ const syntaxFiles = [
   "src/project.js",
   "src/storage.js",
   "src/platform.js",
+  "src/desktop.js",
   "sw.js",
 ];
 
@@ -34,11 +35,13 @@ const requiredScripts = [
   "src/project.js",
   "src/storage.js",
   "src/platform.js",
+  "src/desktop.js",
   "app.js",
 ];
 
 const requiredFiles = [
   "manifest.webmanifest",
+  "desktop-host-manifest.json",
   "assets/punchlab-icon.svg",
   "sw.js",
 ];

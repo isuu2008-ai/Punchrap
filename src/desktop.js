@@ -1,0 +1,118 @@
+(() => {
+  const FALLBACK_REQUIRED_NATIVE_METHODS = [
+    "getCapabilities",
+    "getDevices",
+    "renderMix",
+    "renderVocal",
+    "startInputMonitor",
+    "stopInputMonitor",
+  ];
+
+  const OPTIONAL_NATIVE_METHODS = [
+    "getLatencyStats",
+    "setOutputDevice",
+    "setBufferSize",
+    "openProjectFile",
+    "saveProjectFile",
+    "exportCompressedAudio",
+    "scanPluginHosts",
+  ];
+
+  function getManifest() {
+    const requiredNativeMethods = window.PunchLabEngineContract?.getRequiredNativeMethods?.() || FALLBACK_REQUIRED_NATIVE_METHODS;
+    return {
+      appId: "ai.isuu2008.punchrap",
+      appName: "PunchLab",
+      bridgeVersion: 1,
+      bridgeGlobal: "__PUNCHLAB_NATIVE__",
+      manifestPath: "./desktop-host-manifest.json",
+      projectFormat: ".punchlab.json",
+      bundleFormat: ".punchlab.zip",
+      requiredNativeMethods,
+      optionalNativeMethods: [...OPTIONAL_NATIVE_METHODS],
+      contracts: {
+        engine: "src/engine-contract.js",
+        bridge: "src/native-bridge.js",
+        project: "src/project.js",
+        desktop: "src/desktop.js",
+      },
+    };
+  }
+
+  function getReadiness() {
+    const platform = window.PunchLabPlatform?.platform || {};
+    const bridgeStatus = window.PunchLabNativeBridge?.getStatus?.() || null;
+    const serviceWorker = platform.serviceWorker || {};
+    const checks = [
+      makeCheck(
+        "secure-context",
+        "Secure context",
+        window.isSecureContext ? "ready" : "blocked",
+        window.isSecureContext ? "Required browser APIs are available." : "Use localhost or HTTPS.",
+      ),
+      makeCheck(
+        "file-access",
+        "File access",
+        window.PunchLabFiles?.supportsFileSystemAccess?.() ? "ready" : "fallback",
+        window.PunchLabFiles?.supportsFileSystemAccess?.() ? "OS file picker available." : "Download/input fallback active.",
+      ),
+      makeCheck(
+        "service-worker",
+        "Service worker",
+        getServiceWorkerStatus(serviceWorker),
+        getServiceWorkerDetail(serviceWorker),
+      ),
+      makeCheck(
+        "native-bridge",
+        "Native bridge",
+        bridgeStatus?.available ? "ready" : "fallback",
+        bridgeStatus?.available
+          ? "Native host contract satisfied."
+          : `Web Audio fallback active; missing ${bridgeStatus?.missingMethods?.length || getManifest().requiredNativeMethods.length} method(s).`,
+      ),
+    ];
+    const readyCount = checks.filter((check) => check.status === "ready").length;
+
+    return {
+      manifest: getManifest(),
+      displayMode: platform.displayMode || "browser",
+      bridgeStatus,
+      nativeAvailable: Boolean(bridgeStatus?.available),
+      desktopReady: checks.every((check) => check.status !== "blocked"),
+      summary: `${readyCount}/${checks.length} ready`,
+      checks,
+    };
+  }
+
+  function getServiceWorkerStatus(serviceWorker) {
+    if (!serviceWorker.supported) {
+      return "fallback";
+    }
+    if (serviceWorker.registered) {
+      return "ready";
+    }
+    if (serviceWorker.error) {
+      return "fallback";
+    }
+    return "pending";
+  }
+
+  function getServiceWorkerDetail(serviceWorker) {
+    if (!serviceWorker.supported) {
+      return "Browser service worker unsupported.";
+    }
+    if (serviceWorker.registered) {
+      return "Offline shell cache registered.";
+    }
+    return serviceWorker.error || "Registration pending.";
+  }
+
+  function makeCheck(id, label, status, detail) {
+    return { id, label, status, detail };
+  }
+
+  window.PunchLabDesktop = {
+    getManifest,
+    getReadiness,
+  };
+})();

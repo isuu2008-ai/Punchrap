@@ -320,6 +320,7 @@ function init() {
   window.addEventListener("resize", drawIdleWave);
   window.addEventListener("keydown", handleGlobalShortcut);
   window.addEventListener("punchlab:native-ready", renderEngineStatus);
+  window.addEventListener("punchlab:platform-ready", renderEngineStatus);
   navigator.mediaDevices?.addEventListener?.("devicechange", refreshAudioDevices);
   window.addEventListener("load", () => {
     if (window.lucide) {
@@ -340,10 +341,14 @@ function renderEngineStatus() {
     label: driver?.id === "native" ? "Native" : "Web Audio",
     title: driver?.name || "Web Audio Engine",
   };
+  const desktopReadiness = window.PunchLabDesktop?.getReadiness?.();
 
   els.engineStatus.dataset.engine = descriptor.kind;
+  els.engineStatus.dataset.desktop = desktopReadiness?.nativeAvailable ? "native" : "fallback";
   els.engineStatusText.textContent = descriptor.label;
-  els.engineStatus.title = descriptor.title;
+  els.engineStatus.title = desktopReadiness
+    ? `${descriptor.title} / Desktop ${desktopReadiness.summary}`
+    : descriptor.title;
 }
 
 function bindEvents() {

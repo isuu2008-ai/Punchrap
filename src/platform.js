@@ -16,8 +16,13 @@
     return "browser";
   }
 
+  function emitPlatformReady() {
+    window.dispatchEvent(new CustomEvent("punchlab:platform-ready", { detail: platform }));
+  }
+
   async function registerServiceWorker() {
     if (!platform.serviceWorker.supported || !window.isSecureContext) {
+      emitPlatformReady();
       return platform;
     }
 
@@ -29,6 +34,7 @@
       console.warn("PunchLab service worker registration failed", error);
     }
 
+    emitPlatformReady();
     return platform;
   }
 

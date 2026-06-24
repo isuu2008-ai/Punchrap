@@ -21,6 +21,8 @@
 - `scripts/check.mjs` smoke check 추가
 - PWA manifest/icon/service worker 추가
 - Platform bootstrap `src/platform.js` 추가
+- Desktop wrapper integration 1차
+- `desktop-host-manifest.json`과 `src/desktop.js`로 native wrapper 계약/준비 상태를 분리
 - `.punchlab.json` 로컬 프로젝트 저장/복원
 - processed take `v1`, `v2` 버전 관리
 - processed take 버전/체인 정보 저장 포맷 포함

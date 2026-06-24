@@ -1,0 +1,31 @@
+{
+  "appId": "ai.isuu2008.punchrap",
+  "appName": "PunchLab",
+  "bridgeVersion": 1,
+  "bridgeGlobal": "__PUNCHLAB_NATIVE__",
+  "projectFormat": ".punchlab.json",
+  "bundleFormat": ".punchlab.zip",
+  "requiredNativeMethods": [
+    "getCapabilities",
+    "getDevices",
+    "renderMix",
+    "renderVocal",
+    "startInputMonitor",
+    "stopInputMonitor"
+  ],
+  "optionalNativeMethods": [
+    "getLatencyStats",
+    "setOutputDevice",
+    "setBufferSize",
+    "openProjectFile",
+    "saveProjectFile",
+    "exportCompressedAudio",
+    "scanPluginHosts"
+  ],
+  "contracts": {
+    "engine": "src/engine-contract.js",
+    "bridge": "src/native-bridge.js",
+    "project": "src/project.js",
+    "desktop": "src/desktop.js"
+  }
+}
