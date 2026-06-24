@@ -301,6 +301,10 @@ if (!indexHtml.includes("updateCustomPresetButton") || !appSource.includes("upda
   console.error("Custom vocal presets must support updating the selected custom preset from current chain settings.");
   failed = true;
 }
+if (!readFileSync("src/vocal.js", "utf8").includes("gate: Number(tuneSettings.gate") || !appSource.includes("gate: preset.gate") || !projectZipSource.includes("<dt>Gate</dt>") || !projectZipSource.includes("<dt>De-ess</dt>")) {
+  console.error("Gate and de-ess preset values must be preserved in render snapshots and project zip preset previews.");
+  failed = true;
+}
 if (!appSource.includes("summarizeNativeAudioEnvironment") || !appSource.includes("nativeAudio: summarizeNativeAudioEnvironment()")) {
   console.error("Project zip manifest must include native audio environment summary.");
   failed = true;

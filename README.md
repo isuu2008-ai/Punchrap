@@ -206,6 +206,7 @@ node .\scripts\check.mjs
 - Selected custom vocal presets can be updated from the current chain settings
 - Custom vocal preset deletion while built-in presets stay protected
 - Vocal gate and de-ess controls in the offline render chain
+- Project zip preset previews preserve Gate and De-ess settings
 - Chromatic pitch-correction mode for rap-style hard tune without key locking
 - Fixed MIDI target-note mode for robotic hard-tune effects
 - Manual pitch lane edits for analyzed vocal frames, persisted in project files

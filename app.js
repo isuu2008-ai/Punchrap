@@ -1358,6 +1358,8 @@ function summarizePresetManifest(presetList = [], selectedPresetId = "") {
         selected: preset.id === selectedPresetId,
         retune: preset.retune,
         humanize: preset.humanize,
+        gate: preset.gate,
+        deEss: preset.deEss,
         comp: preset.comp,
         saturation: preset.saturation,
         space: preset.space,

@@ -805,6 +805,8 @@ ${getProjectZipPreviewPlayerScript()}
           <dl>
             <div><dt>Retune</dt><dd>${escapeHtml(String(preset.retune ?? ""))}</dd></div>
             <div><dt>Humanize</dt><dd>${escapeHtml(String(preset.humanize ?? ""))}</dd></div>
+            <div><dt>Gate</dt><dd>${escapeHtml(String(preset.gate ?? ""))}</dd></div>
+            <div><dt>De-ess</dt><dd>${escapeHtml(String(preset.deEss ?? ""))}</dd></div>
             <div><dt>Comp</dt><dd>${escapeHtml(String(preset.comp ?? ""))}</dd></div>
             <div><dt>Space</dt><dd>${escapeHtml(String(preset.space ?? ""))}</dd></div>
             <div><dt>EQ</dt><dd>${escapeHtml(`${formatDb(Number(preset.lowEq || 0))}/${formatDb(Number(preset.midEq || 0))}/${formatDb(Number(preset.airEq || 0))}`)}</dd></div>

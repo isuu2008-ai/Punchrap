@@ -218,6 +218,8 @@
 - project zip preview의 take audio card formatter와 automation/region/latency summary를 `src/project-zip.js`로 분리
 - Project zip preview shell split 1차
 - project zip `preview.html` 전체 shell 조립을 `src/project-zip.js`로 분리하고 app controller는 archive context만 전달
+- Zip preset Gate/De-ess preview 1차
+- project zip preset manifest/preview와 render preset snapshot에 Gate/De-ess 값을 보존
 - Project zip archive asset policy split 1차
 - project zip file map, asset path reservation, beat/take manifest entry builder를 `src/project-zip.js`로 분리
 - Project zip marker manifest split 1차
