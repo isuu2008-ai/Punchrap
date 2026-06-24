@@ -47,11 +47,12 @@
   function getReadiness() {
     const platform = window.PunchLabPlatform?.platform || {};
     const bridgeStatus = window.PunchLabNativeBridge?.getStatus?.() || null;
-    const nativeHost = window.PunchLabNativeBridge?.getNativeHost?.() || null;
     const engineDriver = window.PunchLabEngine?.getDriver?.() || null;
     const capabilities = engineDriver?.capabilities || {};
     const requiredCapabilities = window.PunchLabEngineContract?.getRequiredEngineCapabilities?.() || [];
     const missingCapabilities = window.PunchLabEngineContract?.getMissingCapabilities?.(capabilities, requiredCapabilities) || [];
+    const missingLatencyMethods = getMissingOptionalMethods(bridgeStatus, ["getLatencyStats", "setBufferSize"]);
+    const hasLatencyControl = missingLatencyMethods.length === 0;
     const serviceWorker = platform.serviceWorker || {};
     const checks = [
       makeCheck(
@@ -91,8 +92,8 @@
       makeCheck(
         "latency-buffer-control",
         "Latency/buffer control",
-        hasNativeMethods(nativeHost, ["getLatencyStats", "setBufferSize"]) ? "ready" : "fallback",
-        hasNativeMethods(nativeHost, ["getLatencyStats", "setBufferSize"])
+        hasLatencyControl ? "ready" : "fallback",
+        hasLatencyControl
           ? "Native host can report latency and change buffer size."
           : "Browser fallback active; native host needs getLatencyStats and setBufferSize for low-latency tuning.",
       ),
@@ -104,8 +105,8 @@
       displayMode: platform.displayMode || "browser",
       bridgeStatus,
       latencyControl: {
-        available: hasNativeMethods(nativeHost, ["getLatencyStats", "setBufferSize"]),
-        missingMethods: getMissingNativeMethods(nativeHost, ["getLatencyStats", "setBufferSize"]),
+        available: hasLatencyControl,
+        missingMethods: missingLatencyMethods,
       },
       engineDriver: engineDriver
         ? {
@@ -149,15 +150,12 @@
     return { id, label, status, detail };
   }
 
-  function hasNativeMethods(host, methods) {
-    return getMissingNativeMethods(host, methods).length === 0;
-  }
-
-  function getMissingNativeMethods(host, methods) {
-    if (!host) {
+  function getMissingOptionalMethods(status, methods) {
+    if (!status?.available) {
       return [...methods];
     }
-    return methods.filter((method) => typeof host[method] !== "function");
+    const missing = new Set(status.missingOptionalMethods || []);
+    return methods.filter((method) => missing.has(method));
   }
 
   window.PunchLabDesktop = {

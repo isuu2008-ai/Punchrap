@@ -7,6 +7,10 @@
     "startInputMonitor",
     "stopInputMonitor",
   ];
+  const OPTIONAL_METHODS = window.PunchLabEngineContract?.getOptionalNativeMethods?.() || [
+    "getLatencyStats",
+    "setBufferSize",
+  ];
 
   function getNativeHost() {
     return window.__PUNCHLAB_NATIVE__ || null;
@@ -23,10 +27,13 @@
     }
 
     const missingMethods = REQUIRED_METHODS.filter((method) => typeof host[method] !== "function");
+    const missingOptionalMethods = OPTIONAL_METHODS.filter((method) => typeof host[method] !== "function");
     return {
       available: missingMethods.length === 0,
       driverId: host.driverId || "native",
       missingMethods,
+      optionalMethods: OPTIONAL_METHODS,
+      missingOptionalMethods,
     };
   }
 
@@ -39,10 +46,21 @@
     return host[method](payload);
   }
 
+  async function callOptionalNative(method, payload = null) {
+    const host = getNativeHost();
+    const status = getStatus();
+    if (!host || !status.available || typeof host[method] !== "function") {
+      return null;
+    }
+    return host[method](payload);
+  }
+
   window.PunchLabNativeBridge = {
+    callOptionalNative,
     callNative,
     getNativeHost,
     getStatus,
+    optionalMethods: [...OPTIONAL_METHODS],
     requiredMethods: [...REQUIRED_METHODS],
   };
 })();

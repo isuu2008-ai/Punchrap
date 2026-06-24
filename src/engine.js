@@ -37,8 +37,10 @@
       downloadBlob: window.PunchLabAudio.downloadBlob,
       encodeWav: window.PunchLabAudio.encodeWav,
       getEffectivePreset: window.PunchLabVocal.getEffectivePreset,
+      getLatencyStats: async () => null,
       renderMixBuffer: window.PunchLabMix.renderMixBuffer,
       renderProcessedVocal: window.PunchLabVocal.renderProcessedVocal,
+      setBufferSize: async () => null,
     };
   }
 
@@ -65,7 +67,9 @@
     downloadBlob: (...args) => requireMethod("downloadBlob")(...args),
     encodeWav: (...args) => requireMethod("encodeWav")(...args),
     getEffectivePreset: (...args) => requireMethod("getEffectivePreset")(...args),
+    getLatencyStats: (...args) => requireMethod("getLatencyStats")(...args),
     renderMixBuffer: (...args) => requireMethod("renderMixBuffer")(...args),
     renderProcessedVocal: (...args) => requireMethod("renderProcessedVocal")(...args),
+    setBufferSize: (...args) => requireMethod("setBufferSize")(...args),
   };
 })();

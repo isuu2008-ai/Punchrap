@@ -25,6 +25,8 @@
       downloadBlob: (...args) => window.PunchLabAudio.downloadBlob(...args),
       encodeWav: (...args) => window.PunchLabAudio.encodeWav(...args),
       getEffectivePreset: (...args) => window.PunchLabVocal.getEffectivePreset(...args),
+      getLatencyStats: () => bridge.callOptionalNative("getLatencyStats"),
+      setBufferSize: (payload = {}) => bridge.callOptionalNative("setBufferSize", payload),
       startInputMonitor: (payload = null) => bridge.callNative("startInputMonitor", payload),
       stopInputMonitor: (payload = null) => bridge.callNative("stopInputMonitor", payload),
       async renderMixBuffer(request) {
@@ -65,6 +67,7 @@
       bridgeStatus,
       adapterInstalled: Boolean(window.PunchLabNativeEngine),
       canInstall: Boolean(bridgeStatus?.available),
+      optionalMethods: window.PunchLabNativeBridge?.optionalMethods || [],
       requiredMethods: window.PunchLabNativeBridge?.requiredMethods || [],
     };
   }

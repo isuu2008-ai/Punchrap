@@ -8,6 +8,11 @@
     "stopInputMonitor",
   ];
 
+  const OPTIONAL_NATIVE_METHODS = [
+    "getLatencyStats",
+    "setBufferSize",
+  ];
+
   const WEB_AUDIO_CAPABILITIES = {
     offlineMixRender: true,
     vocalRender: true,
@@ -37,6 +42,10 @@
 
   function getRequiredNativeMethods() {
     return [...REQUIRED_NATIVE_METHODS];
+  }
+
+  function getOptionalNativeMethods() {
+    return [...OPTIONAL_NATIVE_METHODS];
   }
 
   function getRequiredEngineCapabilities() {
@@ -87,6 +96,7 @@
     describeDriver,
     getMissingCapabilities,
     getOptionalEngineCapabilities,
+    getOptionalNativeMethods,
     getRequiredEngineCapabilities,
     getRequiredNativeMethods,
     getWebAudioCapabilities,
