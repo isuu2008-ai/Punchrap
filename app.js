@@ -988,6 +988,8 @@ async function buildProjectZipFiles(bundle, projectFilename) {
     const data = await take.blob.arrayBuffer();
     files[takePath] = data;
     const track = findTrack(take.trackId);
+    const sourceTake = take.sourceTakeId ? findTake(take.sourceTakeId) : null;
+    const processedChain = summarizeProcessedChain(take);
     manifest.takes.push({
       id: take.id,
       path: takePath,
@@ -996,6 +998,13 @@ async function buildProjectZipFiles(bundle, projectFilename) {
       name: getTakeShortName(take),
       processed: Boolean(take.processed),
       sourceTakeId: take.sourceTakeId || null,
+      sourceTakeName: sourceTake ? getTakeShortName(sourceTake) : null,
+      renderVersion: processedChain?.renderVersion || null,
+      renderLabel: processedChain?.renderLabel || null,
+      presetId: processedChain?.presetId || null,
+      presetName: processedChain?.presetName || null,
+      tuneSignature: processedChain?.tuneSignature || null,
+      chain: processedChain,
       compSelected: Boolean(take.compSelected),
       compOrder: Number.isFinite(Number(take.compOrder)) ? Number(take.compOrder) : null,
       bestTake: Boolean(take.bestTake),
@@ -1008,7 +1017,7 @@ async function buildProjectZipFiles(bundle, projectFilename) {
       duration: getTakeVisibleDuration(take),
       sourceOffset: getTakeSourceOffset(take),
       sourceDuration: getTakeSourceDuration(take),
-      automationState: summarizeAutomationState(take.chainSnapshot?.automationState),
+      automationState: processedChain?.automationState || summarizeAutomationState(take.chainSnapshot?.automationState),
       bytes: data.byteLength,
     });
   }
@@ -1101,6 +1110,8 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
             <dl>
               <div><dt>Start</dt><dd>${escapeHtml(formatDuration(take.startTime))}</dd></div>
               <div><dt>Length</dt><dd>${escapeHtml(formatDuration(take.duration))}</dd></div>
+              <div><dt>Version</dt><dd>${escapeHtml(formatPreviewRenderVersion(take))}</dd></div>
+              <div><dt>Source</dt><dd>${escapeHtml(formatPreviewSourceTake(take))}</dd></div>
               <div><dt>Gain</dt><dd>${escapeHtml(formatPreviewGain(take.volume, take.clipGain))}</dd></div>
               <div><dt>Chain</dt><dd>${escapeHtml(formatAutomationStateSummary(take.automationState))}</dd></div>
             </dl>
@@ -1288,6 +1299,43 @@ function formatFileSize(bytes) {
 function formatPreviewGain(volume, clipGain) {
   const gain = Math.max(0, Number(volume || 0) * Number(clipGain || 1));
   return `${Math.round(gain * 100)}%`;
+}
+
+function formatPreviewRenderVersion(take) {
+  if (!take?.processed) {
+    return "Raw take";
+  }
+
+  return take.renderLabel || `${take.presetName || "Processed"} v${take.renderVersion || 1}`;
+}
+
+function formatPreviewSourceTake(take) {
+  if (!take?.processed) {
+    return "Original";
+  }
+
+  return take.sourceTakeName || take.sourceTakeId || "Unknown raw";
+}
+
+function summarizeProcessedChain(take) {
+  if (!take?.processed) {
+    return null;
+  }
+
+  const snapshot = take.chainSnapshot || {};
+  const tuneSettings = take.tuneSettings || snapshot.tuneSettings || null;
+  const renderVersion = Number(take.version || 1);
+  return {
+    renderVersion: Number.isFinite(renderVersion) ? renderVersion : 1,
+    renderLabel: take.renderLabel || `${take.presetName || "Processed"} v${Number.isFinite(renderVersion) ? renderVersion : 1}`,
+    presetId: take.presetId || null,
+    presetName: take.presetName || snapshot.preset?.name || null,
+    tuneSignature: tuneSettings ? getTuneSignature(tuneSettings) : null,
+    key: snapshot.key || null,
+    scaleMode: snapshot.scaleMode || null,
+    customScaleIntervals: Array.isArray(snapshot.customScaleIntervals) ? [...snapshot.customScaleIntervals] : null,
+    automationState: summarizeAutomationState(snapshot.automationState),
+  };
 }
 
 function summarizeAutomationState(automationState) {
