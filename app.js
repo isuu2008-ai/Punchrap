@@ -5633,7 +5633,7 @@ function timelinePercent(value, end) {
 }
 
 function getBeatDuration() {
-  return 60 / (Number(els.bpmInput.value) || 140);
+  return window.PunchLabTimeline.getBeatDuration(getTimelineBpm());
 }
 
 function getTimelineSnapMode() {
@@ -5641,40 +5641,31 @@ function getTimelineSnapMode() {
 }
 
 function normalizeTimelineSnapMode(value) {
-  return ["off", "beat", "bar"].includes(value) ? value : "off";
+  return window.PunchLabTimeline.normalizeTimelineSnapMode(value);
 }
 
 function getTimelineSnapStep() {
-  const mode = getTimelineSnapMode();
-  if (mode === "off") {
-    return 0;
-  }
-
-  return getBeatDuration() * (mode === "bar" ? 4 : 1);
+  return window.PunchLabTimeline.getTimelineSnapStep({
+    bpm: getTimelineBpm(),
+    mode: getTimelineSnapMode(),
+  });
 }
 
 function snapTimelineTime(value) {
-  const safeValue = Math.max(0, Number(value) || 0);
-  const step = getTimelineSnapStep();
-  if (!step) {
-    return safeValue;
-  }
-
-  return Math.max(0, Math.round(safeValue / step) * step);
+  return window.PunchLabTimeline.snapTimelineTime({
+    bpm: getTimelineBpm(),
+    mode: getTimelineSnapMode(),
+    value,
+  });
 }
 
 function nudgeTimelineTime(value, delta) {
-  const safeValue = Math.max(0, Number(value) || 0);
-  const step = getTimelineSnapStep();
-  if (!step) {
-    return Math.max(0, safeValue + delta);
-  }
-
-  if (delta > 0) {
-    return Math.ceil((safeValue + 0.0001) / step) * step;
-  }
-
-  return Math.max(0, Math.floor((safeValue - 0.0001) / step) * step);
+  return window.PunchLabTimeline.nudgeTimelineTime({
+    bpm: getTimelineBpm(),
+    delta,
+    mode: getTimelineSnapMode(),
+    value,
+  });
 }
 
 function formatTimelineInputTime(value) {
@@ -5682,19 +5673,15 @@ function formatTimelineInputTime(value) {
 }
 
 function snapToInputPrecision(value) {
-  return Number(Math.max(0, Number(value) || 0).toFixed(3));
+  return window.PunchLabTimeline.snapToInputPrecision(value);
 }
 
 function normalizeMarkers(markers = []) {
-  return markers
-    .map((marker) => ({
-      id: marker.id || crypto.randomUUID(),
-      type: marker.type || "Marker",
-      time: Math.max(0, Number(marker.time) || 0),
-      lyrics: String(marker.lyrics || ""),
-      comment: String(marker.comment || ""),
-    }))
-    .sort((a, b) => a.time - b.time);
+  return window.PunchLabTimeline.normalizeMarkers(markers, () => crypto.randomUUID());
+}
+
+function getTimelineBpm() {
+  return Number(els.bpmInput.value) || 140;
 }
 
 function downloadLatestTake() {

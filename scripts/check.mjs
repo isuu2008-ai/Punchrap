@@ -9,6 +9,7 @@ const syntaxFiles = [
   "src/audio.js",
   "src/export-mastering.js",
   "src/export-plan.js",
+  "src/timeline.js",
   "src/dsp.js",
   "src/files.js",
   "src/templates.js",
@@ -35,6 +36,7 @@ const requiredScripts = [
   "src/audio.js",
   "src/export-mastering.js",
   "src/export-plan.js",
+  "src/timeline.js",
   "src/files.js",
   "src/templates.js",
   "src/devices.js",
@@ -176,6 +178,10 @@ if (!indexHtml.includes("src/export-plan.js") || !readFileSync("sw.js", "utf8").
   console.error("Export plan module must be loaded by index.html and cached by the service worker.");
   failed = true;
 }
+if (!indexHtml.includes("src/timeline.js") || !readFileSync("sw.js", "utf8").includes("./src/timeline.js")) {
+  console.error("Timeline policy module must be loaded by index.html and cached by the service worker.");
+  failed = true;
+}
 if (!tauriBridgeSource.includes("window.__TAURI__?.core?.invoke") || !tauriBridgeSource.includes("get_punchlab_bridge_status") || !tauriBridgeSource.includes("nativeBridgeReady")) {
   console.error("Tauri bridge adapter must probe Tauri invoke and gate native activation on nativeBridgeReady.");
   failed = true;
@@ -283,6 +289,11 @@ if (!appSource.includes("getAudibleCompTakes") || !appSource.includes("const has
 }
 if (!exportPlanSource.includes("window.PunchLabExportPlan") || !exportPlanSource.includes("buildStemExportGroups") || !exportPlanSource.includes("buildSingleExportGroup") || !appSource.includes("PunchLabExportPlan.buildStemExportGroups") || !appSource.includes("PunchLabExportPlan.buildSingleExportGroup")) {
   console.error("Export filename, stem group, and compressed format planning must be separated from the app controller.");
+  failed = true;
+}
+const timelineSource = readFileSync("src/timeline.js", "utf8");
+if (!timelineSource.includes("window.PunchLabTimeline") || !timelineSource.includes("normalizeTimelineSnapMode") || !appSource.includes("PunchLabTimeline.snapTimelineTime") || !appSource.includes("PunchLabTimeline.normalizeMarkers")) {
+  console.error("Timeline snap and marker normalization policy must live in src/timeline.js and be used by app.js.");
   failed = true;
 }
 if (!indexHtml.includes("quickTakeList") || !appSource.includes("data-quick-play-take") || !appSource.includes("data-quick-vocal-take") || !appSource.includes("sendTakeToVocal")) {

@@ -216,6 +216,8 @@
 - beat/vocal/comp/dry/tuned 단일 WAV export group 계획을 `src/export-plan.js`로 분리
 - Audible export source alignment 1차
 - comp/dry/tuned export count, button state, render 대상이 audible track routing을 따르도록 정렬
+- Timeline policy module split 1차
+- snap mode, beat/bar snap, nudge, marker normalization 계산을 `src/timeline.js`로 분리
 - Project zip asset/timeline formatter split 1차
 - project zip preview의 beat section, marker rows, comp lane rows를 `src/project-zip.js`로 분리
 - Project zip take card formatter split 1차
