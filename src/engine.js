@@ -10,7 +10,8 @@
   };
 
   function getDriver() {
-    if (window.PunchLabNativeEngine) {
+    const bridgeStatus = window.PunchLabNativeBridge?.getStatus();
+    if (bridgeStatus?.available && window.PunchLabNativeEngine) {
       return {
         id: "native",
         name: "Native Audio Engine",
@@ -26,6 +27,7 @@
     return {
       id: "web-audio",
       name: "Web Audio Engine",
+      nativeBridge: bridgeStatus || null,
       capabilities: { ...WEB_AUDIO_CAPABILITIES },
       analyzeLoudness: window.PunchLabAudio.analyzeLoudness,
       analyzeTakePitch: window.PunchLabVocal.analyzeTakePitch,

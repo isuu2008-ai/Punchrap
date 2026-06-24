@@ -40,6 +40,7 @@ node .\scripts\check.mjs
 - Processed take version labels for repeated renders from the same source take
 - Project save/open as a local `.punchlab.json` bundle
 - Separated DSP, audio utility, offline mix render, vocal render engine, swappable audio engine interface, and project storage modules under `src/`
+- Native bridge contract stub for future desktop/native audio integration
 - Node package scripts for local start and smoke checks
 - PWA manifest, local icon, platform bootstrap, and service worker shell cache for desktop-install preparation
 - Timeline view with marker management and take region start/nudge controls
@@ -72,5 +73,5 @@ See [COMMERCIAL_STUDIO_ROADMAP.md](./COMMERCIAL_STUDIO_ROADMAP.md) for the comme
 
 ## Next DSP Steps
 
-- Native audio engine bridge implementation
 - Desktop wrapper shell integration
+- Native audio engine implementation

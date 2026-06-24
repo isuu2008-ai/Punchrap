@@ -1,6 +1,7 @@
 (() => {
   const platform = {
     displayMode: getDisplayMode(),
+    nativeBridge: window.PunchLabNativeBridge?.getStatus() || null,
     serviceWorker: {
       supported: "serviceWorker" in navigator,
       registered: false,
