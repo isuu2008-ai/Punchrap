@@ -38,6 +38,8 @@
 - browser, desktop wrapper, native audio engine, plugin host handoff stage를 readiness 결과와 engine status title에 노출
 - Plugin host manifest 1차
 - VST3/AU scan method, chain role, automation source, pluginHost capability 계약을 `plugin-host-manifest.json`으로 분리
+- Plugin scan adapter 1차
+- native `scanPluginHosts`를 PunchLabEngine API로 노출하고 fixture에서 빈 스캔 결과를 반환
 - Native fixture mode 1차
 - `?nativeFixture=1`로 native adapter/engine 선택 경로를 브라우저에서 검증
 - Vocal chain parameter manifest 1차

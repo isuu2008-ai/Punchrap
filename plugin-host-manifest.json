@@ -7,6 +7,7 @@
   ],
   "scan": {
     "nativeMethod": "scanPluginHosts",
+    "engineMethod": "scanPluginHosts",
     "requiresFilesystem": true,
     "backgroundSafe": true
   },

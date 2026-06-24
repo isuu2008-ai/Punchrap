@@ -38,6 +38,14 @@
         sampleRate: 48000,
       };
     },
+    scanPluginHosts() {
+      return {
+        formats: ["VST3", "AU"],
+        plugins: [],
+        scannedAt: new Date().toISOString(),
+        fixture: true,
+      };
+    },
     startInputMonitor() {
       return { active: true, fixture: true };
     },

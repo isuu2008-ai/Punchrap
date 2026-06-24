@@ -26,6 +26,7 @@
       encodeWav: (...args) => window.PunchLabAudio.encodeWav(...args),
       getEffectivePreset: (...args) => window.PunchLabVocal.getEffectivePreset(...args),
       getLatencyStats: () => bridge.callOptionalNative("getLatencyStats"),
+      scanPluginHosts: (payload = {}) => bridge.callOptionalNative("scanPluginHosts", payload),
       setBufferSize: (payload = {}) => bridge.callOptionalNative("setBufferSize", payload),
       startInputMonitor: (payload = null) => bridge.callNative("startInputMonitor", payload),
       stopInputMonitor: (payload = null) => bridge.callNative("stopInputMonitor", payload),
@@ -68,6 +69,7 @@
       adapterInstalled: Boolean(window.PunchLabNativeEngine),
       canInstall: Boolean(bridgeStatus?.available),
       optionalMethods: window.PunchLabNativeBridge?.optionalMethods || [],
+      pluginScanAvailable: !bridgeStatus?.missingOptionalMethods?.includes("scanPluginHosts"),
       requiredMethods: window.PunchLabNativeBridge?.requiredMethods || [],
     };
   }

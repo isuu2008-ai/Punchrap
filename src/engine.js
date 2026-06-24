@@ -40,6 +40,7 @@
       getLatencyStats: async () => null,
       renderMixBuffer: window.PunchLabMix.renderMixBuffer,
       renderProcessedVocal: window.PunchLabVocal.renderProcessedVocal,
+      scanPluginHosts: async () => null,
       setBufferSize: async () => null,
     };
   }
@@ -70,6 +71,7 @@
     getLatencyStats: (...args) => requireMethod("getLatencyStats")(...args),
     renderMixBuffer: (...args) => requireMethod("renderMixBuffer")(...args),
     renderProcessedVocal: (...args) => requireMethod("renderProcessedVocal")(...args),
+    scanPluginHosts: (...args) => requireMethod("scanPluginHosts")(...args),
     setBufferSize: (...args) => requireMethod("setBufferSize")(...args),
   };
 })();
