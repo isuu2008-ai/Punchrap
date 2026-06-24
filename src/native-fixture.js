@@ -46,6 +46,15 @@
         fixture: true,
       };
     },
+    exportCompressedAudio(payload = {}) {
+      return {
+        format: payload.format || "mp3",
+        mimeType: payload.format === "m4a" ? "audio/mp4" : "audio/mpeg",
+        fileName: payload.fileName || `punchlab-export.${payload.format || "mp3"}`,
+        dataUrl: payload.wavDataUrl || payload.dataUrl || "",
+        fixture: true,
+      };
+    },
     openProjectFile() {
       return { canceled: true, fixture: true };
     },

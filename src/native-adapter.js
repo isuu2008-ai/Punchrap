@@ -24,6 +24,7 @@
       decodeTakeBuffer: (...args) => window.PunchLabVocal.decodeTakeBuffer(...args),
       downloadBlob: (...args) => window.PunchLabAudio.downloadBlob(...args),
       encodeWav: (...args) => window.PunchLabAudio.encodeWav(...args),
+      exportCompressedAudio: (payload = {}) => bridge.callOptionalNative("exportCompressedAudio", payload),
       getEffectivePreset: (...args) => window.PunchLabVocal.getEffectivePreset(...args),
       getLatencyStats: () => bridge.callOptionalNative("getLatencyStats"),
       scanPluginHosts: (payload = {}) => bridge.callOptionalNative("scanPluginHosts", payload),
@@ -69,6 +70,7 @@
       adapterInstalled: Boolean(window.PunchLabNativeEngine),
       canInstall: Boolean(bridgeStatus?.available),
       optionalMethods: window.PunchLabNativeBridge?.optionalMethods || [],
+      compressedExportAvailable: !bridgeStatus?.missingOptionalMethods?.includes("exportCompressedAudio"),
       pluginScanAvailable: !bridgeStatus?.missingOptionalMethods?.includes("scanPluginHosts"),
       requiredMethods: window.PunchLabNativeBridge?.requiredMethods || [],
     };

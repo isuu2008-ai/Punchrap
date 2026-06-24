@@ -27,6 +27,8 @@
 - native 전환 전 필수 audio engine capability 누락 여부를 readiness check로 표시
 - Compressed export handoff readiness 1차
 - MP3/M4A는 native compressedAudioExport capability가 켜질 때 Export 패널에서 준비 상태 표시
+- Compressed export adapter 1차
+- native exportCompressedAudio를 PunchLabEngine API로 노출하고 fixture 응답을 추가
 - Native latency/buffer readiness 1차
 - getLatencyStats와 setBufferSize 지원 여부를 desktop readiness에서 분리 표시
 - getLatencyStats와 setBufferSize를 optional native method로 분리하고 engine adapter에서 호출 가능하게 연결

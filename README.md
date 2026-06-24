@@ -86,6 +86,7 @@ node .\scripts\check.mjs
 - Timeline undo/redo for marker and region edits
 - Export tab for track stems, beat stem, vocal stem, dry vocals, and tuned vocals
 - Export panel reports native MP3/M4A handoff readiness through compressed-audio capability
+- Native engine adapter exposes compressed audio export handoff through `exportCompressedAudio`
 - Export queue with sequential job status for mix, stems, beat stem, vocal stem, dry vocals, and tuned vocals
 - Export queue retry, remove, and clear-finished controls
 - WAV export metadata for artist, title, BPM, key, and software
