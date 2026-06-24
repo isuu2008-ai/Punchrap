@@ -250,6 +250,10 @@ if (!projectZipSource.includes("getProjectZipPreviewStyles") || !projectZipSourc
   console.error("Project zip preview style and player boilerplate must live in src/project-zip.js and be used by app.js.");
   failed = true;
 }
+if (!projectZipSource.includes("buildProjectZipPreviewBeatSection") || !projectZipSource.includes("buildProjectZipPreviewMarkerRows") || !projectZipSource.includes("buildProjectZipPreviewCompRows") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewBeatSection") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewMarkerRows") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewCompRows")) {
+  console.error("Project zip preview beat, marker, and comp rows must live in src/project-zip.js and be used by app.js.");
+  failed = true;
+}
 if (!appSource.includes("Automation Schema") || !projectZipSource.includes("buildProjectZipPreviewAutomationSchemaRows") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewAutomationSchemaRows")) {
   console.error("Project zip preview must display the vocal chain automation parameter schema.");
   failed = true;

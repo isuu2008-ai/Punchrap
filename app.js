@@ -1259,30 +1259,8 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
   const compTakes = window.PunchLabProjectZip.sortProjectZipPreviewCompTakes(takes);
   const playbackData = JSON.stringify(window.PunchLabProjectZip.buildProjectZipPreviewPlaybackData(manifest, takes));
 
-  const beatSection = manifest.beat
-    ? `
-      <section>
-        <h2>Beat</h2>
-        <article class="asset-card">
-          <strong>${escapeHtml(manifest.beat.fileName)}</strong>
-          <small>${formatFileSize(manifest.beat.bytes)}</small>
-          <audio controls src="${escapeHtml(manifest.beat.path)}"></audio>
-        </article>
-      </section>`
-    : "";
-  const markerRows = manifest.markers.length
-    ? manifest.markers
-      .map(
-        (marker) => `
-          <tr>
-            <td>${escapeHtml(formatDuration(marker.time))}</td>
-            <td>${escapeHtml(marker.type)}</td>
-            <td>${escapeHtml(marker.comment || "")}</td>
-            <td>${marker.lyricLines}</td>
-          </tr>`,
-      )
-      .join("")
-    : `<tr><td colspan="4">No markers</td></tr>`;
+  const beatSection = window.PunchLabProjectZip.buildProjectZipPreviewBeatSection(manifest.beat);
+  const markerRows = window.PunchLabProjectZip.buildProjectZipPreviewMarkerRows(manifest.markers);
   const takeRows = takes.length
     ? takes
       .map(
@@ -1315,11 +1293,7 @@ function buildProjectZipPreviewHtml(manifest, bundle, projectFilename) {
       )
       .join("")
     : `<p>No take audio assets exported.</p>`;
-  const compRows = compTakes.length
-    ? compTakes
-      .map((take, index) => `<li><span>${index + 1}</span>${escapeHtml(take.name)} <small>${escapeHtml(take.trackName)}</small></li>`)
-      .join("")
-    : `<li>No comp lane takes selected.</li>`;
+  const compRows = window.PunchLabProjectZip.buildProjectZipPreviewCompRows(compTakes);
   const handoffStageRows = window.PunchLabProjectZip.buildProjectZipPreviewHandoffRows(desktopReadiness);
   const pluginHostRows = window.PunchLabProjectZip.buildProjectZipPreviewPluginHostRows(pluginHost);
   const sessionRows = window.PunchLabProjectZip.buildProjectZipPreviewSessionRows(sessionManifest);
@@ -1413,17 +1387,6 @@ ${window.PunchLabProjectZip.getProjectZipPreviewPlayerScript()}
     </script>
   </body>
 </html>`;
-}
-
-function formatFileSize(bytes) {
-  const safeBytes = Math.max(0, Number(bytes) || 0);
-  if (safeBytes < 1024) {
-    return `${safeBytes} B`;
-  }
-  if (safeBytes < 1024 * 1024) {
-    return `${(safeBytes / 1024).toFixed(1)} KB`;
-  }
-  return `${(safeBytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function summarizePresetManifest(presetList = [], selectedPresetId = "") {

@@ -115,6 +115,17 @@
     return `${value >= 0 ? "+" : ""}${value.toFixed(1)}`;
   }
 
+  function formatFileSize(bytes) {
+    const safeBytes = Math.max(0, Number(bytes) || 0);
+    if (safeBytes < 1024) {
+      return `${safeBytes} B`;
+    }
+    if (safeBytes < 1024 * 1024) {
+      return `${(safeBytes / 1024).toFixed(1)} KB`;
+    }
+    return `${(safeBytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
   function formatTimestamp(value) {
     const timestamp = value ? new Date(value) : null;
     return timestamp && !Number.isNaN(timestamp.getTime())
@@ -251,6 +262,46 @@
         document.querySelector("#playPreviewButton").addEventListener("click", playPreview);
         document.querySelector("#stopPreviewButton").addEventListener("click", () => stopPreview());
       })();`;
+  }
+
+  function buildProjectZipPreviewBeatSection(beat = null) {
+    return beat
+      ? `
+        <section>
+          <h2>Beat</h2>
+          <article class="asset-card">
+            <strong>${escapeHtml(beat.fileName)}</strong>
+            <small>${formatFileSize(beat.bytes)}</small>
+            <audio controls src="${escapeHtml(beat.path)}"></audio>
+          </article>
+        </section>`
+      : "";
+  }
+
+  function buildProjectZipPreviewMarkerRows(markers = []) {
+    const safeMarkers = Array.isArray(markers) ? markers : [];
+    return safeMarkers.length
+      ? safeMarkers
+        .map(
+          (marker) => `
+            <tr>
+              <td>${escapeHtml(formatDuration(marker.time))}</td>
+              <td>${escapeHtml(marker.type)}</td>
+              <td>${escapeHtml(marker.comment || "")}</td>
+              <td>${Number(marker.lyricLines || 0)}</td>
+            </tr>`,
+        )
+        .join("")
+      : `<tr><td colspan="4">No markers</td></tr>`;
+  }
+
+  function buildProjectZipPreviewCompRows(compTakes = []) {
+    const safeTakes = Array.isArray(compTakes) ? compTakes : [];
+    return safeTakes.length
+      ? safeTakes
+        .map((take, index) => `<li><span>${index + 1}</span>${escapeHtml(take.name)} <small>${escapeHtml(take.trackName)}</small></li>`)
+        .join("")
+      : `<li>No comp lane takes selected.</li>`;
   }
 
   function buildProjectZipPreviewAutomationSchemaRows(automationManifest = {}) {
@@ -463,6 +514,9 @@
     escapeScriptJson,
     getProjectZipPreviewStyles,
     getProjectZipPreviewPlayerScript,
+    buildProjectZipPreviewBeatSection,
+    buildProjectZipPreviewMarkerRows,
+    buildProjectZipPreviewCompRows,
     buildProjectZipPreviewAutomationSchemaRows,
     buildProjectZipPreviewSessionRows,
     buildProjectZipPreviewPresetRows,
