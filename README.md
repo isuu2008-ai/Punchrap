@@ -108,6 +108,7 @@ node .\scripts\check.mjs
 - Desktop contract check verifies native output routing permission and `setOutputDevice` alignment
 - Native project save/open handoff through optional `saveProjectFile` and `openProjectFile`
 - Desktop readiness reports native project file open/save handoff availability
+- Tauri project/archive save dialogs choose JSON or ZIP filters from the native file payload
 - Desktop readiness exposes wrapper handoff-stage progress for browser, desktop, native engine, and plugin host
 - Plugin host manifest separates VST3/AU scan, chain role, and automation contract planning
 - Native engine adapter exposes plugin-host scanning through `scanPluginHosts`

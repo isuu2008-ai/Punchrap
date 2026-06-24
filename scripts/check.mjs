@@ -485,6 +485,10 @@ if (!readFileSync("src/desktop.js", "utf8").includes("methodAvailable: hasProjec
   console.error("Desktop readiness and zip previews must preserve project file handoff readiness.");
   failed = true;
 }
+if (!readFileSync("src-tauri/src/lib.rs", "utf8").includes("project_file_dialog_filter") || !readFileSync("src-tauri/src/lib.rs", "utf8").includes("\"PunchLab Archive\"") || !readFileSync("src-tauri/src/lib.rs", "utf8").includes("\"punchlab.zip\"")) {
+  console.error("Tauri project file handoff must select the correct project/archive dialog filters.");
+  failed = true;
+}
 if (!readFileSync("src/desktop.js", "utf8").includes("const compressedExportReady = hasCompressedExportMethod && capabilities.compressedAudioExport === true") || !readFileSync("src/desktop.js", "utf8").includes("ready: compressedExportReady")) {
   console.error("Desktop readiness must separate compressed export method availability from compressedAudioExport capability.");
   failed = true;

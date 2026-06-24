@@ -420,6 +420,8 @@ for (const requiredSnippet of [
   "ProjectFileResult",
   "OpenProjectFilePayload",
   "SaveProjectFilePayload",
+  "project_file_dialog_filter",
+  "\"PunchLab Archive\"",
   "native_bridge_ready: false",
   "IMPLEMENTED_NATIVE_METHODS",
   "renderMix",

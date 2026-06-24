@@ -422,19 +422,20 @@ async fn open_project_file(
     app: tauri::AppHandle,
     payload: Option<OpenProjectFilePayload>,
 ) -> Result<ProjectFileResult, String> {
-    let Some(file_path) = app
-        .dialog()
-        .file()
-        .add_filter("PunchLab Project", &["punchlab.json", "json"])
-        .blocking_pick_file()
-    else {
-        return Ok(canceled_project_file_result("application/json"));
-    };
-    let path = file_path.into_path().map_err(|error| error.to_string())?;
-    let bytes = fs::read(&path).map_err(|error| error.to_string())?;
     let file_type = payload
         .and_then(|value| value.file_type)
         .unwrap_or_else(|| "application/json".to_string());
+    let (filter_name, filter_extensions) = project_file_dialog_filter(&file_type, "");
+    let Some(file_path) = app
+        .dialog()
+        .file()
+        .add_filter(filter_name, filter_extensions)
+        .blocking_pick_file()
+    else {
+        return Ok(canceled_project_file_result(&file_type));
+    };
+    let path = file_path.into_path().map_err(|error| error.to_string())?;
+    let bytes = fs::read(&path).map_err(|error| error.to_string())?;
     let data_url = encode_data_url(&file_type, &bytes);
 
     Ok(ProjectFileResult {
@@ -460,10 +461,11 @@ async fn save_project_file(
     let file_type = payload
         .file_type
         .unwrap_or_else(|| "application/json".to_string());
+    let (filter_name, filter_extensions) = project_file_dialog_filter(&file_type, suggested_name);
     let Some(file_path) = app
         .dialog()
         .file()
-        .add_filter("PunchLab Project", &["punchlab.json", "json"])
+        .add_filter(filter_name, filter_extensions)
         .set_file_name(suggested_name)
         .blocking_save_file()
     else {
@@ -491,6 +493,19 @@ fn canceled_project_file_result(file_type: &str) -> ProjectFileResult {
         file_name: None,
         path: None,
         file_type: file_type.to_string(),
+    }
+}
+
+fn project_file_dialog_filter(
+    file_type: &str,
+    suggested_name: &str,
+) -> (&'static str, &'static [&'static str]) {
+    let lower_type = file_type.to_ascii_lowercase();
+    let lower_name = suggested_name.to_ascii_lowercase();
+    if lower_type.contains("zip") || lower_name.ends_with(".zip") {
+        ("PunchLab Archive", &["punchlab.zip", "zip"])
+    } else {
+        ("PunchLab Project", &["punchlab.json", "json"])
     }
 }
 
