@@ -156,6 +156,10 @@ if (!indexHtml.includes("quickTakeList") || !appSource.includes("data-quick-play
   console.error("Record view must support immediate recent-take audition and Vocal handoff.");
   failed = true;
 }
+if (!indexHtml.includes("batchTargetList") || !appSource.includes("renderBatchTargetList") || !appSource.includes("batch-target-row")) {
+  console.error("Vocal batch render panel must preview the raw take targets before rendering.");
+  failed = true;
+}
 if (!appSource.includes("summarizeNativeAudioEnvironment") || !appSource.includes("nativeAudio: summarizeNativeAudioEnvironment()")) {
   console.error("Project zip manifest must include native audio environment summary.");
   failed = true;

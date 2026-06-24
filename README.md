@@ -59,6 +59,7 @@ node .\scripts\check.mjs
 - A/B comparison between raw and tuned takes
 - Batch render for the current track or all raw vocal takes
 - Batch render for comp lane raw takes and best raw takes
+- Vocal batch render panel previews target raw takes before rendering
 - Processed take version labels, vocal version history, and zip lineage metadata for repeated renders from the same source take
 - Project save/open as a local `.punchlab.json` bundle
 - File System Access project save/open when available, with browser download/input fallback

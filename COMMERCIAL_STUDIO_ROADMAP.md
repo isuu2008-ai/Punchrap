@@ -212,6 +212,8 @@
 - 완료된 export queue job의 마지막 preview WAV를 다시 다운로드
 - Batch scope 고도화 1차
 - comp lane raw takes와 best raw takes에 현재 체인을 batch render
+- Batch target preview 1차
+- Vocal batch render 실행 전 대상 raw take 리스트 표시
 - Custom scale editor
 - 12 pitch-class toggle로 target scale 편집
 - Custom scale 프로젝트 저장/복원

@@ -270,6 +270,7 @@ const els = {
   batchRenderButton: document.querySelector("#batchRenderButton"),
   batchStatus: document.querySelector("#batchStatus"),
   batchMeta: document.querySelector("#batchMeta"),
+  batchTargetList: document.querySelector("#batchTargetList"),
   takesList: document.querySelector("#takesList"),
   playQueueButton: document.querySelector("#playQueueButton"),
   playCompButton: document.querySelector("#playCompButton"),
@@ -4100,12 +4101,35 @@ function renderVersionPanel(take) {
 function renderBatchPanel(targets) {
   const scope = els.batchScopeSelect.value;
   els.batchStatus.textContent = targets.length ? `${targets.length} raw` : "No raw";
+  renderBatchTargetList(targets);
   if (targets.length) {
     els.batchMeta.textContent = getBatchScopeReadyText(scope, targets.length);
     return;
   }
 
   els.batchMeta.textContent = getBatchScopeEmptyText(scope);
+}
+
+function renderBatchTargetList(targets) {
+  if (!els.batchTargetList) {
+    return;
+  }
+
+  if (!targets.length) {
+    els.batchTargetList.innerHTML = `<span class="empty-takes">No batch targets</span>`;
+    return;
+  }
+
+  const visibleTargets = targets.slice(0, 5);
+  const hiddenCount = Math.max(0, targets.length - visibleTargets.length);
+  els.batchTargetList.innerHTML = [
+    ...visibleTargets.map((take) => `
+      <div class="batch-target-row">
+        <strong>${escapeHtml(getTakeShortName(take))}</strong>
+        <span>${escapeHtml(take.trackName)} / ${escapeHtml(formatDuration(take.duration))}</span>
+      </div>`),
+    hiddenCount ? `<small>+${hiddenCount} more target${hiddenCount === 1 ? "" : "s"}</small>` : "",
+  ].join("");
 }
 
 async function playComparisonTake(kind) {

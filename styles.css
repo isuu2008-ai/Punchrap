@@ -1932,6 +1932,38 @@ textarea:focus {
   line-height: 1.45;
 }
 
+.batch-target-list {
+  display: grid;
+  gap: 5px;
+  max-height: 158px;
+  overflow: auto;
+  padding-top: 2px;
+}
+
+.batch-target-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px;
+  padding: 5px 0;
+  border-top: 1px solid var(--line);
+}
+
+.batch-target-row strong,
+.batch-target-row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.batch-target-row strong {
+  font-size: 12px;
+}
+
+.batch-target-row span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
 .hidden {
   display: none !important;
 }
