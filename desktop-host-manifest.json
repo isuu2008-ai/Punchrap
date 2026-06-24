@@ -33,6 +33,7 @@
   ],
   "optionalEngineCapabilities": [
     "compressedAudioExport",
+    "audioOutputRouting",
     "realtimeNativeMonitoring",
     "pluginHost"
   ],

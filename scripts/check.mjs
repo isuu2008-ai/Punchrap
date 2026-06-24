@@ -189,6 +189,10 @@ if (!tauriLibSource.includes("native_bridge_ready: false") || !tauriLibSource.in
   console.error("Tauri Rust shell must keep native audio activation gated until render and monitoring commands exist.");
   failed = true;
 }
+if (!tauriLibSource.includes("audio_output_routing: false")) {
+  console.error("Tauri Rust shell must keep native output routing capability false until real routing is implemented.");
+  failed = true;
+}
 const nativeBridgeSource = readFileSync("src/native-bridge.js", "utf8");
 const platformSource = readFileSync("src/platform.js", "utf8");
 if (!nativeBridgeSource.includes("nativeHostAvailable: true") || !nativeBridgeSource.includes("nativeHostAvailable: false")) {
@@ -401,6 +405,10 @@ if (!readFileSync("src/desktop.js", "utf8").includes("runtimeRoundTripLatencyMs"
 }
 if (!readFileSync("src/desktop.js", "utf8").includes("methodAvailable: hasLatencyMethods") || !readFileSync("src/desktop.js", "utf8").includes("statsAvailable: latencyStatsAvailable") || !readFileSync("src/desktop.js", "utf8").includes("hasMeasuredLatencyStats")) {
   console.error("Desktop readiness must separate latency method availability from measured latency stats.");
+  failed = true;
+}
+if (!readFileSync("src/desktop.js", "utf8").includes("methodAvailable: hasOutputRoutingMethod") || !readFileSync("src/desktop.js", "utf8").includes("capabilityReady: capabilities.audioOutputRouting === true") || !readFileSync("src/engine-contract.js", "utf8").includes("\"audioOutputRouting\"")) {
+  console.error("Desktop readiness must separate output-routing method availability from audioOutputRouting capability.");
   failed = true;
 }
 if (!readFileSync("src/desktop.js", "utf8").includes("fixture: Boolean(capabilities.nativeFixture)") || !appSource.includes("Native fixture")) {

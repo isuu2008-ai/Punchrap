@@ -803,9 +803,9 @@ async function refreshAudioDevices() {
     renderAudioDeviceSelect(els.audioInputSelect, inputs, state.audioInputDeviceId, "Default mic");
     renderAudioDeviceSelect(els.audioOutputSelect, outputs, state.audioOutputDeviceId, "Default output");
     if (els.audioOutputSelect) {
-      els.audioOutputSelect.disabled = !(
-        window.PunchLabDevices.canSetMediaOutput?.() || window.PunchLabDevices.canSetAudioContextOutput?.()
-      );
+      const outputRouting = window.PunchLabDesktop?.getReadiness?.()?.outputRouting || {};
+      const browserOutputReady = window.PunchLabDevices.canSetMediaOutput?.() || window.PunchLabDevices.canSetAudioContextOutput?.();
+      els.audioOutputSelect.disabled = !(browserOutputReady || outputRouting.nativeAvailable);
     }
     state.audioInputDeviceId = els.audioInputSelect.value;
     state.audioOutputDeviceId = els.audioOutputSelect.value;

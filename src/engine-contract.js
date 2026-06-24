@@ -26,6 +26,7 @@
     loudnessAnalysis: true,
     truePeakLimiter: true,
     compressedAudioExport: false,
+    audioOutputRouting: false,
     realtimeNativeMonitoring: false,
     pluginHost: false,
   };
@@ -41,6 +42,7 @@
 
   const OPTIONAL_ENGINE_CAPABILITIES = [
     "compressedAudioExport",
+    "audioOutputRouting",
     "realtimeNativeMonitoring",
     "pluginHost",
   ];

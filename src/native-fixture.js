@@ -15,6 +15,7 @@
         loudnessAnalysis: true,
         truePeakLimiter: true,
         compressedAudioExport: true,
+        audioOutputRouting: true,
         realtimeNativeMonitoring: true,
         pluginHost: false,
         sampleRates: [44100, 48000],

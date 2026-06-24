@@ -233,6 +233,9 @@ if (wrapper.permissions?.audioOutputRouting === true && !wrapperOptionalMethods.
 if (hostOptionalMethods.includes("setOutputDevice") && wrapper.permissions?.audioOutputRouting !== true) {
   fail("Desktop host setOutputDevice contract requires wrapper audioOutputRouting permission.");
 }
+if (!host.optionalEngineCapabilities?.includes("audioOutputRouting")) {
+  fail("Desktop host must expose audioOutputRouting as an optional engine capability.");
+}
 
 const nativeAudioEngine = host.nativeAudioEngine || {};
 const sampleRates = nativeAudioEngine.sampleRates || [];
@@ -262,6 +265,9 @@ if (!desktopSource.includes("nativeAudioEngine") || !desktopSource.includes("get
 }
 if (!desktopSource.includes("methodAvailable: hasLatencyMethods") || !desktopSource.includes("statsAvailable: latencyStatsAvailable") || !desktopSource.includes("hasMeasuredLatencyStats")) {
   fail("Desktop readiness must separate latency method availability from measured latency stats.");
+}
+if (!desktopSource.includes("methodAvailable: hasOutputRoutingMethod") || !desktopSource.includes("capabilityReady: capabilities.audioOutputRouting === true") || !desktopSource.includes("nativeOutputRoutingReady")) {
+  fail("Desktop readiness must separate output-routing method availability from audioOutputRouting capability.");
 }
 if (!desktopSource.includes("packageManifestPath")) {
   fail("Desktop runtime manifest must expose the desktop package manifest path.");

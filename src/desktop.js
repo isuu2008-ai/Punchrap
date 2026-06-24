@@ -141,7 +141,9 @@
     const missingLatencyMethods = getMissingOptionalMethods(bridgeStatus, ["getLatencyStats", "setBufferSize"]);
     const hasLatencyMethods = missingLatencyMethods.length === 0;
     const missingOutputMethods = getMissingOptionalMethods(bridgeStatus, ["setOutputDevice"]);
-    const hasNativeOutputRouting = missingOutputMethods.length === 0;
+    const hasOutputRoutingMethod = missingOutputMethods.length === 0;
+    const nativeOutputRoutingReady = hasOutputRoutingMethod && capabilities.audioOutputRouting === true;
+    const browserOutputRoutingReady = canUseBrowserOutputRouting();
     const missingProjectFileMethods = getMissingOptionalMethods(bridgeStatus, ["openProjectFile", "saveProjectFile"]);
     const hasProjectFileHandoff = missingProjectFileMethods.length === 0;
     const missingCompressedExportMethods = getMissingOptionalMethods(bridgeStatus, ["exportCompressedAudio"]);
@@ -178,12 +180,14 @@
       makeCheck(
         "output-routing",
         "Output routing",
-        hasNativeOutputRouting || canUseBrowserOutputRouting() ? "ready" : "fallback",
-        hasNativeOutputRouting
+        nativeOutputRoutingReady || browserOutputRoutingReady ? "ready" : hasOutputRoutingMethod ? "pending" : "fallback",
+        nativeOutputRoutingReady
           ? "Native host can route playback to the selected output device."
-          : canUseBrowserOutputRouting()
+          : browserOutputRoutingReady
             ? "Browser output sink routing is available."
-            : "Output routing waits for native setOutputDevice or browser sink routing support.",
+            : hasOutputRoutingMethod
+              ? "Native host exposes setOutputDevice; audio output routing capability is pending."
+              : "Output routing waits for native setOutputDevice or browser sink routing support.",
       ),
       makeCheck(
         "service-worker",
@@ -264,7 +268,10 @@
         preferredRuntimeBufferSize: preferredNativeBufferSize,
       },
       outputRouting: {
-        nativeAvailable: hasNativeOutputRouting,
+        nativeAvailable: nativeOutputRoutingReady,
+        methodAvailable: hasOutputRoutingMethod,
+        ready: nativeOutputRoutingReady || browserOutputRoutingReady,
+        capabilityReady: capabilities.audioOutputRouting === true,
         missingMethods: missingOutputMethods,
         browserMediaOutput: Boolean(window.PunchLabDevices?.canSetMediaOutput?.()),
         browserAudioContextOutput: Boolean(window.PunchLabDevices?.canSetAudioContextOutput?.()),
