@@ -373,6 +373,10 @@ if (!indexHtml.includes('id="markerCommentInput"') || !appSource.includes('marke
   console.error("Timeline markers must support comments from creation through editing and project zip manifest output.");
   failed = true;
 }
+if (!appSource.includes("data-play-version") || !appSource.includes("data-delete-version") || !appSource.includes("selectVocalVersion") || !appSource.includes("playVocalVersion") || !appSource.includes("deleteVocalVersion") || !readFileSync("styles.css", "utf8").includes(".version-actions")) {
+  console.error("Vocal render version history must support separate select, audition, and delete actions.");
+  failed = true;
+}
 if (!projectZipSource.includes("buildProjectZipPreviewPlaybackData") || !projectZipSource.includes("buildProjectZipPreviewPlaybackData(manifest, takes)") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewHtml")) {
   console.error("Project zip preview playback data policy must live in src/project-zip.js and be used by app.js.");
   failed = true;

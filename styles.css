@@ -1878,7 +1878,7 @@ textarea:focus {
   min-width: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 4px 8px;
+  gap: 8px;
   align-items: center;
   padding: 9px 10px;
   color: var(--text);
@@ -1886,6 +1886,23 @@ textarea:focus {
   border: 1px solid var(--line);
   border-radius: 7px;
   text-align: left;
+}
+
+.version-main {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 8px;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  text-align: left;
+}
+
+.version-actions {
+  display: flex;
+  gap: 6px;
 }
 
 .version-row strong,
@@ -1924,6 +1941,10 @@ textarea:focus {
 .version-row.active span,
 .version-row.active small {
   color: rgba(5, 7, 6, 0.72);
+}
+
+.version-row.active .mini-button {
+  border-color: rgba(5, 7, 6, 0.2);
 }
 
 .compare-letter {

@@ -2494,6 +2494,7 @@ async function playTakeAudio(take, label) {
   state.currentTakeId = take.id;
   renderTracks();
   renderTakes();
+  renderVocalPanel();
 
   return new Promise((resolve) => {
     let settled = false;
@@ -2520,6 +2521,7 @@ async function playTakeAudio(take, label) {
 
       renderTracks();
       renderTakes();
+      renderVocalPanel();
       resolve(status);
     };
 
@@ -3844,6 +3846,7 @@ function renderVersionPanel(take) {
 
   const sourceTake = take.processed && take.sourceTakeId ? findTake(take.sourceTakeId) : take;
   const versions = getProcessedVersionsForSource(sourceTake?.id);
+  const vocalBusy = isVocalBusy();
   els.versionStatus.textContent = versions.length ? `${versions.length} version(s)` : "No renders";
   els.versionList.innerHTML = versions.length
     ? versions
@@ -3851,23 +3854,68 @@ function renderVersionPanel(take) {
         const isSelected = versionTake.id === state.selectedVocalTakeId;
         const isPlaying = versionTake.id === state.currentTakeId || state.sessionPlayingTakeIds.has(versionTake.id);
         return `
-          <button class="version-row ${isSelected ? "selected" : ""} ${isPlaying ? "active" : ""}" type="button" data-select-version="${versionTake.id}">
-            <strong>${escapeHtml(versionTake.renderLabel || `${versionTake.presetName || "Processed"} v${versionTake.version || 1}`)}</strong>
-            <span>${escapeHtml(formatDuration(versionTake.duration))}</span>
-            <small>${escapeHtml(getTuneSignature(versionTake.tuneSettings))}</small>
-          </button>
+          <div class="version-row ${isSelected ? "selected" : ""} ${isPlaying ? "active" : ""}">
+            <button class="version-main" type="button" data-select-version="${versionTake.id}" ${vocalBusy ? "disabled" : ""}>
+              <strong>${escapeHtml(versionTake.renderLabel || `${versionTake.presetName || "Processed"} v${versionTake.version || 1}`)}</strong>
+              <span>${escapeHtml(formatDuration(versionTake.duration))}</span>
+              <small>${escapeHtml(getTuneSignature(versionTake.tuneSettings))}</small>
+            </button>
+            <div class="version-actions">
+              <button class="mini-button ${isPlaying ? "active" : ""}" type="button" data-play-version="${versionTake.id}" ${vocalBusy ? "disabled" : ""}>
+                ${isPlaying ? "Pause" : "Play"}
+              </button>
+              <button class="mini-button danger" type="button" data-delete-version="${versionTake.id}" ${vocalBusy ? "disabled" : ""}>Del</button>
+            </div>
+          </div>
         `;
       })
       .join("")
     : `<span class="empty-takes">${escapeHtml(getTakeShortName(sourceTake))} has no tuned versions yet.</span>`;
 
   els.versionList.querySelectorAll("[data-select-version]").forEach((button) => {
-    button.addEventListener("click", () => {
-      state.selectedVocalTakeId = button.dataset.selectVersion;
-      playTake(button.dataset.selectVersion);
-      renderVocalPanel();
-    });
+    button.addEventListener("click", () => selectVocalVersion(button.dataset.selectVersion));
   });
+  els.versionList.querySelectorAll("[data-play-version]").forEach((button) => {
+    button.addEventListener("click", () => playVocalVersion(button.dataset.playVersion));
+  });
+  els.versionList.querySelectorAll("[data-delete-version]").forEach((button) => {
+    button.addEventListener("click", () => deleteVocalVersion(button.dataset.deleteVersion));
+  });
+}
+
+function selectVocalVersion(takeId) {
+  if (!findTake(takeId)) {
+    return;
+  }
+
+  state.selectedVocalTakeId = takeId;
+  els.sessionState.textContent = "Version selected";
+  renderVocalPanel();
+}
+
+function playVocalVersion(takeId) {
+  if (!findTake(takeId)) {
+    return;
+  }
+
+  state.selectedVocalTakeId = takeId;
+  playTake(takeId);
+  renderVocalPanel();
+}
+
+function deleteVocalVersion(takeId) {
+  const versionTake = findTake(takeId);
+  if (!versionTake?.processed) {
+    return;
+  }
+
+  const sourceTake = versionTake.sourceTakeId ? findTake(versionTake.sourceTakeId) : null;
+  deleteTake(takeId);
+  if (sourceTake) {
+    state.selectedVocalTakeId = sourceTake.id;
+  }
+  els.sessionState.textContent = "Version deleted";
+  renderVocalPanel();
 }
 
 function renderBatchPanel(targets, skippedCount = 0) {
@@ -6339,6 +6387,7 @@ function deleteTake(takeId) {
   renderTracks();
   renderArmTracks();
   renderTakes();
+  renderVocalPanel();
   renderTimeline();
   renderLyrics();
   updateQueueButton();
