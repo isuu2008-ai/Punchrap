@@ -29,6 +29,7 @@ Then open `http://localhost:4173`.
 - Project save/open as a local `.punchlab.json` bundle
 - Separated DSP, audio utility, and project storage modules under `src/`
 - Timeline view with marker management and take region start/nudge controls
+- Region rename, clip gain, and fade in/out controls persisted in project files
 
 ## Planning
 

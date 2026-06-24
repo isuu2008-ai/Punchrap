@@ -33,12 +33,16 @@
   async function serializeTake(take) {
     return {
       id: take.id,
+      name: take.name || null,
       trackId: take.trackId,
       trackName: take.trackName,
       extension: take.extension,
       createdAt: take.createdAt instanceof Date ? take.createdAt.toISOString() : take.createdAt,
       startTime: take.startTime || 0,
       duration: take.duration || 0,
+      clipGain: take.clipGain ?? 1,
+      fadeIn: take.fadeIn || 0,
+      fadeOut: take.fadeOut || 0,
       processed: Boolean(take.processed),
       sourceTakeId: take.sourceTakeId || null,
       presetId: take.presetId || null,
@@ -99,6 +103,7 @@
     const blob = dataUrlToBlob(take.audio?.dataUrl || "");
     return {
       id: take.id || crypto.randomUUID(),
+      name: take.name || null,
       trackId: take.trackId,
       trackName: take.trackName,
       blob,
@@ -106,6 +111,9 @@
       createdAt: take.createdAt ? new Date(take.createdAt) : new Date(),
       startTime: Number(take.startTime || 0),
       duration: Number(take.duration || 0),
+      clipGain: Number(take.clipGain ?? 1),
+      fadeIn: Number(take.fadeIn || 0),
+      fadeOut: Number(take.fadeOut || 0),
       processed: Boolean(take.processed),
       sourceTakeId: take.sourceTakeId || null,
       presetId: take.presetId || null,

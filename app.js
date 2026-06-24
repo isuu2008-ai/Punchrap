@@ -635,9 +635,9 @@ async function startSessionTake(take, offset) {
   const source = ctx.createMediaElementSource(audio);
   const gain = ctx.createGain();
   const panner = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
-  const player = { takeId: take.id, trackId: track.id, audio, source, gain, panner };
+  const player = { takeId: take.id, trackId: track.id, take, audio, source, gain, panner };
 
-  gain.gain.value = getTrackOutputVolume(track);
+  applyTakeGainAutomation(gain.gain, getTrackOutputVolume(track) * getTakeClipGain(take), take, offset, ctx.currentTime);
   source.connect(gain);
   if (panner) {
     panner.pan.value = track.pan;
@@ -727,7 +727,8 @@ function updateActiveSessionMix() {
       return;
     }
 
-    player.gain.gain.setTargetAtTime(getTrackOutputVolume(track), state.audioContext.currentTime, 0.01);
+    const take = player.take || findTake(player.takeId);
+    player.gain.gain.setTargetAtTime(getTrackOutputVolume(track) * getTakeClipGain(take), state.audioContext.currentTime, 0.01);
     if (player.panner) {
       player.panner.pan.setTargetAtTime(track.pan, state.audioContext.currentTime, 0.01);
     }
@@ -776,6 +777,7 @@ function playTakeAudio(take, label) {
   stopCurrentTake(false);
   els.beatAudio.pause();
   const audio = new Audio(take.url);
+  audio.volume = Math.min(1, getTakeClipGain(take));
   state.currentTakeAudio = audio;
   state.currentTakeId = take.id;
   renderTracks();
@@ -1441,7 +1443,7 @@ function renderVocalPanel() {
       .map(
         (take, index) => `
           <option value="${take.id}" ${take.id === state.selectedVocalTakeId ? "selected" : ""}>
-            ${getTakeTitle(take, index)}
+            ${escapeHtml(getTakeTitle(take, index))}
           </option>
         `,
       )
@@ -1690,6 +1692,9 @@ async function renderProcessedTake(sourceTake, preset, tuneSettings) {
     createdAt: new Date(),
     startTime: sourceTake.startTime || 0,
     duration: rendered.duration,
+    clipGain: sourceTake.clipGain ?? 1,
+    fadeIn: sourceTake.fadeIn || 0,
+    fadeOut: sourceTake.fadeOut || 0,
     processed: true,
     sourceTakeId: sourceTake.id,
     presetId: preset.id,
@@ -1746,7 +1751,7 @@ function renderTakes() {
         return `
         <div class="take-item">
           <div>
-            <strong>${getTakeTitle(take, index)}</strong>
+            <strong>${escapeHtml(getTakeTitle(take, index))}</strong>
             <small>${getTakeSubtitle(take)}</small>
           </div>
           <div class="take-controls">
@@ -1807,7 +1812,7 @@ function renderTimeline() {
     .map(
       (marker) => `
         <span class="timeline-marker" style="left: ${timelinePercent(marker.time, timelineEnd)}%">
-          <span>${marker.type}</span>
+          <span>${escapeHtml(marker.type)}</span>
         </span>
       `,
     )
@@ -1816,7 +1821,7 @@ function renderTimeline() {
   const beatRegion = beatDuration
     ? `
       <div class="timeline-region beat-region" style="left: 0%; width: ${timelinePercent(beatDuration, timelineEnd)}%; --track-color: var(--lime);">
-        <strong>${state.beatFileName || "Beat"}</strong>
+        <strong>${escapeHtml(state.beatFileName || "Beat")}</strong>
       </div>
     `
     : "";
@@ -1828,7 +1833,7 @@ function renderTimeline() {
       const track = findTrack(take.trackId);
       return `
         <div class="timeline-region take-region" style="left: ${left}%; width: ${width}%; --row-index: ${index}; --track-color: ${track?.color || "#c8ff4d"};">
-          <strong>${getTakeShortName(take)}</strong>
+          <strong>${escapeHtml(getTakeShortName(take))}</strong>
         </div>
       `;
     })
@@ -1841,7 +1846,7 @@ function renderTimeline() {
         (marker) => `
           <div class="marker-row">
             <header>
-              <strong>${marker.type}</strong>
+              <strong>${escapeHtml(marker.type)}</strong>
               <button class="mini-button danger" type="button" data-delete-marker="${marker.id}">Del</button>
             </header>
             <small>${formatDuration(marker.time)}</small>
@@ -1857,13 +1862,28 @@ function renderTimeline() {
         (take, index) => `
           <div class="region-row">
             <header>
-              <strong>${getTakeTitle(take, index)}</strong>
-              <small>${take.trackName}</small>
+              <strong>${escapeHtml(getTakeTitle(take, index))}</strong>
+              <small>${escapeHtml(take.trackName)}</small>
             </header>
+            <input class="region-name-input" type="text" value="${escapeHtml(getTakeTitle(take, index))}" data-region-name="${take.id}" />
             <div class="region-actions">
               <button class="mini-button" type="button" data-nudge-region="${take.id}" data-delta="-0.1">-0.1</button>
               <input type="number" min="0" step="0.1" value="${(take.startTime || 0).toFixed(1)}" data-region-start="${take.id}" />
               <button class="mini-button" type="button" data-nudge-region="${take.id}" data-delta="0.1">+0.1</button>
+            </div>
+            <div class="region-controls">
+              <label>
+                Gain
+                <input type="number" min="0" max="3" step="0.05" value="${getTakeClipGain(take).toFixed(2)}" data-region-gain="${take.id}" />
+              </label>
+              <label>
+                In
+                <input type="number" min="0" step="0.05" value="${getTakeFadeIn(take).toFixed(2)}" data-region-fade-in="${take.id}" />
+              </label>
+              <label>
+                Out
+                <input type="number" min="0" step="0.05" value="${getTakeFadeOut(take).toFixed(2)}" data-region-fade-out="${take.id}" />
+              </label>
             </div>
           </div>
         `,
@@ -1876,6 +1896,18 @@ function renderTimeline() {
   });
   els.regionList.querySelectorAll("[data-region-start]").forEach((input) => {
     input.addEventListener("change", () => setRegionStart(input.dataset.regionStart, input.value));
+  });
+  els.regionList.querySelectorAll("[data-region-name]").forEach((input) => {
+    input.addEventListener("change", () => setRegionName(input.dataset.regionName, input.value));
+  });
+  els.regionList.querySelectorAll("[data-region-gain]").forEach((input) => {
+    input.addEventListener("change", () => setRegionClipGain(input.dataset.regionGain, input.value));
+  });
+  els.regionList.querySelectorAll("[data-region-fade-in]").forEach((input) => {
+    input.addEventListener("change", () => setRegionFade(input.dataset.regionFadeIn, "in", input.value));
+  });
+  els.regionList.querySelectorAll("[data-region-fade-out]").forEach((input) => {
+    input.addEventListener("change", () => setRegionFade(input.dataset.regionFadeOut, "out", input.value));
   });
   els.regionList.querySelectorAll("[data-nudge-region]").forEach((button) => {
     button.addEventListener("click", () => nudgeRegionStart(button.dataset.nudgeRegion, Number(button.dataset.delta)));
@@ -1909,6 +1941,50 @@ function setRegionStart(takeId, value) {
   els.sessionState.textContent = "Region moved";
   renderTracks();
   renderTakes();
+  updateExportButtons();
+}
+
+function setRegionName(takeId, value) {
+  const take = findTake(takeId);
+  if (!take) {
+    return;
+  }
+
+  take.name = value.trim() || null;
+  els.sessionState.textContent = "Region renamed";
+  renderTracks();
+  renderTakes();
+  updateExportButtons();
+}
+
+function setRegionClipGain(takeId, value) {
+  const take = findTake(takeId);
+  if (!take) {
+    return;
+  }
+
+  take.clipGain = Math.max(0, Number(value) || 0);
+  els.sessionState.textContent = "Clip gain updated";
+  updateActiveSessionMix();
+  renderTracks();
+  renderTakes();
+  updateExportButtons();
+}
+
+function setRegionFade(takeId, edge, value) {
+  const take = findTake(takeId);
+  if (!take) {
+    return;
+  }
+
+  const safeValue = Math.max(0, Number(value) || 0);
+  if (edge === "in") {
+    take.fadeIn = safeValue;
+  } else {
+    take.fadeOut = safeValue;
+  }
+  els.sessionState.textContent = "Fade updated";
+  renderTimeline();
   updateExportButtons();
 }
 
@@ -2006,7 +2082,7 @@ async function exportFullMix() {
     }
 
     takeBuffers.forEach(({ take, track, buffer }) => {
-      scheduleBuffer(renderContext, buffer, take.startTime || 0, getTrackOutputVolume(track), track.pan);
+      scheduleBuffer(renderContext, buffer, take.startTime || 0, getTrackOutputVolume(track), track.pan, take);
     });
 
     const rendered = await renderContext.startRendering();
@@ -2022,13 +2098,17 @@ async function exportFullMix() {
   }
 }
 
-function scheduleBuffer(context, buffer, startTime, volume, pan) {
+function scheduleBuffer(context, buffer, startTime, volume, pan, take = null) {
   const source = context.createBufferSource();
   const gain = context.createGain();
   const panner = context.createStereoPanner ? context.createStereoPanner() : null;
 
   source.buffer = buffer;
-  gain.gain.value = volume;
+  if (take) {
+    applyTakeGainAutomation(gain.gain, volume * getTakeClipGain(take), take, 0, Math.max(0, startTime));
+  } else {
+    gain.gain.value = volume;
+  }
   source.connect(gain);
 
   if (panner) {
@@ -2214,6 +2294,40 @@ function getTrackOutputVolume(track) {
   return isTrackAudible(track) ? track.volume : 0;
 }
 
+function getTakeClipGain(take) {
+  return Math.max(0, Number(take?.clipGain ?? 1));
+}
+
+function getTakeFadeIn(take) {
+  return Math.max(0, Math.min(Number(take?.fadeIn ?? 0), Math.max(0, (take?.duration || 0) / 2)));
+}
+
+function getTakeFadeOut(take) {
+  return Math.max(0, Math.min(Number(take?.fadeOut ?? 0), Math.max(0, (take?.duration || 0) / 2)));
+}
+
+function applyTakeGainAutomation(audioParam, volume, take, offset = 0, startAt = 0) {
+  const fadeIn = getTakeFadeIn(take);
+  const fadeOut = getTakeFadeOut(take);
+  const duration = Math.max(0, (take?.duration || 0) - offset);
+  const fadeInRemaining = Math.max(0, fadeIn - offset);
+  const fadeOutStart = Math.max(startAt, startAt + duration - fadeOut);
+  const endAt = startAt + duration;
+
+  audioParam.cancelScheduledValues(startAt);
+  if (fadeInRemaining > 0) {
+    audioParam.setValueAtTime(0, startAt);
+    audioParam.linearRampToValueAtTime(volume, startAt + fadeInRemaining);
+  } else {
+    audioParam.setValueAtTime(volume, startAt);
+  }
+
+  if (fadeOut > 0 && endAt > startAt) {
+    audioParam.setValueAtTime(volume, fadeOutStart);
+    audioParam.linearRampToValueAtTime(0, endAt);
+  }
+}
+
 function setTrackVolume(trackId, value) {
   const track = findTrack(trackId);
   if (!track) {
@@ -2316,6 +2430,10 @@ function makeMixFilename() {
 }
 
 function getTakeTitle(take, index) {
+  if (take.name) {
+    return take.name;
+  }
+
   return take.processed ? `${take.trackName} ${take.presetName} v${take.version || 1}` : `${take.trackName} take ${index + 1}`;
 }
 
@@ -2328,6 +2446,10 @@ function getTakeSubtitle(take) {
 }
 
 function getTakeShortName(take) {
+  if (take.name) {
+    return take.name;
+  }
+
   return take.processed ? `${take.trackName} ${take.presetName} v${take.version || 1}` : `${take.trackName} raw`;
 }
 
@@ -2337,6 +2459,15 @@ function getTuneSignature(settings = {}) {
   const humanize = Number(settings.humanize ?? 0);
   const formant = Number(settings.formant ?? 0);
   return `R${retuneSpeed} H${humanize} F${formatSigned(formant)}`;
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 init();

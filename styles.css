@@ -394,6 +394,26 @@ h1 {
   width: 82px;
 }
 
+.region-name-input {
+  width: 100%;
+}
+
+.region-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.region-controls label {
+  gap: 5px;
+  font-size: 10px;
+}
+
+.region-controls input {
+  min-width: 0;
+  width: 100%;
+}
+
 .timeline-region-heading {
   margin-top: 18px;
 }

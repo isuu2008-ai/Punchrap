@@ -16,6 +16,9 @@
 - marker 추가/삭제
 - take region start time 이동/nudge
 - marker와 region start time 프로젝트 저장/복원
+- region 이름 변경
+- clip gain, fade in/out 설정
+- clip gain/fade mix playback/export 반영
 
 ## 결론부터
 
