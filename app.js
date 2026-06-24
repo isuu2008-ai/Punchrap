@@ -1905,27 +1905,6 @@ function downsampleWaveform(waveform, targetLength) {
   });
 }
 
-function makeWaveformFromAudioBuffer(audioBuffer, targetLength = 240) {
-  const peaks = [];
-  const length = audioBuffer.length;
-  const channels = audioBuffer.numberOfChannels;
-  const bucketSize = Math.max(1, Math.floor(length / targetLength));
-
-  for (let start = 0; start < length; start += bucketSize) {
-    let peak = 0;
-    const end = Math.min(length, start + bucketSize);
-    for (let channel = 0; channel < channels; channel += 1) {
-      const data = audioBuffer.getChannelData(channel);
-      for (let index = start; index < end; index += 1) {
-        peak = Math.max(peak, Math.abs(data[index]));
-      }
-    }
-    peaks.push(Math.min(1, peak));
-  }
-
-  return downsampleWaveform(peaks, targetLength);
-}
-
 function updateWaveformStatus() {
   if (!els.waveformStatus) {
     return;
@@ -2312,9 +2291,8 @@ async function analyzeSelectedVocalTake() {
   renderVocalPanel();
 
   try {
-    const decodeContext = new OfflineAudioContext(2, 1, 48000);
-    const sourceBuffer = await decodeContext.decodeAudioData(await selectedTake.blob.arrayBuffer());
-    selectedTake.pitchAnalysis = analyzePitchBuffer(sourceBuffer);
+    const { pitchAnalysis } = await window.PunchLabVocal.analyzeTakePitch(selectedTake);
+    selectedTake.pitchAnalysis = pitchAnalysis;
     selectedTake.pitchPlan = getPitchPlan(selectedTake.pitchAnalysis, selectedTake);
     const plan = selectedTake.pitchPlan;
     els.sessionState.textContent = plan.detectedLabel === "--" ? "Pitch not found" : `${plan.detectedLabel} detected`;
@@ -2466,15 +2444,23 @@ async function renderProcessedTake(sourceTake, preset, tuneSettings) {
   preset ||= getSelectedPreset();
   tuneSettings ||= getTuneSettings();
   const version = getNextProcessedVersion(sourceTake.id, preset.id);
-  const decodeContext = new OfflineAudioContext(2, 1, 48000);
-  const sourceBuffer = await decodeContext.decodeAudioData(await sourceTake.blob.arrayBuffer());
-  sourceTake.pitchAnalysis ||= analyzePitchBuffer(sourceBuffer);
+  let sourceBuffer = null;
+  if (!sourceTake.pitchAnalysis) {
+    const analyzed = await window.PunchLabVocal.analyzeTakePitch(sourceTake);
+    sourceBuffer = analyzed.sourceBuffer;
+    const { pitchAnalysis } = analyzed;
+    sourceTake.pitchAnalysis = pitchAnalysis;
+  }
   const pitchPlan = getPitchPlan(sourceTake.pitchAnalysis, sourceTake);
   sourceTake.pitchPlan = pitchPlan;
-  const renderPreset = getEffectivePreset(preset, tuneSettings);
-  const rendered = await renderVocalBuffer(sourceBuffer, renderPreset, pitchPlan, tuneSettings);
-  const renderedAnalysis = analyzePitchBuffer(rendered);
-  const blob = encodeWav(rendered);
+  const rendered = await window.PunchLabVocal.renderProcessedVocal({
+    sourceTake,
+    sourceBuffer,
+    preset,
+    tuneSettings,
+    pitchPlan,
+  });
+  const blob = rendered.blob;
   const url = URL.createObjectURL(blob);
   const track = findTrack(sourceTake.trackId);
   const take = {
@@ -2487,7 +2473,7 @@ async function renderProcessedTake(sourceTake, preset, tuneSettings) {
     createdAt: new Date(),
     startTime: sourceTake.startTime || 0,
     duration: rendered.duration,
-    waveform: makeWaveformFromAudioBuffer(rendered, 240),
+    waveform: rendered.waveform,
     clipGain: sourceTake.clipGain ?? 1,
     fadeIn: sourceTake.fadeIn || 0,
     fadeOut: sourceTake.fadeOut || 0,
@@ -2498,14 +2484,14 @@ async function renderProcessedTake(sourceTake, preset, tuneSettings) {
     version,
     renderLabel: `${preset.name} v${version}`,
     chainSnapshot: {
-      preset: { ...renderPreset },
+      preset: { ...rendered.renderPreset },
       tuneSettings: { ...tuneSettings },
       key: els.keySelect.value,
       scaleMode: els.scaleModeSelect.value,
       customScaleIntervals: [...state.customScaleIntervals],
     },
-    pitchAnalysis: renderedAnalysis,
-    pitchPlan: getPitchPlan(renderedAnalysis),
+    pitchAnalysis: rendered.pitchAnalysis,
+    pitchPlan: getPitchPlan(rendered.pitchAnalysis),
     sourcePitchPlan: pitchPlan,
     tuneSettings: { ...tuneSettings },
   };
@@ -2520,18 +2506,7 @@ async function renderVocalBuffer(sourceBuffer, preset, pitchPlan = null, tuneSet
 }
 
 function getEffectivePreset(preset, tuneSettings = getTuneSettings()) {
-  return {
-    ...preset,
-    comp: Number(tuneSettings.comp ?? preset.comp),
-    space: Number(tuneSettings.space ?? preset.space),
-    delay: Number(tuneSettings.delay ?? preset.delay ?? preset.space),
-    reverb: Number(tuneSettings.reverb ?? preset.reverb ?? Math.round(Number(preset.space ?? 12) * 0.65)),
-    width: Number(tuneSettings.width ?? preset.width),
-    lowEq: Number(tuneSettings.lowEq ?? preset.lowEq ?? 0),
-    midEq: Number(tuneSettings.midEq ?? preset.midEq ?? 0),
-    airEq: Number(tuneSettings.airEq ?? preset.airEq ?? 0),
-    limiterCeiling: Number(tuneSettings.limiterCeiling ?? preset.limiterCeiling ?? -3),
-  };
+  return window.PunchLabVocal.getEffectivePreset(preset, tuneSettings);
 }
 
 function analyzePitchBuffer(audioBuffer) {

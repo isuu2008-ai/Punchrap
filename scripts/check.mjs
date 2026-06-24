@@ -7,6 +7,7 @@ const syntaxFiles = [
   "src/audio.js",
   "src/dsp.js",
   "src/mix.js",
+  "src/vocal.js",
   "src/project.js",
   "src/storage.js",
 ];
@@ -15,6 +16,7 @@ const requiredScripts = [
   "src/dsp.js",
   "src/audio.js",
   "src/mix.js",
+  "src/vocal.js",
   "src/project.js",
   "src/storage.js",
   "app.js",

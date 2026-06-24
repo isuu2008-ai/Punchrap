@@ -39,7 +39,7 @@ node .\scripts\check.mjs
 - Batch render for the current track or all raw vocal takes
 - Processed take version labels for repeated renders from the same source take
 - Project save/open as a local `.punchlab.json` bundle
-- Separated DSP, audio utility, offline mix render, and project storage modules under `src/`
+- Separated DSP, audio utility, offline mix render, vocal render engine, and project storage modules under `src/`
 - Node package scripts for local start and smoke checks
 - Timeline view with marker management and take region start/nudge controls
 - Region rename, clip gain, and fade in/out controls persisted in project files
@@ -71,5 +71,5 @@ See [COMMERCIAL_STUDIO_ROADMAP.md](./COMMERCIAL_STUDIO_ROADMAP.md) for the comme
 
 ## Next DSP Steps
 
-- Audio Engine Layer additional separation
 - Desktop wrapper preparation
+- Native audio engine interface planning
