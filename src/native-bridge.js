@@ -28,6 +28,9 @@
         available: false,
         driverId: "web-audio",
         missingMethods: REQUIRED_METHODS,
+        missingOptionalMethods: OPTIONAL_METHODS,
+        nativeHostAvailable: false,
+        optionalMethods: OPTIONAL_METHODS,
       };
     }
 
@@ -37,6 +40,7 @@
       available: missingMethods.length === 0,
       driverId: host.driverId || "native",
       missingMethods,
+      nativeHostAvailable: true,
       optionalMethods: OPTIONAL_METHODS,
       missingOptionalMethods,
     };
@@ -53,8 +57,7 @@
 
   async function callOptionalNative(method, payload = null) {
     const host = getNativeHost();
-    const status = getStatus();
-    if (!host || !status.available || typeof host[method] !== "function") {
+    if (!host || typeof host[method] !== "function") {
       return null;
     }
     return host[method](payload);

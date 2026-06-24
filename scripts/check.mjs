@@ -173,8 +173,22 @@ if (!tauriLibSource.includes("get_capabilities") || !tauriLibSource.includes("ge
   console.error("Tauri Rust shell must expose getCapabilities/getDevices scaffold commands.");
   failed = true;
 }
+if (!tauriLibSource.includes("open_project_file") || !tauriLibSource.includes("save_project_file") || !tauriLibSource.includes("ProjectFileResult")) {
+  console.error("Tauri Rust shell must expose native project open/save handoff commands.");
+  failed = true;
+}
 if (!tauriLibSource.includes("native_bridge_ready: false") || !tauriLibSource.includes("native_audio_engine_ready: false")) {
   console.error("Tauri Rust shell must keep native audio activation gated until render and monitoring commands exist.");
+  failed = true;
+}
+const nativeBridgeSource = readFileSync("src/native-bridge.js", "utf8");
+const platformSource = readFileSync("src/platform.js", "utf8");
+if (!nativeBridgeSource.includes("nativeHostAvailable: true") || !nativeBridgeSource.includes("nativeHostAvailable: false")) {
+  console.error("Native bridge status must distinguish partial native host availability from full engine readiness.");
+  failed = true;
+}
+if (!platformSource.includes("status?.nativeHostAvailable") || platformSource.includes("!status?.available || status.missingOptionalMethods?.includes(\"openProjectFile\")")) {
+  console.error("Platform native project file handoff must allow partial native hosts.");
   failed = true;
 }
 if (!appSource.includes("nativeAudioEngine?.detail")) {

@@ -1,4 +1,7 @@
-use serde::Serialize;
+use base64::{engine::general_purpose, Engine as _};
+use serde::{Deserialize, Serialize};
+use std::fs;
+use tauri_plugin_dialog::DialogExt;
 
 const PLANNED_NATIVE_METHODS: [&str; 13] = [
     "getCapabilities",
@@ -16,7 +19,12 @@ const PLANNED_NATIVE_METHODS: [&str; 13] = [
     "scanPluginHosts",
 ];
 
-const IMPLEMENTED_NATIVE_METHODS: [&str; 2] = ["getCapabilities", "getDevices"];
+const IMPLEMENTED_NATIVE_METHODS: [&str; 4] = [
+    "getCapabilities",
+    "getDevices",
+    "openProjectFile",
+    "saveProjectFile",
+];
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -64,6 +72,34 @@ struct PunchLabDevices {
     audio_output: Vec<PunchLabDevice>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct OpenProjectFilePayload {
+    #[serde(rename = "type")]
+    file_type: Option<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SaveProjectFilePayload {
+    data: String,
+    suggested_name: Option<String>,
+    #[serde(rename = "type")]
+    file_type: Option<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ProjectFileResult {
+    canceled: bool,
+    bytes: usize,
+    data_url: Option<String>,
+    file_name: Option<String>,
+    path: Option<String>,
+    #[serde(rename = "type")]
+    file_type: String,
+}
+
 #[tauri::command]
 fn get_punchlab_bridge_status() -> PunchLabBridgeStatus {
     PunchLabBridgeStatus {
@@ -105,6 +141,103 @@ fn get_devices() -> PunchLabDevices {
     }
 }
 
+#[tauri::command]
+async fn open_project_file(
+    app: tauri::AppHandle,
+    payload: Option<OpenProjectFilePayload>,
+) -> Result<ProjectFileResult, String> {
+    let Some(file_path) = app
+        .dialog()
+        .file()
+        .add_filter("PunchLab Project", &["punchlab.json", "json"])
+        .blocking_pick_file()
+    else {
+        return Ok(canceled_project_file_result("application/json"));
+    };
+    let path = file_path.into_path().map_err(|error| error.to_string())?;
+    let bytes = fs::read(&path).map_err(|error| error.to_string())?;
+    let file_type = payload
+        .and_then(|value| value.file_type)
+        .unwrap_or_else(|| "application/json".to_string());
+    let data_url = encode_data_url(&file_type, &bytes);
+
+    Ok(ProjectFileResult {
+        canceled: false,
+        bytes: bytes.len(),
+        data_url: Some(data_url),
+        file_name: path.file_name().map(|name| name.to_string_lossy().to_string()),
+        path: Some(path.to_string_lossy().to_string()),
+        file_type,
+    })
+}
+
+#[tauri::command]
+async fn save_project_file(
+    app: tauri::AppHandle,
+    payload: SaveProjectFilePayload,
+) -> Result<ProjectFileResult, String> {
+    let suggested_name = payload
+        .suggested_name
+        .as_deref()
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or("project.punchlab.json");
+    let file_type = payload
+        .file_type
+        .unwrap_or_else(|| "application/json".to_string());
+    let Some(file_path) = app
+        .dialog()
+        .file()
+        .add_filter("PunchLab Project", &["punchlab.json", "json"])
+        .set_file_name(suggested_name)
+        .blocking_save_file()
+    else {
+        return Ok(canceled_project_file_result(&file_type));
+    };
+    let path = file_path.into_path().map_err(|error| error.to_string())?;
+    let bytes = decode_data_payload(&payload.data)?;
+    fs::write(&path, &bytes).map_err(|error| error.to_string())?;
+
+    Ok(ProjectFileResult {
+        canceled: false,
+        bytes: bytes.len(),
+        data_url: None,
+        file_name: path.file_name().map(|name| name.to_string_lossy().to_string()),
+        path: Some(path.to_string_lossy().to_string()),
+        file_type,
+    })
+}
+
+fn canceled_project_file_result(file_type: &str) -> ProjectFileResult {
+    ProjectFileResult {
+        canceled: true,
+        bytes: 0,
+        data_url: None,
+        file_name: None,
+        path: None,
+        file_type: file_type.to_string(),
+    }
+}
+
+fn decode_data_payload(data: &str) -> Result<Vec<u8>, String> {
+    let source = data.trim();
+    if let Some((meta, body)) = source.split_once(',') {
+        if meta.starts_with("data:") && meta.contains(";base64") {
+            return general_purpose::STANDARD
+                .decode(body)
+                .map_err(|error| error.to_string());
+        }
+    }
+    Ok(source.as_bytes().to_vec())
+}
+
+fn encode_data_url(file_type: &str, bytes: &[u8]) -> String {
+    format!(
+        "data:{};base64,{}",
+        file_type,
+        general_purpose::STANDARD.encode(bytes)
+    )
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -113,7 +246,9 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_punchlab_bridge_status,
             get_capabilities,
-            get_devices
+            get_devices,
+            open_project_file,
+            save_project_file
         ])
         .run(tauri::generate_context!())
         .expect("error while running PunchLab Tauri shell");

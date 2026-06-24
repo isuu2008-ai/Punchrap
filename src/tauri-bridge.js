@@ -99,7 +99,7 @@
   }
 
   function maybeInstallNativeHost(invoke) {
-    if (!status.nativeBridgeReady || window.__PUNCHLAB_NATIVE__) {
+    if (!status.implementedMethods.length || window.__PUNCHLAB_NATIVE__) {
       return false;
     }
 

@@ -41,7 +41,9 @@
     "statusCommand": "get_punchlab_bridge_status",
     "implementedMethods": [
       "getCapabilities",
-      "getDevices"
+      "getDevices",
+      "openProjectFile",
+      "saveProjectFile"
     ],
     "nativeBridgeReady": false,
     "activatesNativeBridgeWhen": "nativeBridgeReady"

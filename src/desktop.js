@@ -99,7 +99,7 @@
           global: "__TAURI__",
           adapter: "src/tauri-bridge.js",
           statusCommand: "get_punchlab_bridge_status",
-          implementedMethods: ["getCapabilities", "getDevices"],
+          implementedMethods: ["getCapabilities", "getDevices", "openProjectFile", "saveProjectFile"],
           nativeBridgeReady: false,
           activatesNativeBridgeWhen: "nativeBridgeReady",
         },
@@ -383,7 +383,7 @@
   }
 
   function getMissingOptionalMethods(status, methods) {
-    if (!status?.available) {
+    if (!status?.nativeHostAvailable) {
       return [...methods];
     }
     const missing = new Set(status.missingOptionalMethods || []);

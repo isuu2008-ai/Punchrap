@@ -46,7 +46,7 @@
   async function saveProjectFile(blob, suggestedName) {
     const bridge = window.PunchLabNativeBridge;
     const status = bridge?.getStatus?.();
-    if (!status?.available || status.missingOptionalMethods?.includes("saveProjectFile")) {
+    if (!status?.nativeHostAvailable || status.missingOptionalMethods?.includes("saveProjectFile")) {
       return null;
     }
 
@@ -61,7 +61,7 @@
   async function openProjectFile() {
     const bridge = window.PunchLabNativeBridge;
     const status = bridge?.getStatus?.();
-    if (!status?.available || status.missingOptionalMethods?.includes("openProjectFile")) {
+    if (!status?.nativeHostAvailable || status.missingOptionalMethods?.includes("openProjectFile")) {
       return null;
     }
 
@@ -84,7 +84,7 @@
   async function setOutputDevice(deviceId = "") {
     const bridge = window.PunchLabNativeBridge;
     const status = bridge?.getStatus?.();
-    if (!status?.available || status.missingOptionalMethods?.includes("setOutputDevice")) {
+    if (!status?.nativeHostAvailable || status.missingOptionalMethods?.includes("setOutputDevice")) {
       return null;
     }
 
@@ -95,7 +95,7 @@
   async function setBufferSize(bufferSize = 128) {
     const bridge = window.PunchLabNativeBridge;
     const status = bridge?.getStatus?.();
-    if (!status?.available || status.missingOptionalMethods?.includes("setBufferSize")) {
+    if (!status?.nativeHostAvailable || status.missingOptionalMethods?.includes("setBufferSize")) {
       return null;
     }
 
@@ -106,7 +106,7 @@
   async function refreshLatencyStats() {
     const bridge = window.PunchLabNativeBridge;
     const status = bridge?.getStatus?.();
-    if (!status?.available || status.missingOptionalMethods?.includes("getLatencyStats")) {
+    if (!status?.nativeHostAvailable || status.missingOptionalMethods?.includes("getLatencyStats")) {
       platform.latencyStats = null;
       platform.latencyStatsUpdatedAt = null;
       emitPlatformReady();

@@ -88,6 +88,8 @@
 - `src/tauri-bridge.js`가 `window.__TAURI__.core.invoke`의 status command를 probe하고 `nativeBridgeReady`일 때만 `__PUNCHLAB_NATIVE__`를 설치
 - Tauri native introspection commands 1차
 - Rust Tauri shell에 `get_capabilities`, `get_devices` command를 추가하되 render/monitoring 미구현 상태에서는 `nativeBridgeReady=false`를 유지
+- Tauri project file handoff commands 1차
+- Rust Tauri shell에 `open_project_file`, `save_project_file` command를 추가하고 `.punchlab.json`을 data URL 기반으로 JS project loader와 연결
 - Tauri main capability scaffold 1차
 - `src-tauri/capabilities/main.json`에 main window, core/dialog/fs 기본 permission 계약을 추가
 - Desktop wrapper contract check 1차
@@ -100,6 +102,8 @@
 - `withGlobalTauri`, `get_punchlab_bridge_status`, planned native method, fallback safety gate를 contract check에서 검증
 - Tauri native introspection contract check 1차
 - `getCapabilities/getDevices` 구현 목록과 native audio activation gate가 분리되어 있는지 검증
+- Partial native host contract check 1차
+- `nativeHostAvailable`과 full native engine `available`을 분리해 project file handoff가 native audio 완성 전에도 동작하도록 검증
 - Tauri capability contract check 1차
 - `tauri.conf.json` security.capabilities, capability permissions, package/wrapper manifest 정합성을 검증
 - Tauri file association scaffold 1차

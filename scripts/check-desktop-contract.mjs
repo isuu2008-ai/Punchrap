@@ -118,7 +118,7 @@ if (wrapper.tauriBridge?.activatesNativeBridgeWhen !== "nativeBridgeReady") {
 if (wrapper.tauriBridge?.nativeBridgeReady !== false || packageManifest.tauriBridge?.nativeBridgeReady !== false) {
   fail("Tauri bridge manifests must keep nativeBridgeReady false until render and monitoring commands exist.");
 }
-for (const method of ["getCapabilities", "getDevices"]) {
+for (const method of ["getCapabilities", "getDevices", "openProjectFile", "saveProjectFile"]) {
   if (!wrapper.tauriBridge?.implementedMethods?.includes(method) || !packageManifest.tauriBridge?.implementedMethods?.includes(method)) {
     fail(`Tauri bridge manifests must list implemented method ${method}.`);
   }
@@ -289,6 +289,9 @@ for (const requiredSnippet of ["nativeBridgeReady", "implementedMethods", "missi
 if (!tauriBridgeSource.includes("payload === null ? invoke(command) : invoke(command, { payload })")) {
   fail("Tauri bridge adapter must omit payload args for no-argument commands.");
 }
+if (!tauriBridgeSource.includes("!status.implementedMethods.length") || tauriBridgeSource.includes("!status.nativeBridgeReady || window.__PUNCHLAB_NATIVE__")) {
+  fail("Tauri bridge adapter must install partial native hosts without enabling the native engine.");
+}
 
 if (tauriConfig.$schema !== "https://schema.tauri.app/config/2") {
   fail("Tauri config must use the Tauri v2 schema.");
@@ -318,6 +321,7 @@ if (!tauriCargo.includes('name = "punchlab"') || !tauriCargo.includes('name = "p
   fail("Tauri Cargo manifest must define punchlab package and punchlab_lib library.");
 }
 for (const requiredSnippet of [
+  'base64 = "0.22"',
   'crate-type = ["staticlib", "cdylib", "rlib"]',
   'serde = { version = "1", features = ["derive"] }',
   'tauri-build = { version = "2"',
@@ -340,20 +344,34 @@ for (const requiredSnippet of [
   "get_punchlab_bridge_status",
   "get_capabilities",
   "get_devices",
+  "open_project_file",
+  "save_project_file",
   "PunchLabBridgeStatus",
   "PunchLabCapabilities",
   "PunchLabDevices",
+  "ProjectFileResult",
+  "OpenProjectFilePayload",
+  "SaveProjectFilePayload",
   "native_bridge_ready: false",
   "IMPLEMENTED_NATIVE_METHODS",
-  'const IMPLEMENTED_NATIVE_METHODS: [&str; 2] = ["getCapabilities", "getDevices"]',
+  "openProjectFile",
+  "saveProjectFile",
   "implemented_methods: IMPLEMENTED_NATIVE_METHODS.to_vec()",
   "native_audio_engine_ready: false",
   "realtime_native_monitoring: false",
   "audio_input: Vec::new()",
   "audio_output: Vec::new()",
+  "blocking_pick_file()",
+  "blocking_save_file()",
+  "fs::read(&path)",
+  "fs::write(&path, &bytes)",
+  "decode_data_payload",
+  "encode_data_url",
   "PLANNED_NATIVE_METHODS",
   "get_capabilities,",
   "get_devices",
+  "open_project_file,",
+  "save_project_file",
   "tauri::Builder::default()",
   "tauri_plugin_dialog::init()",
   "tauri_plugin_fs::init()",
