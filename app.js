@@ -6288,9 +6288,9 @@ function toggleBestTake(takeId) {
 }
 
 function addBestTakesToComp() {
-  const bestPoolTakes = getAllTakes()
-    .filter((take) => take.bestTake && !take.compSelected)
-    .sort((a, b) => (a.startTime || 0) - (b.startTime || 0) || a.createdAt.getTime() - b.createdAt.getTime());
+  const bestPoolTakes = window.PunchLabTakes.sortBestTakesForComp(
+    getAllTakes().filter((take) => take.bestTake && !take.compSelected),
+  );
 
   if (!bestPoolTakes.length) {
     els.sessionState.textContent = "No best takes to add";
@@ -6309,17 +6309,10 @@ function addBestTakesToComp() {
 }
 
 function moveCompTake(takeId, delta) {
-  const compTakes = getCompTakes();
-  const index = compTakes.findIndex((take) => take.id === takeId);
-  const nextIndex = index + delta;
-  if (index < 0 || nextIndex < 0 || nextIndex >= compTakes.length) {
+  if (!window.PunchLabTakes.moveCompTakeOrder(getCompTakes(), takeId, delta)) {
     return;
   }
 
-  [compTakes[index], compTakes[nextIndex]] = [compTakes[nextIndex], compTakes[index]];
-  compTakes.forEach((take, order) => {
-    take.compOrder = order + 1;
-  });
   els.sessionState.textContent = "Comp order updated";
   renderTakes();
   scheduleAutosave();
@@ -6336,13 +6329,11 @@ function clearCompLane() {
 }
 
 function normalizeCompOrder() {
-  getCompTakes().forEach((take, index) => {
-    take.compOrder = index + 1;
-  });
+  window.PunchLabTakes.normalizeCompOrder(getCompTakes());
 }
 
 function getNextCompOrder() {
-  return getCompTakes().reduce((max, take) => Math.max(max, Number(take.compOrder) || 0), 0) + 1;
+  return window.PunchLabTakes.getNextCompOrder(getCompTakes());
 }
 
 function deleteTake(takeId) {
