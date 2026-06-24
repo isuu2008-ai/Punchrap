@@ -7,10 +7,18 @@ enough to grow into a vocal studio.
 ## Run
 
 ```powershell
-& "C:\Users\admin\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe" .\server.mjs
+node .\server.mjs
 ```
 
 Then open `http://localhost:4173`.
+
+## Check
+
+```powershell
+node .\scripts\check.mjs
+```
+
+`package.json` also exposes `npm start` and `npm run check` for environments with npm installed.
 
 ## Current MVP
 
@@ -32,6 +40,7 @@ Then open `http://localhost:4173`.
 - Processed take version labels for repeated renders from the same source take
 - Project save/open as a local `.punchlab.json` bundle
 - Separated DSP, audio utility, offline mix render, and project storage modules under `src/`
+- Node package scripts for local start and smoke checks
 - Timeline view with marker management and take region start/nudge controls
 - Region rename, clip gain, and fade in/out controls persisted in project files
 - Timeline undo/redo for marker and region edits

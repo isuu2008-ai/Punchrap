@@ -1,0 +1,13 @@
+{
+  "name": "punchlab",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local rap vocal recorder and render studio prototype.",
+  "scripts": {
+    "start": "node server.mjs",
+    "check": "node scripts/check.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
