@@ -1431,12 +1431,16 @@ function formatPreviewNativeAudio(nativeAudio = {}) {
   const driver = nativeAudio.nativeAvailable ? nativeAudio.driver || "native" : "web";
   const buffer = Number(nativeAudio.preferredBufferSize || 0);
   const latency = Number(nativeAudio.roundTripLatencyMs);
+  const sampleRateText = formatDisplaySampleRate(nativeAudio.stats?.sampleRate);
   const parts = [driver];
   if (buffer > 0) {
     parts.push(`${buffer} samples`);
   }
   if (Number.isFinite(latency)) {
     parts.push(`${Math.round(latency)}ms`);
+  }
+  if (sampleRateText) {
+    parts.push(sampleRateText);
   }
   return parts.join(" / ");
 }
