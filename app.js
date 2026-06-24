@@ -3864,6 +3864,7 @@ function renderVersionPanel(take) {
               <button class="mini-button ${isPlaying ? "active" : ""}" type="button" data-play-version="${versionTake.id}" ${vocalBusy ? "disabled" : ""}>
                 ${isPlaying ? "Pause" : "Play"}
               </button>
+              <a class="mini-button" href="${versionTake.url}" download="${makeTakeFilename(versionTake)}">Save</a>
               <button class="mini-button danger" type="button" data-delete-version="${versionTake.id}" ${vocalBusy ? "disabled" : ""}>Del</button>
             </div>
           </div>
