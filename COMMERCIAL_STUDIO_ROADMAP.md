@@ -42,6 +42,8 @@
 - shell size, local-first permission, native bridge, plugin host, handoff stage 조건을 `scripts/check-desktop-contract.mjs`에서 검증
 - Desktop manifest reference check 1차
 - index.html meta manifest 참조와 desktop-host contract file path 존재 여부를 contract check에서 검증
+- Output routing contract check 1차
+- `audioOutputRouting` permission과 `setOutputDevice` optional native method의 정합성을 desktop contract check에서 검증
 - Native project file handoff 1차
 - saveProjectFile/openProjectFile optional native method를 Platform API와 project save/open 경로에 연결
 - Project file handoff readiness 1차

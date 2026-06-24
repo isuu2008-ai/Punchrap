@@ -62,6 +62,9 @@ if (wrapper.permissions?.microphone !== true) {
 if (wrapper.permissions?.filesystem !== true) {
   fail("Desktop wrapper must request filesystem permission.");
 }
+if (wrapper.permissions?.audioOutputRouting !== true) {
+  fail("Desktop wrapper must request audio output routing permission.");
+}
 if (wrapper.permissions?.network !== false) {
   fail("Desktop wrapper should remain local-first with network disabled by default.");
 }
@@ -99,6 +102,15 @@ for (const method of host.optionalNativeMethods || []) {
   if (!wrapper.nativeBridge?.optionalMethods?.includes(method)) {
     fail(`Wrapper missing optional native method: ${method}`);
   }
+}
+
+const wrapperOptionalMethods = wrapper.nativeBridge?.optionalMethods || [];
+const hostOptionalMethods = host.optionalNativeMethods || [];
+if (wrapper.permissions?.audioOutputRouting === true && !wrapperOptionalMethods.includes("setOutputDevice")) {
+  fail("Desktop wrapper audioOutputRouting permission requires setOutputDevice optional native method.");
+}
+if (hostOptionalMethods.includes("setOutputDevice") && wrapper.permissions?.audioOutputRouting !== true) {
+  fail("Desktop host setOutputDevice contract requires wrapper audioOutputRouting permission.");
 }
 
 if (failed) {
