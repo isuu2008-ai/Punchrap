@@ -25,6 +25,8 @@
 - `desktop-host-manifest.json`과 `src/desktop.js`로 native wrapper 계약/준비 상태를 분리
 - Native adapter 1차
 - `src/native-adapter.js`가 native host bridge를 swappable engine interface로 연결
+- Native fixture mode 1차
+- `?nativeFixture=1`로 native adapter/engine 선택 경로를 브라우저에서 검증
 - `.punchlab.json` 로컬 프로젝트 저장/복원
 - processed take `v1`, `v2` 버전 관리
 - processed take 버전/체인 정보 저장 포맷 포함

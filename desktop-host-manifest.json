@@ -25,6 +25,7 @@
   "contracts": {
     "engine": "src/engine-contract.js",
     "bridge": "src/native-bridge.js",
+    "nativeFixture": "src/native-fixture.js",
     "nativeAdapter": "src/native-adapter.js",
     "project": "src/project.js",
     "desktop": "src/desktop.js"

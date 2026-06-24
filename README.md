@@ -53,6 +53,7 @@ node .\scripts\check.mjs
 - Engine contract module for native bridge method requirements and shared driver capability defaults
 - Native bridge contract stub for future desktop/native audio integration
 - Native adapter stub that maps host bridge methods into the swappable PunchLab engine interface
+- Native fixture mode via `?nativeFixture=1` for testing the native adapter path in the browser
 - Audio engine status chip showing Web Audio fallback or future native engine activation
 - Node package scripts for local start and smoke checks
 - PWA manifest, local icon, platform bootstrap, and service worker shell cache for desktop-install preparation
