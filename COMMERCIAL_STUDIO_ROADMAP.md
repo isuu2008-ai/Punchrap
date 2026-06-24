@@ -40,6 +40,8 @@
 - Tauri/Electron wrapper에 필요한 shell, 권한, bridge, handoff stage 계약을 `desktop-wrapper-manifest.json`으로 분리
 - Desktop wrapper contract check 1차
 - shell size, local-first permission, native bridge, plugin host, handoff stage 조건을 `scripts/check-desktop-contract.mjs`에서 검증
+- Desktop manifest reference check 1차
+- index.html meta manifest 참조와 desktop-host contract file path 존재 여부를 contract check에서 검증
 - Native project file handoff 1차
 - saveProjectFile/openProjectFile optional native method를 Platform API와 project save/open 경로에 연결
 - Project file handoff readiness 1차

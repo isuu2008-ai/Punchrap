@@ -67,6 +67,7 @@ node .\scripts\check.mjs
 - Desktop host manifest and runtime desktop-readiness diagnostics for future Tauri/Electron/native wrapper integration
 - Desktop wrapper manifest for shell size, permission, bridge, and handoff-stage planning
 - Desktop wrapper contract check for shell, permission, bridge, plugin, and handoff-stage requirements
+- Desktop contract check verifies HTML manifest meta tags and host contract file paths
 - Native project save/open handoff through optional `saveProjectFile` and `openProjectFile`
 - Desktop readiness reports native project file open/save handoff availability
 - Desktop readiness exposes wrapper handoff-stage progress for browser, desktop, native engine, and plugin host

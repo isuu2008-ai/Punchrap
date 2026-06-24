@@ -1,8 +1,9 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 const wrapper = readJson("desktop-wrapper-manifest.json");
 const host = readJson("desktop-host-manifest.json");
 const plugin = readJson("plugin-host-manifest.json");
+const indexHtml = readFileSync("index.html", "utf8");
 let failed = false;
 
 function readJson(path) {
@@ -30,6 +31,18 @@ requireString(wrapper.appId, "wrapper.appId");
 requireString(wrapper.appName, "wrapper.appName");
 requireString(wrapper.shell?.entry, "wrapper.shell.entry");
 requireString(wrapper.shell?.windowTitle, "wrapper.shell.windowTitle");
+
+const requiredMeta = {
+  "punchlab-desktop-manifest": "./desktop-host-manifest.json",
+  "punchlab-wrapper-manifest": "./desktop-wrapper-manifest.json",
+  "punchlab-plugin-host-manifest": "./plugin-host-manifest.json",
+};
+
+for (const [name, content] of Object.entries(requiredMeta)) {
+  if (!indexHtml.includes(`name="${name}"`) || !indexHtml.includes(`content="${content}"`)) {
+    fail(`index.html missing desktop meta ${name} -> ${content}.`);
+  }
+}
 
 if (Number(wrapper.shell?.minWidth || 0) < 1000) {
   fail("wrapper.shell.minWidth must be at least 1000 for the studio layout.");
@@ -69,6 +82,12 @@ if (wrapper.pluginHost?.scanMethod !== plugin.scan?.nativeMethod) {
 }
 if (wrapper.pluginHost?.requiresCapability !== plugin.requiredCapabilities?.[0]) {
   fail("Wrapper plugin capability must match plugin host manifest.");
+}
+
+for (const [contractName, contractPath] of Object.entries(host.contracts || {})) {
+  if (!existsSync(contractPath)) {
+    fail(`Desktop host contract missing file for ${contractName}: ${contractPath}`);
+  }
 }
 
 for (const method of host.requiredNativeMethods || []) {
