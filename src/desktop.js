@@ -34,6 +34,7 @@
       bridgeGlobal: "__PUNCHLAB_NATIVE__",
       manifestPath: "./desktop-host-manifest.json",
       wrapperManifestPath: "./desktop-wrapper-manifest.json",
+      pluginHostManifestPath: "./plugin-host-manifest.json",
       projectFormat: ".punchlab.json",
       bundleFormat: ".punchlab.zip",
       wrapper: {
@@ -49,6 +50,11 @@
           network: false,
         },
         handoffStages: WRAPPER_HANDOFF_STAGES.map((stage) => ({ ...stage })),
+        pluginHost: {
+          manifest: "plugin-host-manifest.json",
+          scanMethod: "scanPluginHosts",
+          requiresCapability: "pluginHost",
+        },
       },
       requiredNativeMethods,
       optionalNativeMethods: [...OPTIONAL_NATIVE_METHODS],

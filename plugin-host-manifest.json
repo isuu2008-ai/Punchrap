@@ -1,0 +1,28 @@
+{
+  "appId": "ai.isuu2008.punchrap",
+  "pluginHostVersion": 1,
+  "formats": [
+    "VST3",
+    "AU"
+  ],
+  "scan": {
+    "nativeMethod": "scanPluginHosts",
+    "requiresFilesystem": true,
+    "backgroundSafe": true
+  },
+  "chainRoles": [
+    "pitch-correction",
+    "gate",
+    "de-ess",
+    "compressor",
+    "saturation",
+    "eq",
+    "delay",
+    "reverb",
+    "limiter"
+  ],
+  "requiredCapabilities": [
+    "pluginHost"
+  ],
+  "automationSource": "src/chain-params.js"
+}

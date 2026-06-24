@@ -36,6 +36,8 @@
 - Tauri/Electron wrapper에 필요한 shell, 권한, bridge, handoff stage 계약을 `desktop-wrapper-manifest.json`으로 분리
 - Desktop wrapper readiness 1차
 - browser, desktop wrapper, native audio engine, plugin host handoff stage를 readiness 결과와 engine status title에 노출
+- Plugin host manifest 1차
+- VST3/AU scan method, chain role, automation source, pluginHost capability 계약을 `plugin-host-manifest.json`으로 분리
 - Native fixture mode 1차
 - `?nativeFixture=1`로 native adapter/engine 선택 경로를 브라우저에서 검증
 - Vocal chain parameter manifest 1차

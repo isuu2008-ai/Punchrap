@@ -36,6 +36,11 @@
     "audioOutputRouting": true,
     "network": false
   },
+  "pluginHost": {
+    "manifest": "plugin-host-manifest.json",
+    "scanMethod": "scanPluginHosts",
+    "requiresCapability": "pluginHost"
+  },
   "handoffStages": [
     {
       "id": "browser-shell",

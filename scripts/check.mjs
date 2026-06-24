@@ -49,6 +49,7 @@ const requiredFiles = [
   "manifest.webmanifest",
   "desktop-host-manifest.json",
   "desktop-wrapper-manifest.json",
+  "plugin-host-manifest.json",
   "assets/punchlab-icon.svg",
   "sw.js",
 ];
@@ -81,6 +82,7 @@ for (const file of requiredFiles) {
 
 const desktopHostManifest = JSON.parse(readFileSync("desktop-host-manifest.json", "utf8"));
 const desktopWrapperManifest = JSON.parse(readFileSync("desktop-wrapper-manifest.json", "utf8"));
+const pluginHostManifest = JSON.parse(readFileSync("plugin-host-manifest.json", "utf8"));
 if (desktopWrapperManifest.nativeBridge?.hostManifest !== "desktop-host-manifest.json") {
   console.error("Desktop wrapper manifest must reference desktop-host-manifest.json.");
   failed = true;
@@ -98,6 +100,20 @@ for (const method of desktopHostManifest.requiredNativeMethods || []) {
 for (const method of desktopHostManifest.optionalNativeMethods || []) {
   if (!desktopWrapperManifest.nativeBridge?.optionalMethods?.includes(method)) {
     console.error(`Desktop wrapper manifest missing optional native method: ${method}`);
+    failed = true;
+  }
+}
+if (desktopWrapperManifest.pluginHost?.manifest !== "plugin-host-manifest.json") {
+  console.error("Desktop wrapper manifest must reference plugin-host-manifest.json.");
+  failed = true;
+}
+if (!desktopWrapperManifest.nativeBridge?.optionalMethods?.includes(pluginHostManifest.scan?.nativeMethod)) {
+  console.error("Plugin scan native method must be listed as an optional native bridge method.");
+  failed = true;
+}
+for (const capability of pluginHostManifest.requiredCapabilities || []) {
+  if (!desktopHostManifest.optionalEngineCapabilities?.includes(capability)) {
+    console.error(`Plugin host required capability missing from desktop host optional capabilities: ${capability}`);
     failed = true;
   }
 }

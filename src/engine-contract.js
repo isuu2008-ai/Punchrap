@@ -10,7 +10,12 @@
 
   const OPTIONAL_NATIVE_METHODS = [
     "getLatencyStats",
+    "setOutputDevice",
     "setBufferSize",
+    "openProjectFile",
+    "saveProjectFile",
+    "exportCompressedAudio",
+    "scanPluginHosts",
   ];
 
   const WEB_AUDIO_CAPABILITIES = {
