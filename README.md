@@ -69,6 +69,7 @@ node .\scripts\check.mjs
 - Dedicated Comp view for comp lane ordering, take-pool add/remove, and persisted comp order
 - Project templates for trap, drill, rage hook, and clean hook sessions
 - Marker-linked lyric sections with project-persisted scratch lyrics
+- Timeline region duplicate/delete actions
 
 ## Planning
 

@@ -3354,7 +3354,11 @@ function renderTimeline() {
           <div class="region-row">
             <header>
               <strong>${escapeHtml(getTakeTitle(take, index))}</strong>
-              <small>${escapeHtml(take.trackName)}</small>
+              <div class="region-header-actions">
+                <small>${escapeHtml(take.trackName)}</small>
+                <button class="mini-button" type="button" data-duplicate-region="${take.id}">Copy</button>
+                <button class="mini-button danger" type="button" data-delete-region="${take.id}">Del</button>
+              </div>
             </header>
             <input class="region-name-input" type="text" value="${escapeHtml(getTakeTitle(take, index))}" data-region-name="${take.id}" />
             <div class="region-actions">
@@ -3399,6 +3403,12 @@ function renderTimeline() {
   });
   els.regionList.querySelectorAll("[data-nudge-region]").forEach((button) => {
     button.addEventListener("click", () => nudgeRegionStart(button.dataset.nudgeRegion, Number(button.dataset.delta)));
+  });
+  els.regionList.querySelectorAll("[data-duplicate-region]").forEach((button) => {
+    button.addEventListener("click", () => duplicateTimelineRegion(button.dataset.duplicateRegion));
+  });
+  els.regionList.querySelectorAll("[data-delete-region]").forEach((button) => {
+    button.addEventListener("click", () => deleteTake(button.dataset.deleteRegion));
   });
 }
 
@@ -3634,8 +3644,55 @@ function nudgeRegionStart(takeId, delta) {
   setRegionStart(takeId, (take.startTime || 0) + delta);
 }
 
+function duplicateTimelineRegion(takeId) {
+  const sourceTake = findTake(takeId);
+  const track = findTrack(sourceTake?.trackId);
+  if (!sourceTake || !track || !sourceTake.blob) {
+    return;
+  }
+
+  stopCurrentTake(false);
+  const sourceIndex = track.takes.findIndex((take) => take.id === sourceTake.id);
+  const title = getTakeTitle(sourceTake, Math.max(0, sourceIndex));
+  const duplicate = {
+    ...sourceTake,
+    id: crypto.randomUUID(),
+    url: URL.createObjectURL(sourceTake.blob),
+    createdAt: new Date(),
+    startTime: (sourceTake.startTime || 0) + Math.max(0.2, sourceTake.duration || 0.5),
+    name: `${title} copy`,
+    compSelected: false,
+    compOrder: null,
+    waveform: sourceTake.waveform ? [...sourceTake.waveform] : sourceTake.waveform,
+    pitchAnalysis: clonePlainObject(sourceTake.pitchAnalysis),
+    pitchPlan: clonePlainObject(sourceTake.pitchPlan),
+    manualPitchTargets: clonePlainObject(sourceTake.manualPitchTargets),
+    tuneSettings: clonePlainObject(sourceTake.tuneSettings),
+  };
+
+  track.takes.push(duplicate);
+  normalizeCompOrder();
+  state.latestTake = duplicate;
+  state.selectedVocalTakeId = duplicate.id;
+  els.downloadLatestButton.disabled = false;
+  els.sessionState.textContent = "Region copied";
+  refreshTimelineEdit();
+}
+
 function isSameTimelineNumber(left, right) {
   return Math.abs(Number(left || 0) - Number(right || 0)) < 0.0001;
+}
+
+function clonePlainObject(value) {
+  if (value == null) {
+    return value;
+  }
+
+  if (typeof structuredClone === "function") {
+    return structuredClone(value);
+  }
+
+  return JSON.parse(JSON.stringify(value));
 }
 
 function getTimelineEndPosition() {
@@ -4208,6 +4265,9 @@ function deleteTake(takeId) {
   renderTracks();
   renderArmTracks();
   renderTakes();
+  renderTimeline();
+  renderLyrics();
+  updateQueueButton();
   updateExportButtons();
   scheduleAutosave();
 }

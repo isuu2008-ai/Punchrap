@@ -84,6 +84,8 @@
 - Trap, drill, rage hook, clean hook 세션 템플릿으로 BPM/key/track mix/marker/preset 빠른 세팅
 - Lyrics marker linking 1차
 - Timeline marker별 가사 섹션과 scratch pad를 project bundle에 저장/복원
+- Timeline region duplicate/delete 1차
+- Region row에서 take copy/delete를 직접 실행하고 timeline/take/export 상태를 즉시 갱신
 - Waveform recording view
 - 녹음 중 waveform peak trail 표시
 - take별 waveform thumbnail 저장/복원
