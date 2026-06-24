@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PunchLab</title>
     <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="./styles.css?v=20260624-22" />
+    <link rel="stylesheet" href="./styles.css?v=20260624-23" />
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
-    <script src="./src/dsp.js?v=20260624-22" defer></script>
-    <script src="./src/audio.js?v=20260624-22" defer></script>
-    <script src="./src/project.js?v=20260624-22" defer></script>
-    <script src="./src/storage.js?v=20260624-22" defer></script>
-    <script src="./app.js?v=20260624-22" defer></script>
+    <script src="./src/dsp.js?v=20260624-23" defer></script>
+    <script src="./src/audio.js?v=20260624-23" defer></script>
+    <script src="./src/project.js?v=20260624-23" defer></script>
+    <script src="./src/storage.js?v=20260624-23" defer></script>
+    <script src="./app.js?v=20260624-23" defer></script>
   </head>
   <body>
     <main class="studio-shell">
@@ -160,6 +160,7 @@
 
               <div class="wave-wrap">
                 <canvas id="waveCanvas" width="1200" height="320"></canvas>
+                <div class="wave-badge" id="waveformStatus">Live input</div>
                 <div class="countdown" id="countdown" hidden>4</div>
               </div>
 

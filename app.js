@@ -17,6 +17,7 @@ const state = {
   recordLatencyMs: 0,
   timerFrame: 0,
   waveFrame: 0,
+  recordWaveform: [],
   latestTake: null,
   activeView: "record",
   armedTrackId: "main",
@@ -118,6 +119,7 @@ const els = {
   inputMeter: document.querySelector("#inputMeter"),
   inputLevelText: document.querySelector("#inputLevelText"),
   waveCanvas: document.querySelector("#waveCanvas"),
+  waveformStatus: document.querySelector("#waveformStatus"),
   countdown: document.querySelector("#countdown"),
   trackList: document.querySelector("#trackList"),
   armTrackList: document.querySelector("#armTrackList"),
@@ -707,6 +709,7 @@ function applyLoadedProject(project) {
   state.markers = normalizeMarkers(project.markers);
   clearTimelineHistory();
   state.latestTake = getAllTakes().at(-1) || null;
+  state.recordWaveform = state.latestTake?.waveform ? [...state.latestTake.waveform] : [];
   state.selectedVocalTakeId = state.latestTake?.id || null;
   els.downloadLatestButton.disabled = !state.latestTake;
   renderTracks();
@@ -1421,6 +1424,7 @@ function startRecording(options = {}) {
 
   state.recordStart = performance.now();
   state.recordStartPosition = Number.isFinite(options.startPosition) ? options.startPosition : getCurrentSessionPosition();
+  state.recordWaveform = [];
   state.isPunchRecording = Boolean(options.punch);
   state.mediaRecorder.start(250);
   state.isRecording = true;
@@ -1484,10 +1488,12 @@ function saveTake() {
     startTime: Math.max(0, state.recordStartPosition - latencySeconds),
     duration: (performance.now() - state.recordStart) / 1000,
     recordLatencyMs: state.recordLatencyMs,
+    waveform: downsampleWaveform(state.recordWaveform, 240),
   };
 
   track.takes.push(take);
   state.latestTake = take;
+  state.recordWaveform = [...take.waveform];
   state.selectedVocalTakeId = take.id;
   els.downloadLatestButton.disabled = false;
   renderTracks();
@@ -1585,6 +1591,7 @@ function startMeter() {
     els.inputMeter.style.width = `${meterValue}%`;
     els.inputLevelText.textContent = Number.isFinite(db) ? `${db.toFixed(1)} dBFS` : "-inf dBFS";
 
+    updateRecordWaveform(data);
     drawLiveWave(ctx, canvas, data);
     state.waveFrame = requestAnimationFrame(draw);
   };
@@ -1598,6 +1605,7 @@ function drawLiveWave(ctx, canvas, data) {
   const height = canvas.height;
   ctx.clearRect(0, 0, width, height);
   drawGrid(ctx, width, height);
+  drawRecordedWaveform(ctx, width, height, state.recordWaveform, state.isRecording ? "#ff4f64" : "rgba(65, 230, 208, 0.5)");
 
   ctx.lineWidth = 3;
   ctx.strokeStyle = state.isRecording ? "#ff4f64" : "#c8ff4d";
@@ -1615,6 +1623,7 @@ function drawLiveWave(ctx, canvas, data) {
   }
 
   ctx.stroke();
+  updateWaveformStatus();
 }
 
 function drawIdleWave() {
@@ -1628,6 +1637,7 @@ function drawIdleWave() {
   const height = canvas.height;
   ctx.clearRect(0, 0, width, height);
   drawGrid(ctx, width, height);
+  drawRecordedWaveform(ctx, width, height, state.recordWaveform, "rgba(65, 230, 208, 0.5)");
 
   ctx.lineWidth = 3;
   ctx.strokeStyle = "#41e6d0";
@@ -1645,6 +1655,116 @@ function drawIdleWave() {
     }
   }
   ctx.stroke();
+  updateWaveformStatus();
+}
+
+function updateRecordWaveform(data) {
+  if (!state.isRecording) {
+    return;
+  }
+
+  let peak = 0;
+  for (const value of data) {
+    peak = Math.max(peak, Math.abs((value - 128) / 128));
+  }
+
+  state.recordWaveform.push(Math.min(1, peak));
+  if (state.recordWaveform.length > 720) {
+    state.recordWaveform.shift();
+  }
+}
+
+function drawRecordedWaveform(ctx, width, height, waveform, color) {
+  if (!waveform?.length) {
+    return;
+  }
+
+  const peaks = downsampleWaveform(waveform, Math.min(width, 360));
+  const center = height * 0.5;
+  const maxHeight = height * 0.34;
+  const step = width / Math.max(1, peaks.length - 1);
+  ctx.save();
+  ctx.lineWidth = Math.max(2, width / 420);
+  ctx.strokeStyle = color;
+  ctx.beginPath();
+  peaks.forEach((peak, index) => {
+    const x = index * step;
+    const y = center - peak * maxHeight;
+    if (index === 0) {
+      ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+    }
+  });
+  for (let index = peaks.length - 1; index >= 0; index -= 1) {
+    const x = index * step;
+    const y = center + peaks[index] * maxHeight;
+    ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.globalAlpha = state.isRecording ? 0.22 : 0.14;
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.globalAlpha = state.isRecording ? 0.8 : 0.35;
+  ctx.stroke();
+  ctx.restore();
+}
+
+function downsampleWaveform(waveform, targetLength) {
+  const source = (waveform || []).filter((value) => Number.isFinite(Number(value)));
+  if (!source.length) {
+    return [];
+  }
+
+  const safeTarget = Math.max(1, Math.min(targetLength, source.length));
+  if (source.length <= safeTarget) {
+    return source.map((value) => Math.max(0, Math.min(1, Number(value))));
+  }
+
+  return Array.from({ length: safeTarget }, (_, index) => {
+    const start = Math.floor((index / safeTarget) * source.length);
+    const end = Math.max(start + 1, Math.floor(((index + 1) / safeTarget) * source.length));
+    let peak = 0;
+    for (let sample = start; sample < end; sample += 1) {
+      peak = Math.max(peak, Math.abs(Number(source[sample]) || 0));
+    }
+    return Math.max(0, Math.min(1, peak));
+  });
+}
+
+function makeWaveformFromAudioBuffer(audioBuffer, targetLength = 240) {
+  const peaks = [];
+  const length = audioBuffer.length;
+  const channels = audioBuffer.numberOfChannels;
+  const bucketSize = Math.max(1, Math.floor(length / targetLength));
+
+  for (let start = 0; start < length; start += bucketSize) {
+    let peak = 0;
+    const end = Math.min(length, start + bucketSize);
+    for (let channel = 0; channel < channels; channel += 1) {
+      const data = audioBuffer.getChannelData(channel);
+      for (let index = start; index < end; index += 1) {
+        peak = Math.max(peak, Math.abs(data[index]));
+      }
+    }
+    peaks.push(Math.min(1, peak));
+  }
+
+  return downsampleWaveform(peaks, targetLength);
+}
+
+function updateWaveformStatus() {
+  if (!els.waveformStatus) {
+    return;
+  }
+
+  if (state.isRecording) {
+    els.waveformStatus.textContent = `Recording waveform ${state.recordWaveform.length}`;
+    return;
+  }
+
+  const latestWaveform = state.latestTake?.waveform || [];
+  els.waveformStatus.textContent = latestWaveform.length ? `Latest take waveform ${latestWaveform.length}` : "Live input";
 }
 
 function drawGrid(ctx, width, height) {
@@ -2150,6 +2270,7 @@ async function renderProcessedTake(sourceTake, preset, tuneSettings) {
     createdAt: new Date(),
     startTime: sourceTake.startTime || 0,
     duration: rendered.duration,
+    waveform: makeWaveformFromAudioBuffer(rendered, 240),
     clipGain: sourceTake.clipGain ?? 1,
     fadeIn: sourceTake.fadeIn || 0,
     fadeOut: sourceTake.fadeOut || 0,
@@ -2487,6 +2608,7 @@ function renderTakes() {
           <div>
             <strong>${escapeHtml(getTakeTitle(take, index))}</strong>
             <small>${getTakeSubtitle(take)}</small>
+            ${renderTakeWaveform(take)}
           </div>
           <div class="take-controls">
             <button class="mini-button ${isPlaying ? "active" : ""}" type="button" data-play-take="${take.id}">
@@ -2527,6 +2649,29 @@ function renderTakes() {
   renderVocalPanel();
   renderTimeline();
   renderExportPanel();
+}
+
+function renderTakeWaveform(take) {
+  if (!take.waveform?.length) {
+    return "";
+  }
+
+  const peaks = downsampleWaveform(take.waveform, 48);
+  const width = 180;
+  const height = 30;
+  const center = height / 2;
+  const step = width / Math.max(1, peaks.length - 1);
+  const top = peaks
+    .map((peak, index) => `${(index * step).toFixed(1)},${(center - peak * 12).toFixed(1)}`)
+    .join(" ");
+  const bottom = peaks
+    .map((peak, index) => `${((peaks.length - 1 - index) * step).toFixed(1)},${(center + peaks[peaks.length - 1 - index] * 12).toFixed(1)}`)
+    .join(" ");
+  return `
+    <svg class="take-waveform" viewBox="0 0 ${width} ${height}" aria-hidden="true" focusable="false">
+      <polygon points="${top} ${bottom}"></polygon>
+    </svg>
+  `;
 }
 
 function renderExportPanel() {
@@ -3358,6 +3503,7 @@ function deleteTake(takeId) {
   URL.revokeObjectURL(take.url);
   track.takes = track.takes.filter((item) => item.id !== takeId);
   state.latestTake = getAllTakes().at(-1) || null;
+  state.recordWaveform = state.latestTake?.waveform ? [...state.latestTake.waveform] : [];
   if (state.selectedVocalTakeId === takeId) {
     state.selectedVocalTakeId = state.latestTake?.id || null;
   }

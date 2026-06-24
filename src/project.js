@@ -40,6 +40,7 @@
       createdAt: take.createdAt instanceof Date ? take.createdAt.toISOString() : take.createdAt,
       startTime: take.startTime || 0,
       duration: take.duration || 0,
+      waveform: sanitizeWaveform(take.waveform),
       clipGain: take.clipGain ?? 1,
       fadeIn: take.fadeIn || 0,
       fadeOut: take.fadeOut || 0,
@@ -114,6 +115,7 @@
       createdAt: take.createdAt ? new Date(take.createdAt) : new Date(),
       startTime: Number(take.startTime || 0),
       duration: Number(take.duration || 0),
+      waveform: sanitizeWaveform(take.waveform),
       clipGain: Number(take.clipGain ?? 1),
       fadeIn: Number(take.fadeIn || 0),
       fadeOut: Number(take.fadeOut || 0),
@@ -175,6 +177,18 @@
         .map(([key, value]) => [String(key), Number(value)])
         .filter(([, value]) => Number.isFinite(value)),
     );
+  }
+
+  function sanitizeWaveform(waveform) {
+    if (!Array.isArray(waveform)) {
+      return [];
+    }
+
+    return waveform
+      .map((value) => Number(value))
+      .filter((value) => Number.isFinite(value))
+      .map((value) => Math.max(0, Math.min(1, value)))
+      .slice(0, 240);
   }
 
   function makeProjectFilename(beatFileName) {
