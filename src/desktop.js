@@ -33,6 +33,7 @@
       contracts: {
         engine: "src/engine-contract.js",
         bridge: "src/native-bridge.js",
+        nativeAdapter: "src/native-adapter.js",
         project: "src/project.js",
         desktop: "src/desktop.js",
       },

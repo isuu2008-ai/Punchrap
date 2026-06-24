@@ -52,6 +52,7 @@ node .\scripts\check.mjs
 - Device management module for browser input/output device enumeration and sink routing
 - Engine contract module for native bridge method requirements and shared driver capability defaults
 - Native bridge contract stub for future desktop/native audio integration
+- Native adapter stub that maps host bridge methods into the swappable PunchLab engine interface
 - Audio engine status chip showing Web Audio fallback or future native engine activation
 - Node package scripts for local start and smoke checks
 - PWA manifest, local icon, platform bootstrap, and service worker shell cache for desktop-install preparation
