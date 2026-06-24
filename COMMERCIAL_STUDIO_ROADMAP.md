@@ -92,6 +92,8 @@
 - Rust Tauri shell에 `open_project_file`, `save_project_file` command를 추가하고 `.punchlab.json`을 data URL 기반으로 JS project loader와 연결
 - Tauri latency/buffer shell commands 1차
 - Rust Tauri shell에 `get_latency_stats`, `set_buffer_size` command를 추가하고 native audio engine 미준비 상태에서는 latency 값을 null로 유지
+- Tauri output-device shell command 1차
+- Rust Tauri shell에 `set_output_device` command를 추가하되 native audio engine 미준비 상태에서는 `unsupported=true`를 반환
 - Tauri main capability scaffold 1차
 - `src-tauri/capabilities/main.json`에 main window, core/dialog/fs 기본 permission 계약을 추가
 - Desktop wrapper contract check 1차

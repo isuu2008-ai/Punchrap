@@ -118,7 +118,7 @@ if (wrapper.tauriBridge?.activatesNativeBridgeWhen !== "nativeBridgeReady") {
 if (wrapper.tauriBridge?.nativeBridgeReady !== false || packageManifest.tauriBridge?.nativeBridgeReady !== false) {
   fail("Tauri bridge manifests must keep nativeBridgeReady false until render and monitoring commands exist.");
 }
-for (const method of ["getCapabilities", "getDevices", "getLatencyStats", "setBufferSize", "openProjectFile", "saveProjectFile"]) {
+for (const method of ["getCapabilities", "getDevices", "getLatencyStats", "setOutputDevice", "setBufferSize", "openProjectFile", "saveProjectFile"]) {
   if (!wrapper.tauriBridge?.implementedMethods?.includes(method) || !packageManifest.tauriBridge?.implementedMethods?.includes(method)) {
     fail(`Tauri bridge manifests must list implemented method ${method}.`);
   }
@@ -354,12 +354,14 @@ for (const requiredSnippet of [
   "get_capabilities",
   "get_devices",
   "get_latency_stats",
+  "set_output_device",
   "set_buffer_size",
   "open_project_file",
   "save_project_file",
   "PunchLabBridgeStatus",
   "PunchLabCapabilities",
   "PunchLabDevices",
+  "OutputDeviceResult",
   "NativeAudioState",
   "PunchLabLatencyStats",
   "SetBufferSizePayload",
@@ -369,6 +371,7 @@ for (const requiredSnippet of [
   "native_bridge_ready: false",
   "IMPLEMENTED_NATIVE_METHODS",
   "getLatencyStats",
+  "setOutputDevice",
   "setBufferSize",
   "openProjectFile",
   "saveProjectFile",
@@ -378,6 +381,8 @@ for (const requiredSnippet of [
   "round_trip_latency_ms: None",
   "source: \"tauri-shell\"",
   "make_latency_stats",
+  "unsupported: true",
+  "state.set_output_device_id",
   "state.set_buffer_size(buffer_size)",
   "SUPPORTED_BUFFER_SIZES",
   "audio_input: Vec::new()",
@@ -392,6 +397,7 @@ for (const requiredSnippet of [
   "get_capabilities,",
   "get_devices",
   "get_latency_stats,",
+  "set_output_device,",
   "set_buffer_size,",
   "open_project_file,",
   "save_project_file",

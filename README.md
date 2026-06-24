@@ -83,6 +83,7 @@ node .\scripts\check.mjs
 - Tauri shell command scaffold for native `getCapabilities` and `getDevices`
 - Tauri native project open/save handoff commands for `.punchlab.json`
 - Tauri native latency/buffer preference commands for `getLatencyStats` and `setBufferSize`
+- Tauri native output-device handoff command for `setOutputDevice`, kept unsupported until the native audio engine can route audio
 - Tauri main-window capability scaffold at `src-tauri/capabilities/main.json`
 - Desktop wrapper contract check for shell, permission, bridge, plugin, and handoff-stage requirements
 - Desktop contract check validates the Tauri app id, dev server, main window, and bundled manifest resources

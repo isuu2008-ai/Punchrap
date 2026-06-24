@@ -103,6 +103,7 @@
             "getCapabilities",
             "getDevices",
             "getLatencyStats",
+            "setOutputDevice",
             "setBufferSize",
             "openProjectFile",
             "saveProjectFile",

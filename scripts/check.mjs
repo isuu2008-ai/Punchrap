@@ -181,6 +181,10 @@ if (!tauriLibSource.includes("get_latency_stats") || !tauriLibSource.includes("s
   console.error("Tauri Rust shell must expose native latency stats and buffer-size shell commands.");
   failed = true;
 }
+if (!tauriLibSource.includes("set_output_device") || !tauriLibSource.includes("OutputDeviceResult") || !tauriLibSource.includes("unsupported: true")) {
+  console.error("Tauri Rust shell must expose output-device handoff while keeping real routing unsupported.");
+  failed = true;
+}
 if (!tauriLibSource.includes("round_trip_latency_ms: None") || !tauriLibSource.includes("source: \"tauri-shell\"")) {
   console.error("Tauri latency scaffold must keep actual native audio latency unset until the audio engine exists.");
   failed = true;

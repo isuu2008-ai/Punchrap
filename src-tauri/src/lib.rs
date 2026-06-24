@@ -20,10 +20,11 @@ const PLANNED_NATIVE_METHODS: [&str; 13] = [
     "scanPluginHosts",
 ];
 
-const IMPLEMENTED_NATIVE_METHODS: [&str; 6] = [
+const IMPLEMENTED_NATIVE_METHODS: [&str; 7] = [
     "getCapabilities",
     "getDevices",
     "getLatencyStats",
+    "setOutputDevice",
     "setBufferSize",
     "openProjectFile",
     "saveProjectFile",
@@ -35,6 +36,7 @@ const DEFAULT_SAMPLE_RATE: u32 = 48000;
 
 struct NativeAudioState {
     buffer_size: Mutex<u32>,
+    output_device_id: Mutex<String>,
     sample_rate: Mutex<u32>,
 }
 
@@ -42,6 +44,7 @@ impl Default for NativeAudioState {
     fn default() -> Self {
         Self {
             buffer_size: Mutex::new(DEFAULT_BUFFER_SIZE),
+            output_device_id: Mutex::new(String::new()),
             sample_rate: Mutex::new(DEFAULT_SAMPLE_RATE),
         }
     }
@@ -62,9 +65,22 @@ impl NativeAudioState {
             .unwrap_or(DEFAULT_SAMPLE_RATE)
     }
 
+    fn output_device_id(&self) -> String {
+        self.output_device_id
+            .lock()
+            .map(|value| value.clone())
+            .unwrap_or_default()
+    }
+
     fn set_buffer_size(&self, buffer_size: u32) {
         if let Ok(mut value) = self.buffer_size.lock() {
             *value = buffer_size;
+        }
+    }
+
+    fn set_output_device_id(&self, device_id: String) {
+        if let Ok(mut value) = self.output_device_id.lock() {
+            *value = device_id;
         }
     }
 }
@@ -121,6 +137,23 @@ struct PunchLabDevices {
 struct SetBufferSizePayload {
     buffer_size: Option<u32>,
     size: Option<u32>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SetOutputDevicePayload {
+    device_id: Option<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct OutputDeviceResult {
+    active: bool,
+    device_id: String,
+    native_audio_engine_ready: bool,
+    supported: bool,
+    unsupported: bool,
+    source: &'static str,
 }
 
 #[derive(Serialize)]
@@ -208,6 +241,23 @@ fn get_devices() -> PunchLabDevices {
 #[tauri::command]
 fn get_latency_stats(state: tauri::State<'_, NativeAudioState>) -> PunchLabLatencyStats {
     make_latency_stats(&state)
+}
+
+#[tauri::command]
+fn set_output_device(
+    state: tauri::State<'_, NativeAudioState>,
+    payload: Option<SetOutputDevicePayload>,
+) -> OutputDeviceResult {
+    let device_id = payload.and_then(|value| value.device_id).unwrap_or_default();
+    state.set_output_device_id(device_id);
+    OutputDeviceResult {
+        active: false,
+        device_id: state.output_device_id(),
+        native_audio_engine_ready: false,
+        supported: false,
+        unsupported: true,
+        source: "tauri-shell",
+    }
 }
 
 #[tauri::command]
@@ -347,6 +397,7 @@ pub fn run() {
             get_capabilities,
             get_devices,
             get_latency_stats,
+            set_output_device,
             set_buffer_size,
             open_project_file,
             save_project_file
