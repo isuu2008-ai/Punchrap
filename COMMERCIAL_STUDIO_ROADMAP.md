@@ -222,6 +222,8 @@
 - tick/grid line/percent mapping 계산을 `src/timeline.js`로 분리
 - Timeline region trim policy split 1차
 - source offset, visible duration, clip gain, fade, color 정규화를 `src/timeline.js`로 분리
+- Timeline region group policy split 1차
+- Verse/Hook/Adlib/Intro/Bridge/Outro group 정의와 기본 group 판정을 `src/timeline.js`로 분리
 - Project zip asset/timeline formatter split 1차
 - project zip preview의 beat section, marker rows, comp lane rows를 `src/project-zip.js`로 분리
 - Project zip take card formatter split 1차

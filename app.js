@@ -115,15 +115,6 @@ const TRACK_FOLDERS = [
   { id: "hook", name: "Hook stack", trackIds: ["hook"], color: "#ff4f64" },
 ];
 
-const REGION_GROUPS = [
-  { id: "verse", label: "Verse" },
-  { id: "hook", label: "Hook" },
-  { id: "adlib", label: "Adlib" },
-  { id: "intro", label: "Intro" },
-  { id: "bridge", label: "Bridge" },
-  { id: "outro", label: "Outro" },
-];
-
 const presets = [
   { id: "trap-hard", name: "Trap Hard", retune: 88, humanize: 10, vibrato: 42, formant: 10, gate: 18, deEss: 28, comp: 72, saturation: 38, space: 18, width: 42 },
   { id: "drill-dark", name: "Drill Dark", retune: 72, humanize: 18, vibrato: 38, formant: -12, gate: 24, deEss: 34, comp: 82, saturation: 46, space: 12, width: 28 },
@@ -6765,28 +6756,19 @@ function getTakeRegionGroup(take) {
 }
 
 function normalizeRegionGroup(value, trackId = "") {
-  const groupId = String(value || "").trim().toLowerCase();
-  return REGION_GROUPS.some((group) => group.id === groupId) ? groupId : getDefaultRegionGroupForTrack(trackId);
+  return window.PunchLabTimeline.normalizeRegionGroup(value, trackId);
 }
 
 function getDefaultRegionGroupForTrack(trackId) {
-  if (trackId === "hook") {
-    return "hook";
-  }
-
-  if (String(trackId || "").startsWith("adlib")) {
-    return "adlib";
-  }
-
-  return "verse";
+  return window.PunchLabTimeline.getDefaultRegionGroupForTrack(trackId);
 }
 
 function getRegionGroupLabel(groupId) {
-  return REGION_GROUPS.find((group) => group.id === groupId)?.label || "Verse";
+  return window.PunchLabTimeline.getRegionGroupLabel(groupId);
 }
 
 function renderRegionGroupOptions(selectedGroup) {
-  return REGION_GROUPS.map(
+  return window.PunchLabTimeline.getRegionGroups().map(
     (group) => `<option value="${group.id}" ${group.id === selectedGroup ? "selected" : ""}>${group.label}</option>`,
   ).join("");
 }

@@ -1,4 +1,13 @@
 (() => {
+  const REGION_GROUPS = [
+    { id: "verse", label: "Verse" },
+    { id: "hook", label: "Hook" },
+    { id: "adlib", label: "Adlib" },
+    { id: "intro", label: "Intro" },
+    { id: "bridge", label: "Bridge" },
+    { id: "outro", label: "Outro" },
+  ];
+
   function normalizeTimelineSnapMode(value) {
     return ["off", "beat", "bar"].includes(value) ? value : "off";
   }
@@ -156,6 +165,31 @@
     return "";
   }
 
+  function getRegionGroups() {
+    return REGION_GROUPS.map((group) => ({ ...group }));
+  }
+
+  function normalizeRegionGroup(value, trackId = "") {
+    const groupId = String(value || "").trim().toLowerCase();
+    return REGION_GROUPS.some((group) => group.id === groupId) ? groupId : getDefaultRegionGroupForTrack(trackId);
+  }
+
+  function getDefaultRegionGroupForTrack(trackId = "") {
+    if (trackId === "hook") {
+      return "hook";
+    }
+
+    if (String(trackId || "").startsWith("adlib")) {
+      return "adlib";
+    }
+
+    return "verse";
+  }
+
+  function getRegionGroupLabel(groupId = "verse") {
+    return REGION_GROUPS.find((group) => group.id === groupId)?.label || "Verse";
+  }
+
   function getTakeFadeIn(take = {}) {
     return Math.max(0, Math.min(Number(take?.fadeIn ?? 0), Math.max(0, (take?.duration || 0) / 2)));
   }
@@ -166,6 +200,9 @@
 
   window.PunchLabTimeline = {
     getBeatDuration,
+    getDefaultRegionGroupForTrack,
+    getRegionGroupLabel,
+    getRegionGroups,
     getTakeClipGain,
     getTakeFadeIn,
     getTakeFadeOut,
@@ -178,6 +215,7 @@
     makeTimelineTicks,
     normalizeMarkers,
     normalizeRegionColor,
+    normalizeRegionGroup,
     normalizeTakeTrim,
     normalizeTimelineSnapMode,
     nudgeTimelineTime,
