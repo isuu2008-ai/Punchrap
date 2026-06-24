@@ -2291,7 +2291,7 @@ async function analyzeSelectedVocalTake() {
   renderVocalPanel();
 
   try {
-    const { pitchAnalysis } = await window.PunchLabVocal.analyzeTakePitch(selectedTake);
+    const { pitchAnalysis } = await window.PunchLabEngine.analyzeTakePitch(selectedTake);
     selectedTake.pitchAnalysis = pitchAnalysis;
     selectedTake.pitchPlan = getPitchPlan(selectedTake.pitchAnalysis, selectedTake);
     const plan = selectedTake.pitchPlan;
@@ -2446,14 +2446,14 @@ async function renderProcessedTake(sourceTake, preset, tuneSettings) {
   const version = getNextProcessedVersion(sourceTake.id, preset.id);
   let sourceBuffer = null;
   if (!sourceTake.pitchAnalysis) {
-    const analyzed = await window.PunchLabVocal.analyzeTakePitch(sourceTake);
+    const analyzed = await window.PunchLabEngine.analyzeTakePitch(sourceTake);
     sourceBuffer = analyzed.sourceBuffer;
     const { pitchAnalysis } = analyzed;
     sourceTake.pitchAnalysis = pitchAnalysis;
   }
   const pitchPlan = getPitchPlan(sourceTake.pitchAnalysis, sourceTake);
   sourceTake.pitchPlan = pitchPlan;
-  const rendered = await window.PunchLabVocal.renderProcessedVocal({
+  const rendered = await window.PunchLabEngine.renderProcessedVocal({
     sourceTake,
     sourceBuffer,
     preset,
@@ -2506,7 +2506,7 @@ async function renderVocalBuffer(sourceBuffer, preset, pitchPlan = null, tuneSet
 }
 
 function getEffectivePreset(preset, tuneSettings = getTuneSettings()) {
-  return window.PunchLabVocal.getEffectivePreset(preset, tuneSettings);
+  return window.PunchLabEngine.getEffectivePreset(preset, tuneSettings);
 }
 
 function analyzePitchBuffer(audioBuffer) {
@@ -3483,7 +3483,7 @@ async function renderFullMixBlob() {
 }
 
 async function renderFullMixBuffer() {
-  if (!window.PunchLabMix?.renderMixBuffer) {
+  if (!window.PunchLabEngine?.renderMixBuffer) {
     throw new Error("Mix engine missing.");
   }
 
@@ -3501,7 +3501,7 @@ async function renderFullMixBuffer() {
     })),
   );
 
-  return window.PunchLabMix.renderMixBuffer({
+  return window.PunchLabEngine.renderMixBuffer({
     sampleRate,
     beatBuffer,
     takes: takeBuffers.map(makeMixTakeSource),
@@ -3509,7 +3509,7 @@ async function renderFullMixBuffer() {
 }
 
 async function analyzeLoudness() {
-  if (!window.PunchLabAudio?.analyzeLoudness) {
+  if (!window.PunchLabEngine?.analyzeLoudness) {
     els.sessionState.textContent = "Audio analyzer missing";
     return;
   }
@@ -3526,7 +3526,7 @@ async function analyzeLoudness() {
     updateExportButtons();
     const audioBuffer = await renderFullMixBuffer();
     state.loudnessReport = {
-      ...window.PunchLabAudio.analyzeLoudness(audioBuffer),
+      ...window.PunchLabEngine.analyzeLoudness(audioBuffer),
       analyzedAt: new Date(),
       sourceSignature: getMixSourceSignature(),
       sourceCount: getAudibleTakes().length + (state.beatArrayBuffer ? 1 : 0),
@@ -3760,7 +3760,7 @@ function getExportJobStatusLabel(status) {
 }
 
 async function renderTakeMixBlob(takes, includeBeat = false) {
-  if (!window.PunchLabMix?.renderMixBuffer) {
+  if (!window.PunchLabEngine?.renderMixBuffer) {
     throw new Error("Mix engine missing.");
   }
 
@@ -3777,7 +3777,7 @@ async function renderTakeMixBlob(takes, includeBeat = false) {
     })),
   );
 
-  const renderedBuffer = await window.PunchLabMix.renderMixBuffer({
+  const renderedBuffer = await window.PunchLabEngine.renderMixBuffer({
     sampleRate,
     beatBuffer,
     takes: takeBuffers.map(makeMixTakeSource),
@@ -3863,11 +3863,11 @@ function getAudioBufferPeak(audioBuffer) {
 }
 
 function encodeWav(audioBuffer, metadata = null) {
-  return window.PunchLabAudio.encodeWav(audioBuffer, metadata);
+  return window.PunchLabEngine.encodeWav(audioBuffer, metadata);
 }
 
 function downloadBlob(blob, filename) {
-  window.PunchLabAudio.downloadBlob(blob, filename);
+  window.PunchLabEngine.downloadBlob(blob, filename);
 }
 
 function toggleCompTake(takeId) {

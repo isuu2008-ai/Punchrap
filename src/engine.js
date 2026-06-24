@@ -1,0 +1,66 @@
+(() => {
+  const WEB_AUDIO_CAPABILITIES = {
+    offlineMixRender: true,
+    vocalRender: true,
+    pitchAnalysis: true,
+    wavExport: true,
+    loudnessAnalysis: true,
+    realtimeNativeMonitoring: false,
+    pluginHost: false,
+  };
+
+  function getDriver() {
+    if (window.PunchLabNativeEngine) {
+      return {
+        id: "native",
+        name: "Native Audio Engine",
+        capabilities: {
+          ...WEB_AUDIO_CAPABILITIES,
+          ...window.PunchLabNativeEngine.capabilities,
+          realtimeNativeMonitoring: true,
+        },
+        ...window.PunchLabNativeEngine,
+      };
+    }
+
+    return {
+      id: "web-audio",
+      name: "Web Audio Engine",
+      capabilities: { ...WEB_AUDIO_CAPABILITIES },
+      analyzeLoudness: window.PunchLabAudio.analyzeLoudness,
+      analyzeTakePitch: window.PunchLabVocal.analyzeTakePitch,
+      decodeTakeBuffer: window.PunchLabVocal.decodeTakeBuffer,
+      downloadBlob: window.PunchLabAudio.downloadBlob,
+      encodeWav: window.PunchLabAudio.encodeWav,
+      getEffectivePreset: window.PunchLabVocal.getEffectivePreset,
+      renderMixBuffer: window.PunchLabMix.renderMixBuffer,
+      renderProcessedVocal: window.PunchLabVocal.renderProcessedVocal,
+    };
+  }
+
+  function requireMethod(name) {
+    const driver = getDriver();
+    if (typeof driver[name] !== "function") {
+      throw new Error(`Audio engine method unavailable: ${name}`);
+    }
+    return driver[name].bind(driver);
+  }
+
+  window.PunchLabEngine = {
+    getDriver,
+    get capabilities() {
+      return getDriver().capabilities;
+    },
+    get driverId() {
+      return getDriver().id;
+    },
+    analyzeLoudness: (...args) => requireMethod("analyzeLoudness")(...args),
+    analyzeTakePitch: (...args) => requireMethod("analyzeTakePitch")(...args),
+    decodeTakeBuffer: (...args) => requireMethod("decodeTakeBuffer")(...args),
+    downloadBlob: (...args) => requireMethod("downloadBlob")(...args),
+    encodeWav: (...args) => requireMethod("encodeWav")(...args),
+    getEffectivePreset: (...args) => requireMethod("getEffectivePreset")(...args),
+    renderMixBuffer: (...args) => requireMethod("renderMixBuffer")(...args),
+    renderProcessedVocal: (...args) => requireMethod("renderProcessedVocal")(...args),
+  };
+})();

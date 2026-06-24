@@ -10,6 +10,7 @@
 - WAV 인코딩/다운로드 유틸을 `src/audio.js`로 분리
 - Offline mix render 엔진을 `src/mix.js`로 분리
 - Vocal render/analyze 엔진을 `src/vocal.js`로 분리
+- Swappable audio engine interface `src/engine.js` 추가
 - 프로젝트 저장/불러오기 계층을 `src/project.js`로 분리
 - `package.json` start/check script 추가
 - `scripts/check.mjs` smoke check 추가
@@ -442,8 +443,8 @@ VST3/AU 플러그인은 마지막에 가는 것이 맞습니다.
 5. stem export
 6. latency compensation
 7. pitch engine 개선
-8. desktop wrapper shell integration
-9. native audio engine
+8. native audio engine bridge
+9. desktop wrapper shell integration
 10. VST3/AU plugin
 
-현재는 1-8번의 기본선과 timeline undo/redo, render/export queue, custom scale editor, take comping, comp lane editing, export metadata, export preview, project zip export asset 포함형, waveform recording view, export peak normalize, K-weighted LUFS/true peak analysis 기본형, offline mix/vocal render 모듈 분리, formant-aware pitch shifting 기본형, vocal chain controls 1차, EQ/limiter controls 1차, delay/reverb controls 1차, desktop wrapper 준비용 start/check/PWA shell이 들어온 상태입니다. 다음으로는 desktop wrapper shell integration, native audio engine 준비, VST3/AU plugin 준비가 중요합니다.
+현재는 1-8번의 기본선과 timeline undo/redo, render/export queue, custom scale editor, take comping, comp lane editing, export metadata, export preview, project zip export asset 포함형, waveform recording view, export peak normalize, K-weighted LUFS/true peak analysis 기본형, offline mix/vocal render 모듈 분리, swappable audio engine interface, formant-aware pitch shifting 기본형, vocal chain controls 1차, EQ/limiter controls 1차, delay/reverb controls 1차, desktop wrapper 준비용 start/check/PWA shell이 들어온 상태입니다. 다음으로는 native audio engine bridge, desktop wrapper shell integration, VST3/AU plugin 준비가 중요합니다.
