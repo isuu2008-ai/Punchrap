@@ -90,6 +90,7 @@ node .\scripts\check.mjs
 - Best take marking with one-click add of best takes into the comp lane
 - Project templates for trap, drill, rage hook, and clean hook sessions
 - Marker-linked lyric sections with project-persisted scratch lyrics and session notes
+- Timeline marker comments with autosave and undo/redo support
 - Timeline region duplicate/delete actions
 - Take rename from the Takes tab with project persistence
 - Track rename with take label propagation

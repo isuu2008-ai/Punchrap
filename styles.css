@@ -489,6 +489,23 @@ h1 {
   font-size: 11px;
 }
 
+.marker-comment-input {
+  width: 100%;
+  min-height: 54px;
+  resize: vertical;
+  color: var(--text);
+  background: #0b0f0d;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.marker-comment-input:focus {
+  border-color: rgba(65, 230, 208, 0.42);
+}
+
 .region-actions input {
   width: 82px;
 }

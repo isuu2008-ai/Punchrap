@@ -3960,7 +3960,7 @@ function renderTimeline() {
     .map(
       (marker) => `
         <span class="timeline-marker" style="left: ${timelinePercent(marker.time, timelineEnd)}%">
-          <span>${escapeHtml(marker.type)}</span>
+          <span title="${escapeHtml(marker.comment || marker.type)}">${escapeHtml(marker.type)}</span>
         </span>
       `,
     )
@@ -4101,13 +4101,15 @@ function renderTimelineMarkerSummary(markers = normalizeMarkers(state.markers)) 
       .map((marker) => {
         const lyricLineCount = getLyricLineCount(marker.lyrics);
         const lyricMeta = lyricLineCount ? ` / ${lyricLineCount} lines` : "";
+        const commentMeta = marker.comment ? " / note" : "";
         return `
           <div class="marker-row">
             <header>
               <strong>${escapeHtml(marker.type)}</strong>
               <button class="mini-button danger" type="button" data-delete-marker="${marker.id}">Del</button>
             </header>
-            <small>${formatDuration(marker.time)}${lyricMeta}</small>
+            <small>${formatDuration(marker.time)}${lyricMeta}${commentMeta}</small>
+            <textarea class="marker-comment-input" spellcheck="false" data-marker-comment="${marker.id}" placeholder="Marker comment...">${escapeHtml(marker.comment)}</textarea>
           </div>
         `;
       })
@@ -4116,6 +4118,15 @@ function renderTimelineMarkerSummary(markers = normalizeMarkers(state.markers)) 
 
   els.markerList.querySelectorAll("[data-delete-marker]").forEach((button) => {
     button.addEventListener("click", () => deleteTimelineMarker(button.dataset.deleteMarker));
+  });
+  els.markerList.querySelectorAll("[data-marker-comment]").forEach((textarea) => {
+    textarea.addEventListener("focus", () => {
+      textarea.dataset.historyRecorded = "0";
+    });
+    textarea.addEventListener("input", () => updateMarkerComment(textarea.dataset.markerComment, textarea.value, textarea));
+    textarea.addEventListener("blur", () => {
+      textarea.dataset.historyRecorded = "0";
+    });
   });
 }
 
@@ -4232,12 +4243,30 @@ function addTimelineMarker() {
     id: crypto.randomUUID(),
     type: els.markerTypeSelect.value,
     time: snapTimelineTime(els.markerTimeInput.value),
+    comment: "",
   };
   state.markers.push(marker);
   state.markers = normalizeMarkers(state.markers);
   els.markerTimeInput.value = formatTimelineInputTime(marker.time);
   els.sessionState.textContent = "Marker added";
   refreshTimelineEdit();
+}
+
+function updateMarkerComment(markerId, value, textarea = null) {
+  const marker = state.markers.find((item) => item.id === markerId);
+  if (!marker || marker.comment === value) {
+    return;
+  }
+
+  if (textarea && textarea.dataset.historyRecorded !== "1") {
+    recordTimelineHistory();
+    textarea.dataset.historyRecorded = "1";
+  }
+
+  marker.comment = value;
+  els.sessionState.textContent = "Marker comment updated";
+  updateTimelineHistoryButtons();
+  scheduleAutosave();
 }
 
 function deleteTimelineMarker(markerId) {
@@ -4589,6 +4618,7 @@ function normalizeMarkers(markers = []) {
       type: marker.type || "Marker",
       time: Math.max(0, Number(marker.time) || 0),
       lyrics: String(marker.lyrics || ""),
+      comment: String(marker.comment || ""),
     }))
     .sort((a, b) => a.time - b.time);
 }

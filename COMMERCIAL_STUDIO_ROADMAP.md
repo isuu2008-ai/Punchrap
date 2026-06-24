@@ -103,6 +103,8 @@
 - Trap, drill, rage hook, clean hook 세션 템플릿으로 BPM/key/track mix/marker/preset 빠른 세팅
 - Lyrics marker linking 1차
 - Timeline marker별 가사 섹션과 scratch pad를 project bundle에 저장/복원
+- Marker comment 1차
+- Timeline marker별 코멘트를 저장하고 autosave/project bundle/undo-redo에 반영
 - Session notes 1차
 - 녹음/믹스 메모를 project bundle과 autosave에 저장/복원
 - Timeline region duplicate/delete 1차
