@@ -171,6 +171,7 @@ node .\scripts\check.mjs
 - Take sorting, best-to-comp ordering, comp order moves, filename, display metadata, batch target copy/selection/duplicate guard, and processed-version policy lives in `src/takes.js`
 - Vocal preset normalization, custom preset snapshots, tune-setting snapshots, and compressor defaults live in `src/presets.js`
 - Track folder membership, default names, solo/mute audibility, and output-volume policy live in `src/tracks.js`
+- Pitch scale normalization, manual target overlays, lane sampling, note labels, and correction summaries live in `src/pitch.js`
 - Shared display formatting for durations, dB values, pan, percentages, LUFS, native latency/sample-rate timestamps, and HTML escaping lives in `src/format.js`
 - Project zip preview beat, marker, and comp rows are formatted in `src/project-zip.js`
 - Project zip comp lane rows show best/version/preset/tune context for selected vocal takes

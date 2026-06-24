@@ -1,5 +1,3 @@
-const DEFAULT_CUSTOM_SCALE_INTERVALS = [0, 2, 3, 5, 7, 8, 10];
-
 const state = {
   audioContext: null,
   stream: null,
@@ -96,7 +94,7 @@ const state = {
     { id: "marker-verse", type: "Verse", time: 16 },
     { id: "marker-hook", type: "Hook", time: 48 },
   ],
-  customScaleIntervals: [...DEFAULT_CUSTOM_SCALE_INTERVALS],
+  customScaleIntervals: window.PunchLabPitch.getDefaultCustomScaleIntervals(),
   timelineUndoStack: [],
   timelineRedoStack: [],
 };
@@ -4089,7 +4087,7 @@ function renderCustomScaleEditor() {
   els.customScaleMeta.textContent = `${activeIntervals.size} notes`;
   els.customScaleGrid.innerHTML = Array.from({ length: 12 }, (_, interval) => {
     const isActive = activeIntervals.has(interval);
-    const noteName = window.PunchLabDSP.NOTE_NAMES[window.PunchLabDSP.positiveModulo(root + interval, 12)];
+    const noteName = getScaleNoteName(root, interval);
     return `
       <button
         class="scale-note-button ${isActive ? "active" : ""}"
@@ -4129,21 +4127,15 @@ function handleCustomScaleClick(event) {
 }
 
 function normalizeScaleIntervals(intervals) {
-  const source = Array.isArray(intervals) ? intervals : DEFAULT_CUSTOM_SCALE_INTERVALS;
-  const normalized = [...new Set(
-    source
-      .map((value) => Number(value))
-      .filter((value) => Number.isFinite(value))
-      .map((value) => window.PunchLabDSP.positiveModulo(Math.round(value), 12)),
-  )].sort((left, right) => left - right);
-
-  return normalized.length ? normalized : [...DEFAULT_CUSTOM_SCALE_INTERVALS];
+  return window.PunchLabPitch.normalizeScaleIntervals(intervals);
 }
 
 function getKeyRootClass(keyValue) {
-  const rootName = String(keyValue || "C minor").split(" ")[0];
-  const root = window.PunchLabDSP.NOTE_NAMES.indexOf(rootName);
-  return root >= 0 ? root : 0;
+  return window.PunchLabPitch.getKeyRootClass(keyValue, window.PunchLabDSP.NOTE_NAMES);
+}
+
+function getScaleNoteName(root, interval) {
+  return window.PunchLabPitch.getScaleNoteName(root, interval, window.PunchLabDSP.NOTE_NAMES);
 }
 
 function renderTargetMidiOptions() {
@@ -4156,30 +4148,16 @@ function renderTargetMidiOptions() {
 }
 
 function getTargetMidiValue() {
-  const rawValue = els.targetMidiSelect?.value;
-  if (rawValue === "") {
-    return null;
-  }
-
-  const value = Number(rawValue);
-  return Number.isFinite(value) ? value : null;
+  return window.PunchLabPitch.getTargetMidiValue(els.targetMidiSelect?.value);
 }
 
 function getPitchModeLabel() {
-  const targetMidi = getTargetMidiValue();
-  if (targetMidi !== null) {
-    return `MIDI ${formatPitchNote(targetMidi)}`;
-  }
-
-  if (els.scaleModeSelect.value === "chromatic") {
-    return "Chromatic";
-  }
-
-  if (els.scaleModeSelect.value === "custom") {
-    return "Custom";
-  }
-
-  return els.keySelect.value;
+  return window.PunchLabPitch.getPitchModeLabel({
+    formatMidiNote: window.PunchLabDSP.formatMidiNote,
+    key: els.keySelect.value,
+    scaleMode: els.scaleModeSelect.value,
+    targetMidi: getTargetMidiValue(),
+  });
 }
 
 function renderPitchPanel(take) {
@@ -4214,28 +4192,7 @@ function getBasePitchPlan(analysis) {
 }
 
 function applyManualPitchTargets(plan, take) {
-  const manualTargets = take?.manualPitchTargets || {};
-  if (!plan.frames?.length || !Object.keys(manualTargets).length) {
-    return { ...plan, manualCount: 0 };
-  }
-
-  let manualCount = 0;
-  const frames = plan.frames.map((frame) => {
-    const manualTarget = Number(manualTargets[getPitchFrameKey(frame)]);
-    if (!Number.isFinite(manualTarget)) {
-      return frame;
-    }
-
-    manualCount += 1;
-    return {
-      ...frame,
-      targetMidi: manualTarget,
-      correctionSemitones: manualTarget - frame.midi,
-      manual: true,
-    };
-  });
-
-  return { ...plan, frames, manualCount };
+  return window.PunchLabPitch.applyManualPitchTargets(plan, take);
 }
 
 function renderPitchLane(take, plan) {
@@ -4282,24 +4239,7 @@ function renderPitchLaneFrame(frame) {
 }
 
 function getPitchLaneFrames(frames) {
-  const limit = 18;
-  if (frames.length <= limit) {
-    return frames;
-  }
-
-  const visible = [];
-  const usedKeys = new Set();
-  const step = (frames.length - 1) / (limit - 1);
-  for (let index = 0; index < limit; index += 1) {
-    const frame = frames[Math.round(index * step)];
-    const key = getPitchFrameKey(frame);
-    if (!usedKeys.has(key)) {
-      visible.push(frame);
-      usedKeys.add(key);
-    }
-  }
-
-  return visible;
+  return window.PunchLabPitch.getPitchLaneFrames(frames);
 }
 
 function handlePitchLaneClick(event) {
@@ -4363,28 +4303,23 @@ function clearManualPitchLane() {
 }
 
 function getManualPitchCount(take) {
-  return Object.values(take?.manualPitchTargets || {}).filter((value) => Number.isFinite(Number(value))).length;
+  return window.PunchLabPitch.getManualPitchCount(take);
 }
 
 function getPitchFrameKey(frame) {
-  return String(Math.round(frame.start || 0));
+  return window.PunchLabPitch.getPitchFrameKey(frame);
 }
 
 function formatPitchNote(midi) {
-  return Number.isFinite(Number(midi)) ? window.PunchLabDSP.formatMidiNote(Number(midi)) : "--";
+  return window.PunchLabPitch.formatPitchNote(midi, window.PunchLabDSP.formatMidiNote);
 }
 
 function getAverageCorrection(frames) {
-  const corrected = frames.filter((frame) => Number.isFinite(frame.correctionSemitones));
-  if (!corrected.length) {
-    return 0;
-  }
-
-  return corrected.reduce((sum, frame) => sum + frame.correctionSemitones, 0) / corrected.length;
+  return window.PunchLabPitch.getAverageCorrection(frames);
 }
 
 function clampMidi(midi) {
-  return Math.min(127, Math.max(0, midi));
+  return window.PunchLabPitch.clampMidi(midi);
 }
 
 function renderTakes() {

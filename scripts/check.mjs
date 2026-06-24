@@ -8,6 +8,7 @@ const syntaxFiles = [
   "src/chain-params.js",
   "src/presets.js",
   "src/tracks.js",
+  "src/pitch.js",
   "src/audio.js",
   "src/export-mastering.js",
   "src/export-plan.js",
@@ -38,6 +39,7 @@ const requiredScripts = [
   "src/chain-params.js",
   "src/presets.js",
   "src/tracks.js",
+  "src/pitch.js",
   "src/dsp.js",
   "src/audio.js",
   "src/export-mastering.js",
@@ -330,6 +332,11 @@ if (!presetsSource.includes("window.PunchLabPresets") || !presetsSource.includes
 const tracksSource = readFileSync("src/tracks.js", "utf8");
 if (!tracksSource.includes("window.PunchLabTracks") || !tracksSource.includes("getDefaultTrackName") || !tracksSource.includes("getFolderedTrackIds") || !tracksSource.includes("getTrackFolderTracks") || !tracksSource.includes("getTrackOutputVolume") || !tracksSource.includes("hasSoloTrack") || !tracksSource.includes("hasTrackFolder") || !tracksSource.includes("isTrackAudible") || !tracksSource.includes("normalizeTrackFolderCollapsed") || !appSource.includes("PunchLabTracks.getDefaultTrackName") || !appSource.includes("PunchLabTracks.getFolderedTrackIds") || !appSource.includes("PunchLabTracks.getTrackFolderTracks") || !appSource.includes("PunchLabTracks.getTrackOutputVolume") || !appSource.includes("PunchLabTracks.hasSoloTrack") || !appSource.includes("PunchLabTracks.hasTrackFolder") || !appSource.includes("PunchLabTracks.isTrackAudible") || !appSource.includes("PunchLabTracks.normalizeTrackFolderCollapsed")) {
   console.error("Track folder, default-name, solo/mute, and output-volume policy must live in src/tracks.js and be used by app.js.");
+  failed = true;
+}
+const pitchSource = readFileSync("src/pitch.js", "utf8");
+if (!pitchSource.includes("window.PunchLabPitch") || !pitchSource.includes("normalizeScaleIntervals") || !pitchSource.includes("getKeyRootClass") || !pitchSource.includes("getScaleNoteName") || !pitchSource.includes("getTargetMidiValue") || !pitchSource.includes("getPitchModeLabel") || !pitchSource.includes("applyManualPitchTargets") || !pitchSource.includes("getPitchLaneFrames") || !pitchSource.includes("getManualPitchCount") || !pitchSource.includes("getPitchFrameKey") || !pitchSource.includes("formatPitchNote") || !pitchSource.includes("getAverageCorrection") || !pitchSource.includes("clampMidi") || !appSource.includes("PunchLabPitch.normalizeScaleIntervals") || !appSource.includes("PunchLabPitch.getKeyRootClass") || !appSource.includes("PunchLabPitch.getScaleNoteName") || !appSource.includes("PunchLabPitch.getTargetMidiValue") || !appSource.includes("PunchLabPitch.getPitchModeLabel") || !appSource.includes("PunchLabPitch.applyManualPitchTargets") || !appSource.includes("PunchLabPitch.getPitchLaneFrames") || !appSource.includes("PunchLabPitch.getManualPitchCount") || !appSource.includes("PunchLabPitch.getPitchFrameKey") || !appSource.includes("PunchLabPitch.formatPitchNote") || !appSource.includes("PunchLabPitch.getAverageCorrection") || !appSource.includes("PunchLabPitch.clampMidi")) {
+  console.error("Pitch scale, manual target, lane sampling, note label, and correction summary policy must live in src/pitch.js and be used by app.js.");
   failed = true;
 }
 if (!indexHtml.includes("quickTakeList") || !appSource.includes("data-quick-play-take") || !appSource.includes("data-quick-vocal-take") || !appSource.includes("sendTakeToVocal")) {
