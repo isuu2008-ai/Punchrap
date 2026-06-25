@@ -395,6 +395,9 @@ if (tauriConfig.productName !== wrapper.appName || tauriConfig.productName !== p
 if (tauriConfig.build?.devUrl !== wrapper.shell?.devServer) {
   fail("Tauri config devUrl must match the desktop wrapper dev server.");
 }
+if (tauriConfig.build?.beforeDevCommand !== "node server.mjs") {
+  fail("Tauri config beforeDevCommand must start server.mjs from the project root.");
+}
 if (tauriConfig.build?.frontendDist !== "../") {
   fail("Tauri config frontendDist must point to the static PunchLab shell.");
 }

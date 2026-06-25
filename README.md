@@ -30,7 +30,7 @@ npm run desktop:build
 npm run desktop:check
 ```
 
-`desktop:dev` opens the Tauri shell from `src-tauri/tauri.conf.json`; Tauri starts `node ../server.mjs` and loads `http://localhost:4173`. Desktop builds require Node/npm plus the Rust/Cargo toolchain.
+`desktop:dev` opens the Tauri shell from `src-tauri/tauri.conf.json`; Tauri starts `node server.mjs` from the project root and loads `http://localhost:4173`. Desktop builds require Node/npm plus the Rust/Cargo toolchain.
 
 ## Current MVP
 

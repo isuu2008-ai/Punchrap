@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "identifier": "ai.isuu2008.punchrap",
   "build": {
-    "beforeDevCommand": "node ../server.mjs",
+    "beforeDevCommand": "node server.mjs",
     "devUrl": "http://localhost:4173",
     "frontendDist": "../"
   },

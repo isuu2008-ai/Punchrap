@@ -112,6 +112,8 @@
 - `scripts/desktop-doctor.mjs`로 Node/npm/Rust/Cargo와 Tauri shell config 준비 상태를 확인
 - Desktop package tooling contract check 1차
 - `desktop-package-manifest.json`과 `scripts/check-desktop-contract.mjs`에서 Tauri CLI/scripts/verification command 정합성을 검증
+- Tauri dev server command fix 1차
+- `beforeDevCommand`를 project root 기준 `node server.mjs`로 고정하고 contract/doctor에서 검증
 - Desktop wrapper contract check 1차
 - shell size, local-first permission, native bridge, plugin host, handoff stage 조건을 `scripts/check-desktop-contract.mjs`에서 검증
 - Tauri shell contract check 1차
