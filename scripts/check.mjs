@@ -12,6 +12,7 @@ const syntaxFiles = [
   "src/beat-playback.js",
   "src/track-panel.js",
   "src/vocal-panel.js",
+  "src/comp-panel.js",
   "src/take-panel.js",
   "src/ui-elements.js",
   "src/ui-renderers.js",
@@ -86,6 +87,7 @@ const requiredScripts = [
   "src/beat-playback.js",
   "src/track-panel.js",
   "src/vocal-panel.js",
+  "src/comp-panel.js",
   "src/take-panel.js",
   "src/ui-elements.js",
   "src/ui-renderers.js",
@@ -109,6 +111,7 @@ const requiredFiles = [
   "src/timeline-panel.js",
   "src/track-panel.js",
   "src/vocal-panel.js",
+  "src/comp-panel.js",
   "src/take-panel.js",
   "src-tauri/tauri.conf.json",
   "src-tauri/Cargo.lock",
@@ -152,6 +155,7 @@ const studioStateSource = readFileSync("src/studio-state.js", "utf8");
 const beatPlaybackSource = readFileSync("src/beat-playback.js", "utf8");
 const trackPanelSource = readFileSync("src/track-panel.js", "utf8");
 const vocalPanelSource = readFileSync("src/vocal-panel.js", "utf8");
+const compPanelSource = readFileSync("src/comp-panel.js", "utf8");
 const takePanelSource = readFileSync("src/take-panel.js", "utf8");
 const uiElementsSource = readFileSync("src/ui-elements.js", "utf8");
 const uiRenderersSource = readFileSync("src/ui-renderers.js", "utf8");
@@ -232,6 +236,10 @@ if (!trackPanelSource.includes("window.PunchLabTrackPanel") || !appSource.includ
 }
 if (!vocalPanelSource.includes("window.PunchLabVocalPanel") || !appSource.includes("PunchLabVocalPanel.createVocalPanel") || appSource.includes("function renderVocalPanel(") || appSource.includes("function renderVersionPanel(") || appSource.includes("function renderBatchPanel(") || appSource.includes("function renderPitchPanel(")) {
   console.error("Vocal panel rendering must live in src/vocal-panel.js.");
+  failed = true;
+}
+if (!compPanelSource.includes("window.PunchLabCompPanel") || !appSource.includes("PunchLabCompPanel.createCompPanel") || appSource.includes("function renderCompView(") || appSource.includes("function renderCompLaneRow(")) {
+  console.error("Comp panel rendering must live in src/comp-panel.js.");
   failed = true;
 }
 if (!takePanelSource.includes("window.PunchLabTakePanel") || !appSource.includes("PunchLabTakePanel.createTakePanel") || appSource.includes("function renderTakes(") || appSource.includes("function renderQuickTakeReview(")) {

@@ -302,6 +302,8 @@
 - track folder/row/arm-track HTML과 mute/solo/arm/volume/pan/name binding을 `src/track-panel.js`로 분리
 - Vocal panel renderer split 1차
 - vocal take selector, compare/version/batch/pitch/custom-scale HTML과 version action binding을 `src/vocal-panel.js`로 분리
+- Comp panel renderer split 1차
+- comp lane/pool HTML과 comp add/remove/reorder binding을 `src/comp-panel.js`로 분리
 - Take panel renderer split 1차
 - take list/recent review HTML과 play/delete/comp/best/download/name/vocal handoff binding을 `src/take-panel.js`로 분리
 - Beat gain/noise floor 기본값 1차

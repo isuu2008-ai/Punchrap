@@ -190,6 +190,7 @@ npm run desktop:check
 - Timeline ruler, grid, marker summary, region rows, and timeline edit action binding live in `src/timeline-panel.js`
 - Track folder rows, track rows, arm buttons, and track action binding live in `src/track-panel.js`
 - Vocal take selector, compare/version/batch/pitch/custom-scale panel rendering lives in `src/vocal-panel.js`
+- Comp lane rows, take pool rows, and comp action binding live in `src/comp-panel.js`
 - Take list rows, take review cards, and take action binding live in `src/take-panel.js`
 - Beat playback gain is controlled separately and passed into mix/export rendering
 - Browser mic constraints default to noise suppression and echo cancellation while keeping auto gain disabled
