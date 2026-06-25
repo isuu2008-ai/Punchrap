@@ -7,7 +7,17 @@
     return helper;
   }
 
+  function requireValue(deps, name) {
+    const value = deps[name];
+    if (!value) {
+      throw new Error(`PunchLab UI renderer dependency missing: ${name}`);
+    }
+    return value;
+  }
+
   function createRenderers(deps = {}) {
+    const els = requireValue(deps, "els");
+    const state = requireValue(deps, "state");
     const escapeHtml = requireHelper(deps, "escapeHtml", window.PunchLabFormat?.escapeHtml);
     const formatDuration = requireHelper(deps, "formatDuration", window.PunchLabFormat?.formatDuration);
     const formatPitchNote = requireHelper(
@@ -19,6 +29,9 @@
     const getTakeTitle = requireHelper(deps, "getTakeTitle", window.PunchLabTakes?.getTakeTitle);
     const getTakeSubtitle = requireHelper(deps, "getTakeSubtitle");
     const downsampleWaveform = requireHelper(deps, "downsampleWaveform");
+    const formatBackupHistoryLabel = requireHelper(deps, "formatBackupHistoryLabel", window.PunchLabStorage?.formatBackupHistoryLabel);
+    const listTemplates = deps.listTemplates || (() => window.PunchLabTemplates?.listTemplates?.() || null);
+    const getTemplate = deps.getTemplate || ((templateId) => window.PunchLabTemplates?.getTemplate?.(templateId) || null);
 
     function renderRegionGroupOptions(selectedGroup) {
       return window.PunchLabTimeline.getRegionGroups().map(
@@ -95,12 +108,61 @@
   `;
     }
 
+    function updateTemplateMeta() {
+      if (!els.templateMeta) {
+        return;
+      }
+
+      const template = getTemplate(els.templateSelect.value);
+      if (!template) {
+        return;
+      }
+      els.templateMeta.textContent = `${template.bpm} BPM / ${template.key}`;
+    }
+
+    function renderRecoverySelect() {
+      if (!els.recoverySelect) {
+        return;
+      }
+
+      const currentValue = els.recoverySelect.value || "autosave";
+      const backupOptions = state.backupHistory.map((backup, index) => ({
+        label: formatBackupHistoryLabel(backup, index),
+        value: `backup:${backup.id}`,
+      }));
+      const values = ["autosave", ...backupOptions.map((option) => option.value)];
+      const options = [
+        `<option value="autosave">Autosave</option>`,
+        ...backupOptions.map((option) => `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`),
+      ];
+      els.recoverySelect.innerHTML = options.join("");
+      els.recoverySelect.value = values.includes(currentValue) ? currentValue : "autosave";
+    }
+
+    function renderProjectTemplates() {
+      if (!els.templateSelect) {
+        return;
+      }
+
+      const templates = listTemplates();
+      if (!templates) {
+        return;
+      }
+      els.templateSelect.innerHTML = templates
+        .map((template) => `<option value="${template.id}">${escapeHtml(template.name)}</option>`)
+        .join("");
+      updateTemplateMeta();
+    }
+
     return {
       renderRegionGroupOptions,
       renderCompPoolRow,
       renderAudioDeviceSelect,
       renderPitchLaneFrame,
       renderTakeWaveform,
+      updateTemplateMeta,
+      renderRecoverySelect,
+      renderProjectTemplates,
     };
   }
 

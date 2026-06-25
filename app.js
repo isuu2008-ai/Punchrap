@@ -133,6 +133,8 @@ if (!window.PunchLabUIRenderers?.createRenderers) {
 }
 
 const uiRenderers = window.PunchLabUIRenderers.createRenderers({
+  els,
+  state,
   escapeHtml,
   formatDuration,
   formatPitchNote,
@@ -140,6 +142,9 @@ const uiRenderers = window.PunchLabUIRenderers.createRenderers({
   getTakeTitle,
   getTakeSubtitle,
   downsampleWaveform,
+  formatBackupHistoryLabel,
+  getTemplate: (templateId) => window.PunchLabTemplates?.getTemplate?.(templateId) || null,
+  listTemplates: () => window.PunchLabTemplates?.listTemplates?.() || null,
 });
 
 const {
@@ -148,6 +153,9 @@ const {
   renderAudioDeviceSelect,
   renderPitchLaneFrame,
   renderTakeWaveform,
+  updateTemplateMeta,
+  renderRecoverySelect,
+  renderProjectTemplates,
 } = uiRenderers;
 
 function init() {
@@ -1639,25 +1647,6 @@ function updateRecoveryButton() {
   if (els.recoverySelect) {
     els.recoverySelect.disabled = state.isAutosaving || !state.hasAutosave;
   }
-}
-
-function renderRecoverySelect() {
-  if (!els.recoverySelect) {
-    return;
-  }
-
-  const currentValue = els.recoverySelect.value || "autosave";
-  const backupOptions = state.backupHistory.map((backup, index) => ({
-    label: formatBackupHistoryLabel(backup, index),
-    value: `backup:${backup.id}`,
-  }));
-  const values = ["autosave", ...backupOptions.map((option) => option.value)];
-  const options = [
-    `<option value="autosave">Autosave</option>`,
-    ...backupOptions.map((option) => `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`),
-  ];
-  els.recoverySelect.innerHTML = options.join("");
-  els.recoverySelect.value = values.includes(currentValue) ? currentValue : "autosave";
 }
 
 function formatBackupHistoryLabel(backup, index) {
@@ -3170,27 +3159,6 @@ function renderArmTracks() {
       renderTracks();
     });
   });
-}
-
-function renderProjectTemplates() {
-  if (!window.PunchLabTemplates || !els.templateSelect) {
-    return;
-  }
-
-  const templates = window.PunchLabTemplates.listTemplates();
-  els.templateSelect.innerHTML = templates
-    .map((template) => `<option value="${template.id}">${escapeHtml(template.name)}</option>`)
-    .join("");
-  updateTemplateMeta();
-}
-
-function updateTemplateMeta() {
-  if (!window.PunchLabTemplates || !els.templateMeta) {
-    return;
-  }
-
-  const template = window.PunchLabTemplates.getTemplate(els.templateSelect.value);
-  els.templateMeta.textContent = `${template.bpm} BPM / ${template.key}`;
 }
 
 function applySelectedTemplate() {
