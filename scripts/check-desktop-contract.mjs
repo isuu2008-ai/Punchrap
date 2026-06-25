@@ -202,6 +202,23 @@ if (!packageArtifacts.includes("src-tauri/Cargo.lock")) {
 if (!packageArtifacts.includes("src-tauri/capabilities/main.json")) {
   fail("Desktop package manifest must list the Tauri main capability artifact.");
 }
+const requiredTauriIcons = [
+  "icons/32x32.png",
+  "icons/128x128.png",
+  "icons/128x128@2x.png",
+  "icons/icon.icns",
+  "icons/icon.ico",
+];
+const tauriIcons = tauriConfig.bundle?.icon || [];
+for (const icon of requiredTauriIcons) {
+  const artifact = `src-tauri/${icon}`;
+  if (!tauriIcons.includes(icon)) {
+    fail(`Tauri bundle icon list must include ${icon}.`);
+  }
+  if (!packageArtifacts.includes(artifact) || !existsSync(artifact)) {
+    fail(`Desktop package manifest must list existing Tauri icon artifact: ${artifact}`);
+  }
+}
 if (!packageArtifacts.includes("scripts/desktop-doctor.mjs")) {
   fail("Desktop package manifest must list the desktop doctor script.");
 }

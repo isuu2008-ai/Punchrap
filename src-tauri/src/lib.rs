@@ -550,7 +550,7 @@ fn default_plugin_scan_formats() -> Vec<String> {
 }
 
 fn normalize_plugin_scan_formats(formats: Vec<String>) -> Vec<String> {
-    let mut normalized = Vec::new();
+    let mut normalized: Vec<String> = Vec::new();
     for format in formats {
         let value = format.trim().to_ascii_uppercase();
         let format = match value.as_str() {

@@ -103,6 +103,7 @@ npm run desktop:check
 - Dedicated Comp vocal WAV export for the audible selected comp lane
 - Tauri plugin-scan handoff command for `scanPluginHosts`, returning an empty VST3/AU scan until a real plugin host exists
 - Tauri main-window capability scaffold at `src-tauri/capabilities/main.json`
+- Tauri desktop icon set generated from `assets/punchlab-icon.svg`
 - Tauri desktop npm scripts for `desktop:dev`, `desktop:build`, `tauri:dev`, and `tauri:build`
 - Desktop doctor script for Node/npm/Rust/Cargo and Tauri shell prerequisite checks
 - Desktop doctor checks the Windows MSVC linker required by Rust/Tauri builds
