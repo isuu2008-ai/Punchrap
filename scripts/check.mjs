@@ -491,6 +491,10 @@ if (!appSource.includes("data-play-version") || !appSource.includes("data-best-v
   console.error("Vocal render version history must support separate select, audition, and delete actions.");
   failed = true;
 }
+if (!appSource.includes("data-download-take") || !appSource.includes("downloadTakeWav") || !appSource.includes("buildTakeWavBlob") || !appSource.includes("makeTakeWavFilename") || !appSource.includes('accept: { "audio/wav": [".wav"] }')) {
+  console.error("Recorded takes must support direct WAV save/download from latest and take cards.");
+  failed = true;
+}
 if (!projectZipSource.includes("buildProjectZipPreviewPlaybackData") || !projectZipSource.includes("buildProjectZipPreviewPlaybackData(manifest, takes)") || !appSource.includes("window.PunchLabProjectZip.buildProjectZipPreviewHtml")) {
   console.error("Project zip preview playback data policy must live in src/project-zip.js and be used by app.js.");
   failed = true;
@@ -611,7 +615,7 @@ if (!readFileSync("src/desktop.js", "utf8").includes("methodAvailable: hasProjec
   console.error("Desktop readiness and zip previews must preserve project file handoff readiness.");
   failed = true;
 }
-if (!readFileSync("src-tauri/src/lib.rs", "utf8").includes("project_file_dialog_filter") || !readFileSync("src-tauri/src/lib.rs", "utf8").includes("\"PunchLab Archive\"") || !readFileSync("src-tauri/src/lib.rs", "utf8").includes("\"punchlab.zip\"")) {
+if (!readFileSync("src-tauri/src/lib.rs", "utf8").includes("project_file_dialog_filter") || !readFileSync("src-tauri/src/lib.rs", "utf8").includes("\"PunchLab Archive\"") || !readFileSync("src-tauri/src/lib.rs", "utf8").includes("\"punchlab.zip\"") || !readFileSync("src-tauri/src/lib.rs", "utf8").includes("\"WAV Audio\"")) {
   console.error("Tauri project file handoff must select the correct project/archive dialog filters.");
   failed = true;
 }

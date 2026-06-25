@@ -993,7 +993,7 @@ async function saveProject() {
       types: [
         {
           description: "PunchLab project",
-          accept: { "application/json": [".json"] },
+          accept: { "application/json": [".json", ".punchlab.json"] },
         },
       ],
     });
@@ -1033,7 +1033,7 @@ async function saveProjectZip() {
       types: [
         {
           description: "PunchLab project archive",
-          accept: { "application/zip": [".zip"] },
+          accept: { "application/zip": [".zip", ".punchlab.zip"] },
         },
       ],
     });
@@ -4088,6 +4088,7 @@ function renderTakes() {
             <button class="mini-button ${take.bestTake ? "active" : ""}" type="button" data-best-take="${take.id}">
               Best
             </button>
+            <button class="mini-button" type="button" data-download-take="${take.id}" title="Download WAV">Download WAV</button>
             <a href="${take.url}" download="${makeTakeFilename(take)}">Save</a>
             <button class="mini-button danger" type="button" data-delete-take="${take.id}">Del</button>
           </div>
@@ -4117,6 +4118,11 @@ function renderTakes() {
   els.takesList.querySelectorAll("[data-best-take]").forEach((button) => {
     button.addEventListener("click", () => {
       toggleBestTake(button.dataset.bestTake);
+    });
+  });
+  els.takesList.querySelectorAll("[data-download-take]").forEach((button) => {
+    button.addEventListener("click", () => {
+      downloadTakeWav(button.dataset.downloadTake);
     });
   });
   els.takesList.querySelectorAll("[data-take-name]").forEach((input) => {
@@ -5188,17 +5194,72 @@ function getTimelineBpm() {
   return Number(els.bpmInput.value) || 140;
 }
 
-function downloadLatestTake() {
-  if (!state.latestTake) {
+async function downloadLatestTake() {
+  const latestTake = state.latestTake || getAllTakes().at(-1);
+  if (!latestTake) {
     return;
   }
 
-  const link = document.createElement("a");
-  link.href = state.latestTake.url;
-  link.download = makeTakeFilename(state.latestTake);
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
+  await saveTakeWav(latestTake);
+}
+
+async function downloadTakeWav(takeId) {
+  const take = findTake(takeId);
+  if (!take) {
+    els.sessionState.textContent = "Take missing";
+    return;
+  }
+
+  await saveTakeWav(take);
+}
+
+async function saveTakeWav(take) {
+  if (!take?.blob) {
+    els.sessionState.textContent = "Take audio missing";
+    return;
+  }
+
+  const filename = makeTakeWavFilename(take);
+  try {
+    els.downloadLatestButton.disabled = true;
+    els.sessionState.textContent = "Preparing take WAV";
+    const wavBlob = await buildTakeWavBlob(take);
+    const result = await saveBlobWithPlatform(wavBlob, filename, {
+      types: [
+        {
+          description: "WAV audio",
+          accept: { "audio/wav": [".wav"] },
+        },
+      ],
+    });
+    els.sessionState.textContent = result.canceled
+      ? "Take save canceled"
+      : result.method === "native"
+        ? "Take WAV saved"
+        : result.method === "file-system"
+          ? "Take WAV saved"
+          : "Take WAV downloaded";
+  } catch (error) {
+    els.sessionState.textContent = "Take WAV failed";
+    console.error(error);
+  } finally {
+    els.downloadLatestButton.disabled = !state.latestTake;
+  }
+}
+
+async function buildTakeWavBlob(take) {
+  if (take.blob?.type === "audio/wav" || String(take.extension || "").toLowerCase() === "wav") {
+    return take.blob;
+  }
+
+  const sampleRate = state.audioContext?.sampleRate || 48000;
+  const decodeContext = new OfflineAudioContext(2, 1, sampleRate);
+  const audioBuffer = await decodeContext.decodeAudioData(await take.blob.arrayBuffer());
+  return encodeWav(audioBuffer, getExportMetadata(), getExportWavOptions());
+}
+
+function makeTakeWavFilename(take) {
+  return makeTakeFilename({ ...take, extension: "wav" });
 }
 
 function exportFullMix() {

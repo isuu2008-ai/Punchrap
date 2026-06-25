@@ -502,7 +502,9 @@ fn project_file_dialog_filter(
 ) -> (&'static str, &'static [&'static str]) {
     let lower_type = file_type.to_ascii_lowercase();
     let lower_name = suggested_name.to_ascii_lowercase();
-    if lower_type.contains("zip") || lower_name.ends_with(".zip") {
+    if lower_type.contains("wav") || lower_name.ends_with(".wav") {
+        ("WAV Audio", &["wav"])
+    } else if lower_type.contains("zip") || lower_name.ends_with(".zip") {
         ("PunchLab Archive", &["punchlab.zip", "zip"])
     } else {
         ("PunchLab Project", &["punchlab.json", "json"])
