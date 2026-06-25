@@ -230,6 +230,10 @@ if (!timelinePanelSource.includes("window.PunchLabTimelinePanel") || !appSource.
   console.error("Timeline panel rendering must live in src/timeline-panel.js.");
   failed = true;
 }
+if (!indexHtml.includes("timelineRecordFromCursorButton") || !indexHtml.includes("timelinePlayhead") || !uiEventsSource.includes("recordFromTimelineCursor") || !appSource.includes("function recordFromTimelineCursor") || !timelinePanelSource.includes("renderTimelineCursor(timelineEnd") || !studioStateSource.includes("timelineCursor: 0")) {
+  console.error("Timeline playhead recording controls must stay wired from UI through app state.");
+  failed = true;
+}
 if (!trackPanelSource.includes("window.PunchLabTrackPanel") || !appSource.includes("PunchLabTrackPanel.createTrackPanel") || appSource.includes("function renderTracks(") || appSource.includes("function renderTrackRow(") || appSource.includes("function renderArmTracks(")) {
   console.error("Track panel rendering must live in src/track-panel.js.");
   failed = true;

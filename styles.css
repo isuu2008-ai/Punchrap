@@ -319,6 +319,7 @@ h1 {
   position: relative;
   min-height: 440px;
   overflow: hidden;
+  cursor: crosshair;
   border-top: 1px solid var(--line);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px) 0 58px / 100% 58px,
@@ -386,6 +387,30 @@ h1 {
 .timeline-markers,
 .timeline-regions {
   z-index: 1;
+}
+
+.timeline-playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 3;
+  width: 2px;
+  pointer-events: none;
+  background: var(--red);
+  box-shadow: 0 0 0 1px rgba(5, 7, 6, 0.78), 0 0 18px rgba(255, 79, 100, 0.5);
+}
+
+.timeline-playhead::before {
+  content: "";
+  position: absolute;
+  top: 31px;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  background: var(--red);
+  border: 2px solid #050706;
+  border-radius: 999px;
+  transform: translateX(-50%);
 }
 
 .timeline-marker {
@@ -479,6 +504,28 @@ h1 {
   font-size: 11px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
+}
+
+.timeline-cursor-control {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  margin-bottom: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.timeline-cursor-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.record-inline.active {
+  color: #050706;
+  background: var(--red);
+  border-color: var(--red);
 }
 
 .marker-form,

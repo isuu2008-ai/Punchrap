@@ -160,10 +160,12 @@ const timelinePanel = window.PunchLabTimelinePanel.createTimelinePanel({
     getTakeSourceOffset,
     getTakeTitle,
     getTakeVisibleDuration,
+    getTimelineCursorPosition,
     getTimelineEndPosition,
     makeTimelineGridLines,
     makeTimelineTicks,
     normalizeMarkers,
+    renderTimelineCursor,
     renderRegionGroupOptions,
     timelinePercent,
     updateTimelineGridMeta,
@@ -380,6 +382,10 @@ const uiEvents = window.PunchLabUIEvents.createEvents({
     loadProject,
     recoverAutosave,
     updateRecoveryButton,
+    handleTimelinePointer,
+    playFromTimelineCursor,
+    recordFromTimelineCursor,
+    setPunchPointFromTimeline,
     addTimelineMarker,
     updateTimelineSnapMode,
     undoTimelineEdit,
@@ -1179,6 +1185,7 @@ function summarizeSessionManifest(bundle = {}) {
     targetNote: targetMidi === null ? "Scale nearest" : formatPitchNote(targetMidi),
     countInBars: Number(settings.countIn) || 0,
     timelineSnap: normalizeTimelineSnapMode(settings.timelineSnap || "off"),
+    timelineCursor: Number(settings.timelineCursor) || 0,
     armedTrackId: settings.armedTrackId || "main",
     armedTrackName: track?.name || settings.armedTrackId || "Main",
     punchEnabled: Boolean(settings.punchEnabled),
@@ -1727,6 +1734,7 @@ function getProjectSettings() {
     lyrics: els.lyricsInput.value,
     sessionNotes: els.sessionNotesInput.value,
     timelineSnap: getTimelineSnapMode(),
+    timelineCursor: state.timelineCursor,
     punchEnabled: state.punchEnabled,
     loopEnabled: state.loopEnabled,
     metronomeEnabled: state.metronomeEnabled,
@@ -1751,6 +1759,7 @@ function applyProjectSettings(settings = {}) {
   els.lyricsInput.value = settings.lyrics || "";
   els.sessionNotesInput.value = settings.sessionNotes || "";
   els.timelineSnapSelect.value = normalizeTimelineSnapMode(settings.timelineSnap || "off");
+  state.timelineCursor = Math.max(0, Number(settings.timelineCursor || 0));
   els.inputGainSlider.value = settings.inputGain ?? state.inputGain;
   els.beatGainSlider.value = normalizeBeatGain(settings.beatGain ?? state.beatGain);
   state.audioInputDeviceId = settings.audioInputDeviceId || "";
@@ -1903,6 +1912,25 @@ function setPunchPoint(point) {
   scheduleAutosave();
 }
 
+function setPunchPointFromTimeline(point) {
+  const position = getTimelineCursorPosition();
+  if (point === "in") {
+    state.punchIn = Math.max(0, position);
+    if (state.punchOut <= state.punchIn) {
+      state.punchOut = state.punchIn + 4;
+    }
+    els.sessionState.textContent = "Punch in set";
+  } else {
+    state.punchOut = Math.max(state.punchIn + 0.1, position);
+    els.sessionState.textContent = "Punch out set";
+  }
+
+  state.punchEnabled = state.punchOut > state.punchIn;
+  updatePunchControls();
+  renderTimelineCursor();
+  scheduleAutosave();
+}
+
 function updatePunchControls(syncInputs = true) {
   const isValid = state.punchOut > state.punchIn;
 
@@ -1937,6 +1965,7 @@ function cancelPunchWait() {
   state.isPunchWaiting = false;
   els.countdown.hidden = true;
   els.recordButton.classList.remove("armed");
+  updateTimelineTransportButtons();
 }
 
 async function toggleSessionPlayback() {
@@ -1949,7 +1978,7 @@ async function toggleSessionPlayback() {
   await playSession();
 }
 
-async function playSession() {
+async function playSession(options = {}) {
   const audibleTakes = getAllTakes().filter((take) => getTrackOutputVolume(findTrack(take.trackId)) > 0);
 
   if (!els.beatAudio.src && !audibleTakes.length) {
@@ -1962,8 +1991,10 @@ async function playSession() {
   stopSessionPlayback(false);
   await ensureAudioContext();
 
-  const loopRangeValid = state.loopEnabled && state.punchOut > state.punchIn;
-  let origin = loopRangeValid ? state.punchIn : els.beatAudio.src ? els.beatAudio.currentTime : 0;
+  const explicitOrigin = Number(options.origin);
+  const hasExplicitOrigin = Number.isFinite(explicitOrigin);
+  const loopRangeValid = !hasExplicitOrigin && state.loopEnabled && state.punchOut > state.punchIn;
+  let origin = hasExplicitOrigin ? Math.max(0, explicitOrigin) : loopRangeValid ? state.punchIn : els.beatAudio.src ? els.beatAudio.currentTime : 0;
   if (els.beatAudio.src && Number.isFinite(els.beatAudio.duration) && origin >= els.beatAudio.duration - 0.05) {
     origin = 0;
   }
@@ -1973,6 +2004,7 @@ async function playSession() {
 
   state.isSessionPlaying = true;
   state.sessionOrigin = origin;
+  setTimelineCursor(origin, { announce: false, render: false, snap: false, syncBeat: false });
   state.sessionStartedAt = performance.now();
   state.sessionPlayers = [];
   state.sessionPlayingTakeIds = new Set();
@@ -2034,6 +2066,7 @@ async function playSession() {
   startMetronome();
   renderTracks();
   renderTakes();
+  renderTimelineCursor();
 }
 
 async function startSessionTake(take, offset) {
@@ -2141,6 +2174,9 @@ function stopSessionPlayback(shouldRender = true, resetBeat = false) {
   els.beatAudio.pause();
   if (resetBeat) {
     els.beatAudio.currentTime = 0;
+    setTimelineCursor(0, { announce: false, render: false, snap: false, syncBeat: false });
+  } else if (els.beatAudio?.src) {
+    setTimelineCursor(els.beatAudio.currentTime, { announce: false, render: false, snap: false, syncBeat: false });
   }
 
   updateSessionPlayButton();
@@ -2408,6 +2444,7 @@ function stopAll() {
   stopExportPreview(false);
   els.beatAudio.pause();
   els.beatAudio.currentTime = 0;
+  setTimelineCursor(0, { announce: false, render: false, snap: false, syncBeat: false });
   els.sessionState.textContent = "Stopped";
 }
 
@@ -2479,6 +2516,7 @@ async function startPunchRecording(options = {}) {
 
   state.isPunchWaiting = true;
   els.recordButton.classList.add("armed");
+  updateTimelineTransportButtons();
   els.sessionState.textContent = options.loopCycle ? "Loop record armed" : "Punch armed";
 
   if (els.beatAudio.src) {
@@ -2496,6 +2534,7 @@ async function startPunchRecording(options = {}) {
     state.isPunchWaiting = false;
     els.recordButton.classList.remove("armed");
     els.countdown.hidden = true;
+    updateTimelineTransportButtons();
     startRecording({
       startPosition: punchIn,
       keepBeat: true,
@@ -2548,12 +2587,14 @@ function startRecording(options = {}) {
 
   state.recordStart = performance.now();
   state.recordStartPosition = Number.isFinite(options.startPosition) ? options.startPosition : getCurrentSessionPosition();
+  setTimelineCursor(state.recordStartPosition, { announce: false, render: false, snap: false, syncBeat: false });
   state.recordWaveform = [];
   state.isPunchRecording = Boolean(options.punch);
   state.currentLoopCycle = Boolean(options.loopCycle);
   state.mediaRecorder.start(250);
   state.isRecording = true;
   els.recordButton.classList.add("active");
+  updateTimelineTransportButtons();
   renderQuickTakeReview();
   els.sessionState.textContent = options.loopCycle
     ? `Loop take ${state.loopRecordTakeCount + 1}`
@@ -2589,6 +2630,7 @@ function stopRecording() {
   state.isPunchRecording = false;
   state.currentLoopCycle = false;
   els.recordButton.classList.remove("active");
+  updateTimelineTransportButtons();
   els.sessionState.textContent = wasLoopCycle ? "Loop take saved" : wasPunchRecording ? "Punch saved" : "Take saved";
   if (!state.isSessionPlaying) {
     stopMetronome();
@@ -3856,6 +3898,126 @@ function updateTimelineHistoryButtons() {
   els.timelineRedoButton.disabled = state.timelineRedoStack.length === 0;
 }
 
+function getTimelineCursorPosition() {
+  return Math.max(0, Number(state.timelineCursor) || 0);
+}
+
+function setTimelineCursor(value, options = {}) {
+  const {
+    announce = true,
+    render = true,
+    snap = true,
+    syncBeat = true,
+  } = options;
+  const next = Math.max(0, snap ? snapTimelineTime(value) : Number(value) || 0);
+  state.timelineCursor = next;
+  if (syncBeat && els.beatAudio?.src) {
+    const beatDuration = Number.isFinite(els.beatAudio.duration) ? els.beatAudio.duration : 0;
+    els.beatAudio.currentTime = beatDuration > 0 ? Math.min(next, Math.max(0, beatDuration - 0.05)) : next;
+  }
+  if (els.markerTimeInput && document.activeElement !== els.markerTimeInput) {
+    els.markerTimeInput.value = formatTimelineInputTime(next);
+  }
+  renderTimelineCursor();
+  if (render) {
+    renderTimeline();
+  }
+  if (announce) {
+    els.sessionState.textContent = `Playhead ${formatDuration(next)}`;
+  }
+  return next;
+}
+
+function renderTimelineCursor(timelineEnd = getTimelineEndPosition(), position = getTimelineCursorPosition()) {
+  const cursor = Math.max(0, Number(position) || 0);
+  if (els.timelinePlayhead) {
+    els.timelinePlayhead.style.left = `${timelinePercent(cursor, timelineEnd)}%`;
+  }
+  if (els.timelineCursorText) {
+    els.timelineCursorText.textContent = formatDuration(cursor);
+  }
+  updateTimelineTransportButtons();
+}
+
+function updateTimelineTransportButtons() {
+  if (!els.timelineRecordFromCursorButton) {
+    return;
+  }
+
+  const isActive = state.isRecording || state.isPunchWaiting;
+  els.timelineRecordFromCursorButton.classList.toggle("active", isActive);
+  const label = els.timelineRecordFromCursorButton.querySelector(".button-label");
+  if (label) {
+    label.textContent = state.isRecording ? "Stop" : state.isPunchWaiting ? "Cancel" : "Record";
+  }
+}
+
+function handleTimelinePointer(event) {
+  if (!els.timelineSurface || event.button > 0) {
+    return;
+  }
+
+  const rect = els.timelineSurface.getBoundingClientRect();
+  if (!rect.width) {
+    return;
+  }
+
+  const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+  const next = setTimelineCursor(ratio * getTimelineEndPosition());
+  if (state.isSessionPlaying && !state.isRecording) {
+    void playSession({ origin: next });
+  }
+}
+
+async function playFromTimelineCursor() {
+  const origin = setTimelineCursor(getTimelineCursorPosition(), { announce: false, render: false });
+  await playSession({ origin });
+}
+
+async function recordFromTimelineCursor() {
+  if (state.isCountInActive) {
+    cancelCountIn();
+    els.sessionState.textContent = "Count canceled";
+    return;
+  }
+
+  if (state.isRecording) {
+    state.isLoopRecording = false;
+    stopRecording();
+    return;
+  }
+
+  if (state.isPunchWaiting) {
+    state.isLoopRecording = false;
+    cancelPunchWait();
+    els.sessionState.textContent = "Punch canceled";
+    updateTimelineTransportButtons();
+    return;
+  }
+
+  if (!state.stream) {
+    await enableMic();
+  }
+
+  if (!state.stream) {
+    return;
+  }
+
+  const startPosition = setTimelineCursor(getTimelineCursorPosition(), { announce: false, render: false });
+  const bars = Number(els.countInSelect.value);
+  if (bars > 0) {
+    const completed = await countIn(bars);
+    if (!completed) {
+      return;
+    }
+  }
+
+  if (els.beatAudio.src) {
+    els.beatAudio.currentTime = startPosition;
+  }
+  startRecording({ startPosition });
+}
+
 function addTimelineMarker() {
   recordTimelineHistory();
   const marker = {
@@ -4992,11 +5154,19 @@ function deleteTake(takeId) {
 
 function updateTimer() {
   if (state.isRecording) {
+    const position = state.recordStartPosition + (performance.now() - state.recordStart) / 1000;
+    state.timelineCursor = position;
     els.clock.textContent = formatDuration((performance.now() - state.recordStart) / 1000);
+    renderTimelineCursor();
   } else if (state.isSessionPlaying) {
-    els.clock.textContent = formatDuration(getCurrentSessionPosition());
+    const position = getCurrentSessionPosition();
+    state.timelineCursor = position;
+    els.clock.textContent = formatDuration(position);
+    renderTimelineCursor();
   } else if (els.beatAudio && !els.beatAudio.paused) {
+    state.timelineCursor = els.beatAudio.currentTime;
     els.clock.textContent = formatDuration(els.beatAudio.currentTime);
+    renderTimelineCursor();
   }
 
   state.timerFrame = requestAnimationFrame(updateTimer);

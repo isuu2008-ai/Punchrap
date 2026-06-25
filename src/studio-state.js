@@ -79,6 +79,7 @@
       sessionTimers: [],
       sessionPlayers: [],
       sessionPlayingTakeIds: new Set(),
+      timelineCursor: 0,
       punchEnabled: false,
       loopEnabled: false,
       metronomeEnabled: false,

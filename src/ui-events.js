@@ -133,6 +133,11 @@
       on(els.projectInput, "change", actions.loadProject);
       on(els.recoverProjectButton, "click", actions.recoverAutosave);
       on(els.recoverySelect, "change", actions.updateRecoveryButton);
+      on(els.timelineSurface, "pointerdown", actions.handleTimelinePointer);
+      on(els.timelinePlayFromCursorButton, "click", actions.playFromTimelineCursor);
+      on(els.timelineRecordFromCursorButton, "click", actions.recordFromTimelineCursor);
+      on(els.timelineSetPunchInButton, "click", () => actions.setPunchPointFromTimeline("in"));
+      on(els.timelineSetPunchOutButton, "click", () => actions.setPunchPointFromTimeline("out"));
       on(els.addMarkerButton, "click", actions.addTimelineMarker);
       on(els.timelineSnapSelect, "change", actions.updateTimelineSnapMode);
       on(els.timelineUndoButton, "click", actions.undoTimelineEdit);

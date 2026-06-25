@@ -768,6 +768,7 @@ ${getProjectZipPreviewPlayerScript()}
       ["Target", sessionManifest.targetNote || "Scale nearest"],
       ["Count-in", countIn > 0 ? `${countIn} bar${countIn === 1 ? "" : "s"}` : "Off"],
       ["Snap", formatProjectZipPreviewSnapMode(sessionManifest.timelineSnap)],
+      ["Playhead", formatDuration(sessionManifest.timelineCursor || 0)],
       ["Armed", sessionManifest.armedTrackName || sessionManifest.armedTrackId || "Main"],
       ["Punch", sessionManifest.punchEnabled ? `${formatDuration(sessionManifest.punchIn)} - ${formatDuration(sessionManifest.punchOut)}` : "Off"],
       ["Loop", sessionManifest.loopEnabled ? "On" : "Off"],

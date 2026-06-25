@@ -170,6 +170,8 @@ npm run desktop:check
 - Native audio summaries preserve and display latency stat freshness timestamps when available
 - Timeline view with marker management and take region start/nudge controls
 - BPM-based timeline grid with optional beat/bar snap for markers and region starts
+- Timeline playhead click/seek with play-from-cursor and record-from-cursor controls
+- Timeline side controls can set punch in/out from the current playhead
 - Region rename, color, clip gain, and fade in/out controls persisted in project files
 - Region grouping tags for verse, hook, adlib, intro, bridge, and outro
 - Track folder headers for lead, adlib, and hook stacks with group mute/solo

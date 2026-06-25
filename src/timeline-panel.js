@@ -36,9 +36,11 @@
     const getTakeTitle = requireHelper(helpers, "getTakeTitle");
     const getTakeVisibleDuration = requireHelper(helpers, "getTakeVisibleDuration");
     const getTimelineEndPosition = requireHelper(helpers, "getTimelineEndPosition");
+    const getTimelineCursorPosition = requireHelper(helpers, "getTimelineCursorPosition");
     const makeTimelineGridLines = requireHelper(helpers, "makeTimelineGridLines");
     const makeTimelineTicks = requireHelper(helpers, "makeTimelineTicks");
     const normalizeMarkers = requireHelper(helpers, "normalizeMarkers");
+    const renderTimelineCursor = requireHelper(helpers, "renderTimelineCursor");
     const renderRegionGroupOptions = requireHelper(helpers, "renderRegionGroupOptions");
     const timelinePercent = requireHelper(helpers, "timelinePercent");
     const updateTimelineGridMeta = requireHelper(helpers, "updateTimelineGridMeta");
@@ -87,6 +89,7 @@
         .join("");
 
       els.timelineRegions.innerHTML = renderBeatRegion(beatDuration, timelineEnd) + renderTakeRegions(takes, timelineEnd);
+      renderTimelineCursor(timelineEnd, getTimelineCursorPosition());
       renderTimelineMarkerSummary(markers);
       renderRegionList(takes);
       bindRegionListActions();
