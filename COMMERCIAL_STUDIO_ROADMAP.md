@@ -120,6 +120,8 @@
 - `beforeDevCommand`의 project root 기준 dev server 실행 경로를 contract/doctor에서 검증
 - Tauri existing dev server reuse 1차
 - `scripts/start-desktop-dev-server.mjs`가 `localhost:4173`의 기존 PunchLab 서버를 재사용하고 없을 때만 `server.mjs`를 시작
+- Tauri production dist 1차
+- `scripts/build-desktop-dist.mjs`가 `dist/`에 web asset만 복사하고 Tauri build가 `node_modules/src-tauri/target`을 포함하지 않게 분리
 - Desktop wrapper contract check 1차
 - shell size, local-first permission, native bridge, plugin host, handoff stage 조건을 `scripts/check-desktop-contract.mjs`에서 검증
 - Tauri shell contract check 1차

@@ -222,6 +222,9 @@ for (const icon of requiredTauriIcons) {
 if (!packageArtifacts.includes("scripts/desktop-doctor.mjs")) {
   fail("Desktop package manifest must list the desktop doctor script.");
 }
+if (!packageArtifacts.includes("scripts/build-desktop-dist.mjs")) {
+  fail("Desktop package manifest must list the desktop dist builder.");
+}
 if (!packageArtifacts.includes("scripts/start-desktop-dev-server.mjs")) {
   fail("Desktop package manifest must list the desktop dev server launcher.");
 }
@@ -256,6 +259,7 @@ const requiredPackageScripts = {
   "desktop:check": "node scripts/check-desktop-contract.mjs",
   "desktop:doctor": "node scripts/desktop-doctor.mjs",
   "desktop:serve": "node scripts/start-desktop-dev-server.mjs",
+  "desktop:dist": "node scripts/build-desktop-dist.mjs",
   "desktop:dev": "tauri dev",
   "desktop:build": "tauri build",
   "tauri:dev": "tauri dev",
@@ -277,6 +281,7 @@ for (const [toolingKey, scriptName] of Object.entries({
   desktopCheck: "desktop:check",
   desktopDoctor: "desktop:doctor",
   desktopServe: "desktop:serve",
+  desktopDist: "desktop:dist",
   desktopDev: "desktop:dev",
   desktopBuild: "desktop:build",
   tauriDev: "tauri:dev",
@@ -423,15 +428,27 @@ if (tauriConfig.build?.devUrl !== wrapper.shell?.devServer) {
 if (tauriConfig.build?.beforeDevCommand !== "node scripts/start-desktop-dev-server.mjs") {
   fail("Tauri config beforeDevCommand must use the desktop dev server launcher.");
 }
+if (tauriConfig.build?.beforeBuildCommand !== "node scripts/build-desktop-dist.mjs") {
+  fail("Tauri config beforeBuildCommand must use the desktop dist builder.");
+}
 const desktopDevServerLauncher = readFileSync("scripts/start-desktop-dev-server.mjs", "utf8");
 if (!desktopDevServerLauncher.includes("probePunchLabServer") || !desktopDevServerLauncher.includes("<title>PunchLab</title>") || !desktopDevServerLauncher.includes("process.env.PORT ||= devPort") || !desktopDevServerLauncher.includes("await import(SERVER_SCRIPT)")) {
   fail("Desktop dev server launcher must reuse an existing PunchLab server or start server.mjs.");
 }
+const desktopDistBuilder = readFileSync("scripts/build-desktop-dist.mjs", "utf8");
+for (const requiredSnippet of ["const DIST_DIR = \"dist\"", "\"index.html\"", "\"src\"", "\"assets\"", "\"desktop-host-manifest.json\""]) {
+  if (!desktopDistBuilder.includes(requiredSnippet)) {
+    fail(`Desktop dist builder missing ${requiredSnippet}.`);
+  }
+}
 if (!readFileSync("scripts/desktop-doctor.mjs", "utf8").includes("checkWindowsMsvcLinker") || !readFileSync("scripts/desktop-doctor.mjs", "utf8").includes("Microsoft.VisualStudio.Component.VC.Tools.x86.x64")) {
   fail("Desktop doctor must check for the Windows MSVC linker needed by Rust/Tauri.");
 }
-if (tauriConfig.build?.frontendDist !== "../") {
-  fail("Tauri config frontendDist must point to the static PunchLab shell.");
+if (tauriConfig.build?.frontendDist !== "../dist") {
+  fail("Tauri config frontendDist must point to the isolated desktop dist.");
+}
+if (packageManifest.entry?.productionDir !== "dist") {
+  fail("Desktop package productionDir must be dist.");
 }
 if (tauriConfig.app?.withGlobalTauri !== true) {
   fail("Tauri config must enable app.withGlobalTauri for the vanilla JS bridge adapter.");

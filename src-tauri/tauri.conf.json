@@ -5,8 +5,9 @@
   "identifier": "ai.isuu2008.punchrap",
   "build": {
     "beforeDevCommand": "node scripts/start-desktop-dev-server.mjs",
+    "beforeBuildCommand": "node scripts/build-desktop-dist.mjs",
     "devUrl": "http://localhost:4173",
-    "frontendDist": "../"
+    "frontendDist": "../dist"
   },
   "app": {
     "withGlobalTauri": true,

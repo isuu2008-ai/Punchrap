@@ -138,6 +138,7 @@ const scripts = nodePackage.scripts || {};
 checkScript(scripts, "desktop:check", "node scripts/check-desktop-contract.mjs");
 checkScript(scripts, "desktop:doctor", "node scripts/desktop-doctor.mjs");
 checkScript(scripts, "desktop:serve", "node scripts/start-desktop-dev-server.mjs");
+checkScript(scripts, "desktop:dist", "node scripts/build-desktop-dist.mjs");
 checkScript(scripts, "desktop:dev", "tauri dev");
 checkScript(scripts, "desktop:build", "tauri build");
 checkScript(scripts, "tauri:dev", "tauri dev");
@@ -159,6 +160,18 @@ if (tauriConfig.build?.beforeDevCommand !== "node scripts/start-desktop-dev-serv
   fail("tauri.conf.json build.beforeDevCommand must start the local PunchLab server");
 } else {
   pass(`Tauri beforeDevCommand: ${tauriConfig.build.beforeDevCommand}`);
+}
+
+if (tauriConfig.build?.beforeBuildCommand !== "node scripts/build-desktop-dist.mjs") {
+  fail("tauri.conf.json build.beforeBuildCommand must build the isolated desktop dist");
+} else {
+  pass(`Tauri beforeBuildCommand: ${tauriConfig.build.beforeBuildCommand}`);
+}
+
+if (tauriConfig.build?.frontendDist !== "../dist") {
+  fail("tauri.conf.json build.frontendDist must point to ../dist for production builds");
+} else {
+  pass(`Tauri frontendDist: ${tauriConfig.build.frontendDist}`);
 }
 
 if (tauriConfig.app?.withGlobalTauri !== true) {

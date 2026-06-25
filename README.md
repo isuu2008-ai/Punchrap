@@ -25,6 +25,7 @@ node .\scripts\check.mjs
 ```powershell
 npm install
 npm run desktop:doctor
+npm run desktop:dist
 npm run desktop:dev
 npm run desktop:build
 npm run desktop:check
@@ -108,6 +109,7 @@ npm run desktop:check
 - Desktop doctor script for Node/npm/Rust/Cargo and Tauri shell prerequisite checks
 - Desktop doctor checks the Windows MSVC linker required by Rust/Tauri builds
 - Desktop dev server launcher reuses an existing PunchLab `localhost:4173` server before starting a new one
+- Desktop production build copies web assets into an isolated `dist/` folder before Tauri packaging
 - Desktop wrapper contract check for shell, permission, bridge, plugin, and handoff-stage requirements
 - Desktop contract check validates the Tauri app id, dev server, main window, and bundled manifest resources
 - Desktop contract check validates the Tauri Rust entry, library, build script, and dialog/fs plugin initialization
