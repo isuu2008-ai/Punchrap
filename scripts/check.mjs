@@ -10,6 +10,7 @@ const syntaxFiles = [
   "src/runtime-guard.js",
   "src/studio-state.js",
   "src/beat-playback.js",
+  "src/track-panel.js",
   "src/ui-elements.js",
   "src/ui-renderers.js",
   "src/ui-events.js",
@@ -81,6 +82,7 @@ const requiredScripts = [
   "src/runtime-guard.js",
   "src/studio-state.js",
   "src/beat-playback.js",
+  "src/track-panel.js",
   "src/ui-elements.js",
   "src/ui-renderers.js",
   "src/ui-events.js",
@@ -101,6 +103,7 @@ const requiredFiles = [
   "src/beat-playback.js",
   "src/export-panel.js",
   "src/timeline-panel.js",
+  "src/track-panel.js",
   "src-tauri/tauri.conf.json",
   "src-tauri/Cargo.lock",
   "src-tauri/Cargo.toml",
@@ -141,6 +144,7 @@ const appSource = readFileSync("app.js", "utf8");
 const runtimeGuardSource = readFileSync("src/runtime-guard.js", "utf8");
 const studioStateSource = readFileSync("src/studio-state.js", "utf8");
 const beatPlaybackSource = readFileSync("src/beat-playback.js", "utf8");
+const trackPanelSource = readFileSync("src/track-panel.js", "utf8");
 const uiElementsSource = readFileSync("src/ui-elements.js", "utf8");
 const uiRenderersSource = readFileSync("src/ui-renderers.js", "utf8");
 const uiEventsSource = readFileSync("src/ui-events.js", "utf8");
@@ -152,6 +156,7 @@ const tauriBridgeSource = readFileSync("src/tauri-bridge.js", "utf8");
 const projectZipSource = readFileSync("src/project-zip.js", "utf8");
 const domLookupSource = `${appSource}\n${uiElementsSource}`;
 const appRendererSource = `${appSource}\n${uiRenderersSource}`;
+const trackUsageSource = `${appSource}\n${trackPanelSource}`;
 const zipSource = `${appSource}\n${projectZipSource}`;
 for (const script of requiredScripts) {
   if (!indexHtml.includes(script)) {
@@ -209,6 +214,10 @@ if (!exportPanelSource.includes("window.PunchLabExportPanel") || !appSource.incl
 }
 if (!timelinePanelSource.includes("window.PunchLabTimelinePanel") || !appSource.includes("PunchLabTimelinePanel.createTimelinePanel") || appSource.includes("function renderTimeline(") || appSource.includes("function renderTimelineMarkerSummary(")) {
   console.error("Timeline panel rendering must live in src/timeline-panel.js.");
+  failed = true;
+}
+if (!trackPanelSource.includes("window.PunchLabTrackPanel") || !appSource.includes("PunchLabTrackPanel.createTrackPanel") || appSource.includes("function renderTracks(") || appSource.includes("function renderTrackRow(") || appSource.includes("function renderArmTracks(")) {
+  console.error("Track panel rendering must live in src/track-panel.js.");
   failed = true;
 }
 if (!uiElementsSource.includes("validateElementMap") || !uiElementsSource.includes("PunchLab UI missing required elements")) {
@@ -448,7 +457,7 @@ if (!presetsSource.includes("window.PunchLabPresets") || !presetsSource.includes
   failed = true;
 }
 const tracksSource = readFileSync("src/tracks.js", "utf8");
-if (!tracksSource.includes("window.PunchLabTracks") || !tracksSource.includes("getDefaultTrackName") || !tracksSource.includes("getFolderedTrackIds") || !tracksSource.includes("getTrackFolderTracks") || !tracksSource.includes("getTrackOutputVolume") || !tracksSource.includes("hasSoloTrack") || !tracksSource.includes("hasTrackFolder") || !tracksSource.includes("isTrackAudible") || !tracksSource.includes("normalizeTrackFolderCollapsed") || !appSource.includes("PunchLabTracks.getDefaultTrackName") || !appSource.includes("PunchLabTracks.getFolderedTrackIds") || !appSource.includes("PunchLabTracks.getTrackFolderTracks") || !appSource.includes("PunchLabTracks.getTrackOutputVolume") || !appSource.includes("PunchLabTracks.hasSoloTrack") || !appSource.includes("PunchLabTracks.hasTrackFolder") || !appSource.includes("PunchLabTracks.isTrackAudible") || !appSource.includes("PunchLabTracks.normalizeTrackFolderCollapsed")) {
+if (!tracksSource.includes("window.PunchLabTracks") || !tracksSource.includes("getDefaultTrackName") || !tracksSource.includes("getFolderedTrackIds") || !tracksSource.includes("getTrackFolderTracks") || !tracksSource.includes("getTrackOutputVolume") || !tracksSource.includes("hasSoloTrack") || !tracksSource.includes("hasTrackFolder") || !tracksSource.includes("isTrackAudible") || !tracksSource.includes("normalizeTrackFolderCollapsed") || !trackUsageSource.includes("PunchLabTracks.getDefaultTrackName") || !trackUsageSource.includes("PunchLabTracks.getFolderedTrackIds") || !trackUsageSource.includes("PunchLabTracks.getTrackFolderTracks") || !trackUsageSource.includes("PunchLabTracks.getTrackOutputVolume") || !trackUsageSource.includes("PunchLabTracks.hasSoloTrack") || !trackUsageSource.includes("PunchLabTracks.hasTrackFolder") || !trackUsageSource.includes("PunchLabTracks.isTrackAudible") || !trackUsageSource.includes("PunchLabTracks.normalizeTrackFolderCollapsed")) {
   console.error("Track folder, default-name, solo/mute, and output-volume policy must live in src/tracks.js and be used by app.js.");
   failed = true;
 }

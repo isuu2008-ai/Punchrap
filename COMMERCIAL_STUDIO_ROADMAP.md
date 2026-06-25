@@ -298,6 +298,8 @@
 - export source/loudness/queue HTML과 queue button binding을 `src/export-panel.js`로 분리
 - Timeline panel renderer split 1차
 - timeline ruler/grid/marker/region HTML과 timeline edit button/input binding을 `src/timeline-panel.js`로 분리
+- Track panel renderer split 1차
+- track folder/row/arm-track HTML과 mute/solo/arm/volume/pan/name binding을 `src/track-panel.js`로 분리
 - Beat gain/noise floor 기본값 1차
 - beat playback/export gain control 추가, 기본 input gain 하향, browser noise suppression/echo cancellation 기본 활성화
 - App controller shrink/stability guard 1차
