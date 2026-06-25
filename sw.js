@@ -1,9 +1,10 @@
-const CACHE_NAME = "punchlab-shell-20260625-032";
+const CACHE_NAME = "punchlab-shell-20260625-033";
 const CORE_ASSETS = [
   "./",
   "./index.html",
   "./styles.css",
   "./src/ui-elements.js",
+  "./src/ui-renderers.js",
   "./app.js",
   "./src/chain-params.js",
   "./src/presets.js",

@@ -5,6 +5,7 @@ const syntaxFiles = [
   "server.mjs",
   "scripts/check-desktop-contract.mjs",
   "src/ui-elements.js",
+  "src/ui-renderers.js",
   "app.js",
   "src/chain-params.js",
   "src/presets.js",
@@ -67,6 +68,7 @@ const requiredScripts = [
   "src/platform.js",
   "src/desktop.js",
   "src/ui-elements.js",
+  "src/ui-renderers.js",
   "app.js",
 ];
 
@@ -108,9 +110,11 @@ if (desktopContractResult.status !== 0) {
 const indexHtml = readFileSync("index.html", "utf8");
 const appSource = readFileSync("app.js", "utf8");
 const uiElementsSource = readFileSync("src/ui-elements.js", "utf8");
+const uiRenderersSource = readFileSync("src/ui-renderers.js", "utf8");
 const tauriBridgeSource = readFileSync("src/tauri-bridge.js", "utf8");
 const projectZipSource = readFileSync("src/project-zip.js", "utf8");
 const domLookupSource = `${appSource}\n${uiElementsSource}`;
+const appRendererSource = `${appSource}\n${uiRenderersSource}`;
 const zipSource = `${appSource}\n${projectZipSource}`;
 for (const script of requiredScripts) {
   if (!indexHtml.includes(script)) {
@@ -122,6 +126,24 @@ for (const script of requiredScripts) {
 for (const file of requiredFiles) {
   if (!existsSync(file)) {
     console.error(`Missing required file: ${file}`);
+    failed = true;
+  }
+}
+
+const uiRendererNames = [
+  "renderRegionGroupOptions",
+  "renderCompPoolRow",
+  "renderAudioDeviceSelect",
+  "renderPitchLaneFrame",
+  "renderTakeWaveform",
+];
+if (!uiRenderersSource.includes("window.PunchLabUIRenderers") || !appSource.includes("window.PunchLabUIRenderers.createRenderers")) {
+  console.error("app.js must create small UI renderers through src/ui-renderers.js.");
+  failed = true;
+}
+for (const name of uiRendererNames) {
+  if (!uiRenderersSource.includes(`function ${name}`) || appSource.includes(`function ${name}`)) {
+    console.error(`${name} must live in src/ui-renderers.js and be consumed by app.js.`);
     failed = true;
   }
 }
@@ -316,7 +338,7 @@ if (!exportPlanSource.includes("window.PunchLabExportPlan") || !exportPlanSource
   failed = true;
 }
 const timelineSource = readFileSync("src/timeline.js", "utf8");
-if (!timelineSource.includes("window.PunchLabTimeline") || !timelineSource.includes("normalizeTimelineSnapMode") || !timelineSource.includes("makeTimelineGridLines") || !timelineSource.includes("timelinePercent") || !timelineSource.includes("normalizeTakeTrim") || !timelineSource.includes("normalizeRegionColor") || !timelineSource.includes("getRegionGroups") || !timelineSource.includes("normalizeRegionGroup") || !timelineSource.includes("getDefaultRegionGroupForTrack") || !timelineSource.includes("formatTimelineInputTime") || !timelineSource.includes("isSameTimelineNumber") || !timelineSource.includes("createTimelineSnapshot") || !timelineSource.includes("normalizeTimelineTakeSnapshot") || !appSource.includes("PunchLabTimeline.snapTimelineTime") || !appSource.includes("PunchLabTimeline.normalizeMarkers") || !appSource.includes("PunchLabTimeline.makeTimelineTicks") || !appSource.includes("PunchLabTimeline.getTakeVisibleDuration") || !appSource.includes("PunchLabTimeline.getRegionGroups") || !appSource.includes("PunchLabTimeline.normalizeRegionGroup") || !appSource.includes("PunchLabTimeline.formatTimelineInputTime") || !appSource.includes("PunchLabTimeline.isSameTimelineNumber") || !appSource.includes("PunchLabTimeline.createTimelineSnapshot") || !appSource.includes("PunchLabTimeline.normalizeTimelineTakeSnapshot")) {
+if (!timelineSource.includes("window.PunchLabTimeline") || !timelineSource.includes("normalizeTimelineSnapMode") || !timelineSource.includes("makeTimelineGridLines") || !timelineSource.includes("timelinePercent") || !timelineSource.includes("normalizeTakeTrim") || !timelineSource.includes("normalizeRegionColor") || !timelineSource.includes("getRegionGroups") || !timelineSource.includes("normalizeRegionGroup") || !timelineSource.includes("getDefaultRegionGroupForTrack") || !timelineSource.includes("formatTimelineInputTime") || !timelineSource.includes("isSameTimelineNumber") || !timelineSource.includes("createTimelineSnapshot") || !timelineSource.includes("normalizeTimelineTakeSnapshot") || !appSource.includes("PunchLabTimeline.snapTimelineTime") || !appSource.includes("PunchLabTimeline.normalizeMarkers") || !appSource.includes("PunchLabTimeline.makeTimelineTicks") || !appSource.includes("PunchLabTimeline.getTakeVisibleDuration") || !appRendererSource.includes("PunchLabTimeline.getRegionGroups") || !appSource.includes("PunchLabTimeline.normalizeRegionGroup") || !appSource.includes("PunchLabTimeline.formatTimelineInputTime") || !appSource.includes("PunchLabTimeline.isSameTimelineNumber") || !appSource.includes("PunchLabTimeline.createTimelineSnapshot") || !appSource.includes("PunchLabTimeline.normalizeTimelineTakeSnapshot")) {
   console.error("Timeline snap, grid, marker, region trim, region group, and snapshot policy must live in src/timeline.js and be used by app.js.");
   failed = true;
 }
