@@ -16,6 +16,17 @@
     "rustEntry": "src-tauri/src/main.rs",
     "rustLibrary": "src-tauri/src/lib.rs"
   },
+  "desktopTooling": {
+    "tauriCliPackage": "@tauri-apps/cli",
+    "tauriCliVersion": "2.11.3",
+    "scripts": {
+      "desktopCheck": "desktop:check",
+      "desktopDev": "desktop:dev",
+      "desktopBuild": "desktop:build",
+      "tauriDev": "tauri:dev",
+      "tauriBuild": "tauri:build"
+    }
+  },
   "fileAssociations": [
     {
       "id": "project",
@@ -127,6 +138,7 @@
   },
   "verificationCommands": [
     "node scripts/check.mjs",
-    "node scripts/check-desktop-contract.mjs"
+    "node scripts/check-desktop-contract.mjs",
+    "npm run desktop:check"
   ]
 }

@@ -20,6 +20,17 @@ node .\scripts\check.mjs
 
 `package.json` also exposes `npm start`, `npm run check`, and `npm run desktop:check` for environments with npm installed.
 
+## Desktop / Tauri
+
+```powershell
+npm install
+npm run desktop:dev
+npm run desktop:build
+npm run desktop:check
+```
+
+`desktop:dev` opens the Tauri shell from `src-tauri/tauri.conf.json`; Tauri starts `node ../server.mjs` and loads `http://localhost:4173`. Desktop builds require Node/npm plus the Rust/Cargo toolchain.
+
 ## Current MVP
 
 - Beat upload and playback
@@ -91,6 +102,7 @@ node .\scripts\check.mjs
 - Dedicated Comp vocal WAV export for the audible selected comp lane
 - Tauri plugin-scan handoff command for `scanPluginHosts`, returning an empty VST3/AU scan until a real plugin host exists
 - Tauri main-window capability scaffold at `src-tauri/capabilities/main.json`
+- Tauri desktop npm scripts for `desktop:dev`, `desktop:build`, `tauri:dev`, and `tauri:build`
 - Desktop wrapper contract check for shell, permission, bridge, plugin, and handoff-stage requirements
 - Desktop contract check validates the Tauri app id, dev server, main window, and bundled manifest resources
 - Desktop contract check validates the Tauri Rust entry, library, build script, and dialog/fs plugin initialization

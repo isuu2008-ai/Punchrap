@@ -4,6 +4,7 @@ const wrapper = readJson("desktop-wrapper-manifest.json");
 const host = readJson("desktop-host-manifest.json");
 const plugin = readJson("plugin-host-manifest.json");
 const packageManifest = readJson("desktop-package-manifest.json");
+const nodePackage = readJson("package.json");
 const tauriConfig = readJson("src-tauri/tauri.conf.json");
 const mainCapability = readJson("src-tauri/capabilities/main.json");
 const indexHtml = readFileSync("index.html", "utf8");
@@ -218,9 +219,41 @@ for (const boundary of ["src/engine-contract.js", "src/chain-params.js", "src/pr
   }
 }
 const verificationCommands = packageManifest.verificationCommands || [];
-for (const command of ["node scripts/check.mjs", "node scripts/check-desktop-contract.mjs"]) {
+for (const command of ["node scripts/check.mjs", "node scripts/check-desktop-contract.mjs", "npm run desktop:check"]) {
   if (!verificationCommands.includes(command)) {
     fail(`Desktop package verification command missing: ${command}`);
+  }
+}
+
+const packageScripts = nodePackage.scripts || {};
+const requiredPackageScripts = {
+  "desktop:check": "node scripts/check-desktop-contract.mjs",
+  "desktop:dev": "tauri dev",
+  "desktop:build": "tauri build",
+  "tauri:dev": "tauri dev",
+  "tauri:build": "tauri build",
+};
+for (const [scriptName, command] of Object.entries(requiredPackageScripts)) {
+  if (packageScripts[scriptName] !== command) {
+    fail(`package.json script ${scriptName} must be ${command}.`);
+  }
+}
+const tooling = packageManifest.desktopTooling || {};
+if (tooling.tauriCliPackage !== "@tauri-apps/cli") {
+  fail("Desktop package tooling must pin the Tauri CLI npm package.");
+}
+if (tooling.tauriCliVersion !== nodePackage.devDependencies?.["@tauri-apps/cli"]) {
+  fail("Desktop package tooling Tauri CLI version must match package.json devDependency.");
+}
+for (const [toolingKey, scriptName] of Object.entries({
+  desktopCheck: "desktop:check",
+  desktopDev: "desktop:dev",
+  desktopBuild: "desktop:build",
+  tauriDev: "tauri:dev",
+  tauriBuild: "tauri:build",
+})) {
+  if (tooling.scripts?.[toolingKey] !== scriptName) {
+    fail(`Desktop package tooling script ${toolingKey} must point to ${scriptName}.`);
   }
 }
 

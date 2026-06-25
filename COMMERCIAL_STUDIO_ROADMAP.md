@@ -106,6 +106,10 @@
 - Rust Tauri shell에 `scan_plugin_hosts` command를 추가하되 real plugin host 미준비 상태에서는 빈 VST3/AU scan 결과와 `plugin_host_ready=false`를 반환
 - Tauri main capability scaffold 1차
 - `src-tauri/capabilities/main.json`에 main window, core/dialog/fs 기본 permission 계약을 추가
+- Tauri desktop npm scripts 1차
+- `package.json`에 `desktop:dev`, `desktop:build`, `tauri:dev`, `tauri:build`와 `@tauri-apps/cli` devDependency를 추가
+- Desktop package tooling contract check 1차
+- `desktop-package-manifest.json`과 `scripts/check-desktop-contract.mjs`에서 Tauri CLI/scripts/verification command 정합성을 검증
 - Desktop wrapper contract check 1차
 - shell size, local-first permission, native bridge, plugin host, handoff stage 조건을 `scripts/check-desktop-contract.mjs`에서 검증
 - Tauri shell contract check 1차
