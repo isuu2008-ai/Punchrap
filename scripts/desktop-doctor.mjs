@@ -1,5 +1,6 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 
 let failed = false;
 
@@ -37,6 +38,76 @@ function checkCommand(command, args, label) {
   pass(`${label}: ${version || command}`);
 }
 
+function findVswhere() {
+  const candidates = [
+    join(process.env["ProgramFiles(x86)"] || "", "Microsoft Visual Studio", "Installer", "vswhere.exe"),
+    join(process.env.ProgramFiles || "", "Microsoft Visual Studio", "Installer", "vswhere.exe"),
+  ];
+  return candidates.find((path) => path && existsSync(path));
+}
+
+function findMsvcLinker(installationPath) {
+  const toolsRoot = join(installationPath, "VC", "Tools", "MSVC");
+  if (!existsSync(toolsRoot)) {
+    return "";
+  }
+
+  const versions = readdirSync(toolsRoot).sort().reverse();
+  for (const version of versions) {
+    for (const relativePath of [
+      ["bin", "Hostx64", "x64", "link.exe"],
+      ["bin", "Hostx64", "x86", "link.exe"],
+      ["bin", "Hostx86", "x64", "link.exe"],
+      ["bin", "Hostx86", "x86", "link.exe"],
+    ]) {
+      const linker = join(toolsRoot, version, ...relativePath);
+      if (existsSync(linker)) {
+        return linker;
+      }
+    }
+  }
+
+  return "";
+}
+
+function checkWindowsMsvcLinker() {
+  if (process.platform !== "win32") {
+    pass("MSVC linker check skipped on non-Windows platform");
+    return;
+  }
+
+  const vswhere = findVswhere();
+  if (!vswhere) {
+    fail("Visual Studio Installer/vswhere not found; install Visual Studio 2022 Build Tools with Desktop development with C++");
+    return;
+  }
+
+  const result = spawnSync(vswhere, [
+    "-latest",
+    "-products",
+    "*",
+    "-requires",
+    "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+    "-property",
+    "installationPath",
+  ], {
+    encoding: "utf8",
+  });
+  const installationPath = result.stdout.trim().split(/\r?\n/)[0];
+  if (result.status !== 0 || !installationPath) {
+    fail("MSVC C++ x64/x86 build tools are missing; open Visual Studio Installer and install Desktop development with C++");
+    return;
+  }
+
+  const linker = findMsvcLinker(installationPath);
+  if (!linker) {
+    fail("MSVC linker link.exe not found; install MSVC v143 C++ x64/x86 build tools and a Windows SDK");
+    return;
+  }
+
+  pass(`MSVC linker: ${linker}`);
+}
+
 function checkScript(scripts, name, expected) {
   if (scripts[name] !== expected) {
     fail(`package.json script ${name} must be "${expected}"`);
@@ -51,6 +122,7 @@ checkCommand("node", ["--version"], "Node");
 checkCommand("npm", ["--version"], "npm");
 checkCommand("rustc", ["--version"], "Rust compiler");
 checkCommand("cargo", ["--version"], "Cargo");
+checkWindowsMsvcLinker();
 
 checkFile("src-tauri/tauri.conf.json", "Tauri config");
 checkFile("src-tauri/Cargo.toml", "Cargo manifest");

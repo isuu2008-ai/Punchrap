@@ -83,6 +83,7 @@ const requiredFiles = [
   "scripts/desktop-doctor.mjs",
   "scripts/start-desktop-dev-server.mjs",
   "src-tauri/tauri.conf.json",
+  "src-tauri/Cargo.lock",
   "src-tauri/Cargo.toml",
   "src-tauri/build.rs",
   "src-tauri/src/main.rs",

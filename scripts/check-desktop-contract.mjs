@@ -196,6 +196,9 @@ for (const artifact of [wrapper.shell?.cargoManifest, wrapper.shell?.rustEntry, 
     fail(`Desktop package manifest must list the Tauri Rust artifact: ${artifact}`);
   }
 }
+if (!packageArtifacts.includes("src-tauri/Cargo.lock")) {
+  fail("Desktop package manifest must list the Tauri Cargo.lock artifact.");
+}
 if (!packageArtifacts.includes("src-tauri/capabilities/main.json")) {
   fail("Desktop package manifest must list the Tauri main capability artifact.");
 }
@@ -406,6 +409,9 @@ if (tauriConfig.build?.beforeDevCommand !== "node scripts/start-desktop-dev-serv
 const desktopDevServerLauncher = readFileSync("scripts/start-desktop-dev-server.mjs", "utf8");
 if (!desktopDevServerLauncher.includes("probePunchLabServer") || !desktopDevServerLauncher.includes("<title>PunchLab</title>") || !desktopDevServerLauncher.includes("process.env.PORT ||= devPort") || !desktopDevServerLauncher.includes("await import(SERVER_SCRIPT)")) {
   fail("Desktop dev server launcher must reuse an existing PunchLab server or start server.mjs.");
+}
+if (!readFileSync("scripts/desktop-doctor.mjs", "utf8").includes("checkWindowsMsvcLinker") || !readFileSync("scripts/desktop-doctor.mjs", "utf8").includes("Microsoft.VisualStudio.Component.VC.Tools.x86.x64")) {
+  fail("Desktop doctor must check for the Windows MSVC linker needed by Rust/Tauri.");
 }
 if (tauriConfig.build?.frontendDist !== "../") {
   fail("Tauri config frontendDist must point to the static PunchLab shell.");

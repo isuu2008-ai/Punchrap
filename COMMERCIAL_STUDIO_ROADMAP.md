@@ -110,6 +110,8 @@
 - `package.json`에 `desktop:dev`, `desktop:build`, `tauri:dev`, `tauri:build`와 `@tauri-apps/cli` devDependency를 추가
 - Tauri desktop doctor 1차
 - `scripts/desktop-doctor.mjs`로 Node/npm/Rust/Cargo와 Tauri shell config 준비 상태를 확인
+- Tauri MSVC linker doctor 1차
+- Windows에서 Rust/Tauri 빌드에 필요한 MSVC `link.exe`와 C++ Build Tools workload를 doctor에서 확인
 - Desktop package tooling contract check 1차
 - `desktop-package-manifest.json`과 `scripts/check-desktop-contract.mjs`에서 Tauri CLI/scripts/verification command 정합성을 검증
 - Tauri dev server command fix 1차

@@ -105,6 +105,7 @@ npm run desktop:check
 - Tauri main-window capability scaffold at `src-tauri/capabilities/main.json`
 - Tauri desktop npm scripts for `desktop:dev`, `desktop:build`, `tauri:dev`, and `tauri:build`
 - Desktop doctor script for Node/npm/Rust/Cargo and Tauri shell prerequisite checks
+- Desktop doctor checks the Windows MSVC linker required by Rust/Tauri builds
 - Desktop dev server launcher reuses an existing PunchLab `localhost:4173` server before starting a new one
 - Desktop wrapper contract check for shell, permission, bridge, plugin, and handoff-stage requirements
 - Desktop contract check validates the Tauri app id, dev server, main window, and bundled manifest resources
