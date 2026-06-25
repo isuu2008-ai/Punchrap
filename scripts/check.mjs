@@ -21,6 +21,7 @@ const syntaxFiles = [
   "src/audio.js",
   "src/export-mastering.js",
   "src/export-plan.js",
+  "src/export-panel.js",
   "src/timeline.js",
   "src/takes.js",
   "src/format.js",
@@ -54,6 +55,7 @@ const requiredScripts = [
   "src/audio.js",
   "src/export-mastering.js",
   "src/export-plan.js",
+  "src/export-panel.js",
   "src/timeline.js",
   "src/takes.js",
   "src/format.js",
@@ -95,6 +97,7 @@ const requiredFiles = [
   "src/runtime-guard.js",
   "src/studio-state.js",
   "src/beat-playback.js",
+  "src/export-panel.js",
   "src-tauri/tauri.conf.json",
   "src-tauri/Cargo.lock",
   "src-tauri/Cargo.toml",
@@ -140,6 +143,7 @@ const uiRenderersSource = readFileSync("src/ui-renderers.js", "utf8");
 const uiEventsSource = readFileSync("src/ui-events.js", "utf8");
 const devicesSource = readFileSync("src/devices.js", "utf8");
 const mixSource = readFileSync("src/mix.js", "utf8");
+const exportPanelSource = readFileSync("src/export-panel.js", "utf8");
 const tauriBridgeSource = readFileSync("src/tauri-bridge.js", "utf8");
 const projectZipSource = readFileSync("src/project-zip.js", "utf8");
 const domLookupSource = `${appSource}\n${uiElementsSource}`;
@@ -193,6 +197,10 @@ if (!runtimeGuardSource.includes("window.PunchLabRuntimeGuard") || !runtimeGuard
 }
 if (!beatPlaybackSource.includes("window.PunchLabBeatPlayback") || !appSource.includes("PunchLabBeatPlayback.createBeatPlayback") || appSource.includes("function prepareBeatPlayback(") || appSource.includes("function updateBeatGain(")) {
   console.error("Beat playback and gain control must live in src/beat-playback.js.");
+  failed = true;
+}
+if (!exportPanelSource.includes("window.PunchLabExportPanel") || !appSource.includes("PunchLabExportPanel.createExportPanel") || appSource.includes("function renderExportPanel(") || appSource.includes("function renderLoudnessReport(")) {
+  console.error("Export panel rendering must live in src/export-panel.js.");
   failed = true;
 }
 if (!uiElementsSource.includes("validateElementMap") || !uiElementsSource.includes("PunchLab UI missing required elements")) {
@@ -394,7 +402,7 @@ if (!exportMasteringSource.includes("window.PunchLabExportMastering") || !export
   console.error("Export mastering must be separated from the app controller.");
   failed = true;
 }
-if (!appSource.includes("data-compress-export") || !appSource.includes("exportCompressedJob") || !appSource.includes("PunchLabEngine.exportCompressedAudio")) {
+if (!exportPanelSource.includes("data-compress-export") || !appSource.includes("exportCompressedJob") || !appSource.includes("PunchLabEngine.exportCompressedAudio")) {
   console.error("Completed export jobs must expose native compressed MP3/M4A handoff when supported.");
   failed = true;
 }
@@ -403,11 +411,11 @@ if (!indexHtml.includes("exportCompVocalButton") || !appSource.includes("exportC
   console.error("Export view must support rendering the selected comp lane as a dedicated vocal WAV.");
   failed = true;
 }
-if (!appSource.includes("getAudibleCompTakes") || !appSource.includes("const hasCompVocal = getAudibleCompTakes().length > 0") || !appSource.includes("count: getAudibleCompTakes().length")) {
+if (!appSource.includes("getAudibleCompTakes") || !appSource.includes("const hasCompVocal = getAudibleCompTakes().length > 0") || !exportPanelSource.includes("count: getAudibleCompTakes().length")) {
   console.error("Comp vocal export counts and button state must respect audible track routing.");
   failed = true;
 }
-if (!exportPlanSource.includes("window.PunchLabExportPlan") || !exportPlanSource.includes("buildStemExportGroups") || !exportPlanSource.includes("buildSingleExportGroup") || !exportPlanSource.includes("buildExportWavOptions") || !exportPlanSource.includes("normalizeExportBitDepth") || !exportPlanSource.includes("formatExportRowCount") || !exportPlanSource.includes("getExportJobStatusLabel") || !exportPlanSource.includes("getClippingRisk") || !exportPlanSource.includes("getCompressedExportStatus") || !appSource.includes("PunchLabExportPlan.buildStemExportGroups") || !appSource.includes("PunchLabExportPlan.buildSingleExportGroup") || !appSource.includes("PunchLabExportPlan.buildExportWavOptions") || !appSource.includes("PunchLabExportPlan.normalizeExportBitDepth") || !appSource.includes("PunchLabExportPlan.formatExportRowCount") || !appSource.includes("PunchLabExportPlan.getExportJobStatusLabel") || !appSource.includes("PunchLabExportPlan.getClippingRisk") || !appSource.includes("PunchLabExportPlan.getCompressedExportStatus")) {
+if (!exportPlanSource.includes("window.PunchLabExportPlan") || !exportPlanSource.includes("buildStemExportGroups") || !exportPlanSource.includes("buildSingleExportGroup") || !exportPlanSource.includes("buildExportWavOptions") || !exportPlanSource.includes("normalizeExportBitDepth") || !exportPlanSource.includes("formatExportRowCount") || !exportPlanSource.includes("getExportJobStatusLabel") || !exportPlanSource.includes("getClippingRisk") || !exportPlanSource.includes("getCompressedExportStatus") || !appSource.includes("PunchLabExportPlan.buildStemExportGroups") || !appSource.includes("PunchLabExportPlan.buildSingleExportGroup") || !appSource.includes("PunchLabExportPlan.buildExportWavOptions") || !appSource.includes("PunchLabExportPlan.normalizeExportBitDepth") || !exportPanelSource.includes("PunchLabExportPlan.formatExportRowCount") || !exportPanelSource.includes("PunchLabExportPlan.getExportJobStatusLabel") || !exportPanelSource.includes("PunchLabExportPlan.getClippingRisk") || !exportPanelSource.includes("PunchLabExportPlan.getCompressedExportStatus")) {
   console.error("Export filename, stem group, WAV option, compressed format, queue display, clipping-risk, and compressed-status planning must be separated from the app controller.");
   failed = true;
 }

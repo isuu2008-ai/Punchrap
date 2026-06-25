@@ -294,6 +294,8 @@
 - project zip `preview.html`, `manifest.json`, `README.txt` final write 정책을 `src/project-zip.js`로 분리
 - UI event binding split 1차
 - top-level button/input event binding을 `src/ui-events.js`로 분리하고 `app.js`는 handler map만 제공
+- Export panel renderer split 1차
+- export source/loudness/queue HTML과 queue button binding을 `src/export-panel.js`로 분리
 - Beat gain/noise floor 기본값 1차
 - beat playback/export gain control 추가, 기본 input gain 하향, browser noise suppression/echo cancellation 기본 활성화
 - App controller shrink/stability guard 1차
