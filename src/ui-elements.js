@@ -29,6 +29,8 @@
       nativeLatencyRefreshButton: document.querySelector("#nativeLatencyRefreshButton"),
       inputGainSlider: document.querySelector("#inputGainSlider"),
       inputGainText: document.querySelector("#inputGainText"),
+      beatGainSlider: document.querySelector("#beatGainSlider"),
+      beatGainText: document.querySelector("#beatGainText"),
       micButton: document.querySelector("#micButton"),
       monitorButton: document.querySelector("#monitorButton"),
       playButton: document.querySelector("#playButton"),

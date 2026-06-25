@@ -126,6 +126,8 @@ const appSource = readFileSync("app.js", "utf8");
 const uiElementsSource = readFileSync("src/ui-elements.js", "utf8");
 const uiRenderersSource = readFileSync("src/ui-renderers.js", "utf8");
 const uiEventsSource = readFileSync("src/ui-events.js", "utf8");
+const devicesSource = readFileSync("src/devices.js", "utf8");
+const mixSource = readFileSync("src/mix.js", "utf8");
 const tauriBridgeSource = readFileSync("src/tauri-bridge.js", "utf8");
 const projectZipSource = readFileSync("src/project-zip.js", "utf8");
 const domLookupSource = `${appSource}\n${uiElementsSource}`;
@@ -167,6 +169,22 @@ if (!uiEventsSource.includes("window.PunchLabUIEvents") || !appSource.includes("
 }
 if (!uiEventsSource.includes("PunchLab UI event handler missing")) {
   console.error("UI event binding must fail loudly when a visible control has no handler.");
+  failed = true;
+}
+if (!indexHtml.includes("beatGainSlider") || !uiElementsSource.includes("beatGainSlider") || !uiEventsSource.includes("updateBeatGain")) {
+  console.error("Beat playback gain control must be present and wired.");
+  failed = true;
+}
+if (!appSource.includes("beatGain: 1.4") || !appSource.includes("prepareBeatPlayback") || !mixSource.includes("beatVolume")) {
+  console.error("Beat playback/export boost must stay wired through app.js and src/mix.js.");
+  failed = true;
+}
+if (!appSource.includes("inputGain: 1.25") || !indexHtml.includes('id="inputGainSlider" type="range" min="0.5" max="4" step="0.1" value="1.25"')) {
+  console.error("Default input gain must stay below the old noisy +6 dB default.");
+  failed = true;
+}
+if (!devicesSource.includes("noiseSuppression: true") || !devicesSource.includes("echoCancellation: true")) {
+  console.error("Default mic constraints must reduce room noise and playback bleed.");
   failed = true;
 }
 for (const name of uiRendererNames) {
@@ -395,7 +413,6 @@ if (!pitchSource.includes("window.PunchLabPitch") || !pitchSource.includes("norm
   console.error("Pitch scale, manual target, lane sampling, note label, and correction summary policy must live in src/pitch.js and be used by app.js.");
   failed = true;
 }
-const devicesSource = readFileSync("src/devices.js", "utf8");
 if (!devicesSource.includes("window.PunchLabDevices") || !devicesSource.includes("getBestMimeType") || !devicesSource.includes("getMicConstraints") || !devicesSource.includes("listAudioDevices") || !devicesSource.includes("setMediaOutput") || !devicesSource.includes("setAudioContextOutput") || !appSource.includes("PunchLabDevices?.getBestMimeType") || !appSource.includes("PunchLabDevices.getMicConstraints") || !appSource.includes("PunchLabDevices.listAudioDevices")) {
   console.error("Device enumeration, recording MIME, mic constraints, and output routing must live in src/devices.js and be used by app.js.");
   failed = true;

@@ -186,6 +186,8 @@ npm run desktop:check
 - Project zip preview plugin-host, notes, and desktop-handoff rows are formatted in `src/project-zip.js`
 - Project zip preview header summaries for export, plugin scan, native audio, and desktop readiness are formatted in `src/project-zip.js`
 - Top-level UI event binding lives in `src/ui-events.js`; `app.js` provides the handler map
+- Beat playback gain is controlled separately and passed into mix/export rendering
+- Browser mic constraints default to noise suppression and echo cancellation while keeping auto gain disabled
 - Export mastering finalize logic for loudness normalize, peak normalize, and true-peak ceiling lives in `src/export-mastering.js`
 - Export filename, single group, stem group, WAV bit-depth options, compressed-format, queue row count, status label, clipping risk, compressed-status, and job-detail planning lives in `src/export-plan.js`
 - Timeline snap, grid, marker normalization, region trim, fade, color, region group, input formatting, numeric comparison, undo snapshot, and percent mapping policy lives in `src/timeline.js`

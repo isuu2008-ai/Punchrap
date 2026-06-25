@@ -1,5 +1,5 @@
 (() => {
-  async function renderMixBuffer({ sampleRate = 48000, beatBuffer = null, takes = [] }) {
+  async function renderMixBuffer({ sampleRate = 48000, beatBuffer = null, beatVolume = 1, takes = [] }) {
     const endPosition = Math.max(
       beatBuffer?.duration || 0,
       ...takes.map((take) => (take.startTime || 0) + getScheduledDuration(take)),
@@ -12,7 +12,7 @@
       scheduleBuffer(context, {
         buffer: beatBuffer,
         startTime: 0,
-        volume: 1,
+        volume: beatVolume,
         pan: 0,
       });
     }

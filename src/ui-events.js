@@ -55,7 +55,11 @@
       on(els.countInSelect, "change", actions.scheduleAutosave);
       on(els.templateSelect, "change", actions.updateTemplateMeta);
       on(els.applyTemplateButton, "click", actions.applySelectedTemplate);
-      on(els.inputGainSlider, "input", actions.updateInputGain);
+      on(els.inputGainSlider, "input", () => {
+        actions.updateInputGain();
+        actions.scheduleAutosave();
+      });
+      on(els.beatGainSlider, "input", actions.updateBeatGain);
       on(els.audioInputSelect, "change", actions.changeAudioInputDevice);
       on(els.audioOutputSelect, "change", actions.changeAudioOutputDevice);
       on(els.nativeBufferSizeSelect, "change", actions.changeNativeBufferSize);

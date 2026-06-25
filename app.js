@@ -5,6 +5,8 @@ const state = {
   analyser: null,
   gainNode: null,
   monitorGain: null,
+  beatSourceNode: null,
+  beatGainNode: null,
   monitorConnected: false,
   monitorMode: null,
   nativeMonitorActive: false,
@@ -34,7 +36,8 @@ const state = {
   beatArrayBuffer: null,
   beatFileName: "",
   mimeType: "",
-  inputGain: 2,
+  inputGain: 1.25,
+  beatGain: 1.4,
   audioInputDeviceId: "",
   audioOutputDeviceId: "",
   nativeBufferSize: 128,
@@ -184,6 +187,7 @@ const uiEvents = window.PunchLabUIEvents.createEvents({
     updateTemplateMeta,
     applySelectedTemplate,
     updateInputGain,
+    updateBeatGain,
     changeAudioInputDevice,
     changeAudioOutputDevice,
     changeNativeBufferSize,
@@ -256,6 +260,7 @@ function init() {
   refreshAudioDevices();
   updateTimelineHistoryButtons();
   updateInputGain();
+  updateBeatGain(false);
   updatePunchControls();
   checkAutosave();
   drawIdleWave();
@@ -668,6 +673,33 @@ async function ensureAudioContext() {
   return state.audioContext;
 }
 
+function normalizeBeatGain(value) {
+  const gain = Number(value);
+  return Number.isFinite(gain) ? Math.max(0.5, Math.min(2.5, gain)) : 1.4;
+}
+
+function ensureBeatPlaybackChain() {
+  if (!state.audioContext || !els.beatAudio || state.beatSourceNode) {
+    return;
+  }
+
+  state.beatSourceNode = state.audioContext.createMediaElementSource(els.beatAudio);
+  state.beatGainNode = state.audioContext.createGain();
+  state.beatSourceNode.connect(state.beatGainNode).connect(state.audioContext.destination);
+}
+
+async function prepareBeatPlayback() {
+  await ensureAudioContext();
+  ensureBeatPlaybackChain();
+  updateBeatGain(false);
+  await applyPlaybackOutput(els.beatAudio);
+}
+
+async function playBeatAudio() {
+  await prepareBeatPlayback();
+  await els.beatAudio.play();
+}
+
 async function enableMic() {
   if (state.stream) {
     return;
@@ -867,6 +899,7 @@ async function loadBeat(event) {
   state.beatFileName = file.name;
   state.beatUrl = URL.createObjectURL(file);
   els.beatAudio.src = state.beatUrl;
+  updateBeatGain(false);
   await applyPlaybackOutput(els.beatAudio);
   els.beatName.textContent = file.name;
   els.sessionState.textContent = "Beat loaded";
@@ -1537,6 +1570,7 @@ function applyLoadedProject(project) {
     state.beatFileName = project.beat.fileName;
     state.beatUrl = URL.createObjectURL(project.beat.blob);
     els.beatAudio.src = state.beatUrl;
+    updateBeatGain(false);
     applyPlaybackOutput(els.beatAudio);
     els.beatName.textContent = project.beat.fileName;
   } else {
@@ -1612,6 +1646,7 @@ function getProjectSettings() {
     targetMidi: getTargetMidiValue(),
     customScaleIntervals: [...state.customScaleIntervals],
     inputGain: state.inputGain,
+    beatGain: state.beatGain,
     audioInputDeviceId: state.audioInputDeviceId,
     audioOutputDeviceId: state.audioOutputDeviceId,
     nativeBufferSize: state.nativeBufferSize,
@@ -1650,7 +1685,8 @@ function applyProjectSettings(settings = {}) {
   els.lyricsInput.value = settings.lyrics || "";
   els.sessionNotesInput.value = settings.sessionNotes || "";
   els.timelineSnapSelect.value = normalizeTimelineSnapMode(settings.timelineSnap || "off");
-  els.inputGainSlider.value = settings.inputGain || 2;
+  els.inputGainSlider.value = settings.inputGain ?? state.inputGain;
+  els.beatGainSlider.value = normalizeBeatGain(settings.beatGain ?? state.beatGain);
   state.audioInputDeviceId = settings.audioInputDeviceId || "";
   state.audioOutputDeviceId = settings.audioOutputDeviceId || "";
   state.nativeBufferSize = normalizeNativeBufferSize(
@@ -1709,6 +1745,7 @@ function applyProjectSettings(settings = {}) {
   }
 
   updateInputGain();
+  updateBeatGain(false);
   updatePunchControls();
 }
 
@@ -1718,6 +1755,27 @@ function updateInputGain() {
 
   if (state.gainNode && state.audioContext) {
     state.gainNode.gain.setTargetAtTime(state.inputGain, state.audioContext.currentTime, 0.01);
+  }
+}
+
+function updateBeatGain(shouldAutosave = true) {
+  state.beatGain = normalizeBeatGain(els.beatGainSlider?.value ?? state.beatGain);
+  if (els.beatGainSlider) {
+    els.beatGainSlider.value = String(state.beatGain);
+  }
+  if (els.beatGainText) {
+    els.beatGainText.textContent = formatGainDb(state.beatGain);
+  }
+
+  if (state.beatGainNode && state.audioContext) {
+    state.beatGainNode.gain.setTargetAtTime(state.beatGain, state.audioContext.currentTime, 0.01);
+    els.beatAudio.volume = 1;
+  } else {
+    els.beatAudio.volume = Math.min(1, state.beatGain);
+  }
+
+  if (shouldAutosave) {
+    scheduleAutosave();
   }
 }
 
@@ -1877,9 +1935,8 @@ async function playSession() {
 
   if (els.beatAudio.src) {
     els.beatAudio.currentTime = origin;
-    els.beatAudio.volume = 1;
-    await applyPlaybackOutput(els.beatAudio);
     try {
+      await prepareBeatPlayback();
       await els.beatAudio.play();
     } catch (error) {
       stopSessionPlayback();
@@ -2381,7 +2438,7 @@ async function startPunchRecording(options = {}) {
 
   if (els.beatAudio.src) {
     els.beatAudio.currentTime = playStart;
-    els.beatAudio.play().catch((error) => {
+    playBeatAudio().catch((error) => {
       console.error(error);
     });
   }
@@ -2459,7 +2516,9 @@ function startRecording(options = {}) {
   startMetronome();
 
   if (els.beatAudio.src && els.beatAudio.paused) {
-    els.beatAudio.play();
+    playBeatAudio().catch((error) => {
+      console.error(error);
+    });
   }
 
   if (options.autoStopAfter) {
@@ -2492,7 +2551,7 @@ function stopRecording() {
 
   if (wasPunchRecording && state.loopEnabled && els.beatAudio.src && state.punchOut > state.punchIn) {
     els.beatAudio.currentTime = state.punchIn;
-    els.beatAudio.play().catch((error) => {
+    playBeatAudio().catch((error) => {
       console.error(error);
     });
     if (!wasLoopCycle) {
@@ -5205,6 +5264,7 @@ async function renderFullMixBuffer() {
   return window.PunchLabEngine.renderMixBuffer({
     sampleRate,
     beatBuffer,
+    beatVolume: state.beatGain,
     takes: takeBuffers.map(makeMixTakeSource),
   });
 }
@@ -5645,6 +5705,7 @@ async function renderTakeMixBlob(takes, includeBeat = false) {
   const renderedBuffer = await window.PunchLabEngine.renderMixBuffer({
     sampleRate,
     beatBuffer,
+    beatVolume: state.beatGain,
     takes: takeBuffers.map(makeMixTakeSource),
   });
 

@@ -1,7 +1,7 @@
 (() => {
   const MIC_AUDIO_CONSTRAINTS = {
-    echoCancellation: false,
-    noiseSuppression: false,
+    echoCancellation: true,
+    noiseSuppression: true,
     autoGainControl: false,
   };
   const RECORDING_MIME_TYPES = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", ""];
