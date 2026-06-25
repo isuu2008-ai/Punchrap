@@ -11,6 +11,7 @@ const syntaxFiles = [
   "src/studio-state.js",
   "src/beat-playback.js",
   "src/track-panel.js",
+  "src/vocal-panel.js",
   "src/take-panel.js",
   "src/ui-elements.js",
   "src/ui-renderers.js",
@@ -84,6 +85,7 @@ const requiredScripts = [
   "src/studio-state.js",
   "src/beat-playback.js",
   "src/track-panel.js",
+  "src/vocal-panel.js",
   "src/take-panel.js",
   "src/ui-elements.js",
   "src/ui-renderers.js",
@@ -106,6 +108,7 @@ const requiredFiles = [
   "src/export-panel.js",
   "src/timeline-panel.js",
   "src/track-panel.js",
+  "src/vocal-panel.js",
   "src/take-panel.js",
   "src-tauri/tauri.conf.json",
   "src-tauri/Cargo.lock",
@@ -148,6 +151,7 @@ const runtimeGuardSource = readFileSync("src/runtime-guard.js", "utf8");
 const studioStateSource = readFileSync("src/studio-state.js", "utf8");
 const beatPlaybackSource = readFileSync("src/beat-playback.js", "utf8");
 const trackPanelSource = readFileSync("src/track-panel.js", "utf8");
+const vocalPanelSource = readFileSync("src/vocal-panel.js", "utf8");
 const takePanelSource = readFileSync("src/take-panel.js", "utf8");
 const uiElementsSource = readFileSync("src/ui-elements.js", "utf8");
 const uiRenderersSource = readFileSync("src/ui-renderers.js", "utf8");
@@ -161,6 +165,7 @@ const projectZipSource = readFileSync("src/project-zip.js", "utf8");
 const domLookupSource = `${appSource}\n${uiElementsSource}`;
 const appRendererSource = `${appSource}\n${uiRenderersSource}`;
 const trackUsageSource = `${appSource}\n${trackPanelSource}`;
+const vocalUsageSource = `${appSource}\n${vocalPanelSource}`;
 const takeUsageSource = `${appSource}\n${takePanelSource}`;
 const zipSource = `${appSource}\n${projectZipSource}`;
 for (const script of requiredScripts) {
@@ -223,6 +228,10 @@ if (!timelinePanelSource.includes("window.PunchLabTimelinePanel") || !appSource.
 }
 if (!trackPanelSource.includes("window.PunchLabTrackPanel") || !appSource.includes("PunchLabTrackPanel.createTrackPanel") || appSource.includes("function renderTracks(") || appSource.includes("function renderTrackRow(") || appSource.includes("function renderArmTracks(")) {
   console.error("Track panel rendering must live in src/track-panel.js.");
+  failed = true;
+}
+if (!vocalPanelSource.includes("window.PunchLabVocalPanel") || !appSource.includes("PunchLabVocalPanel.createVocalPanel") || appSource.includes("function renderVocalPanel(") || appSource.includes("function renderVersionPanel(") || appSource.includes("function renderBatchPanel(") || appSource.includes("function renderPitchPanel(")) {
+  console.error("Vocal panel rendering must live in src/vocal-panel.js.");
   failed = true;
 }
 if (!takePanelSource.includes("window.PunchLabTakePanel") || !appSource.includes("PunchLabTakePanel.createTakePanel") || appSource.includes("function renderTakes(") || appSource.includes("function renderQuickTakeReview(")) {
@@ -493,7 +502,7 @@ if (!indexHtml.includes("quickTakeList") || !takeUsageSource.includes("data-quic
   console.error("Record view must support immediate recent-take audition and Vocal handoff.");
   failed = true;
 }
-if (!indexHtml.includes("batchTargetList") || !appSource.includes("renderBatchTargetList") || !appSource.includes("batch-target-row")) {
+if (!indexHtml.includes("batchTargetList") || !vocalUsageSource.includes("renderBatchTargetList") || !vocalUsageSource.includes("batch-target-row")) {
   console.error("Vocal batch render panel must preview the raw take targets before rendering.");
   failed = true;
 }
@@ -589,7 +598,7 @@ if (!indexHtml.includes('id="markerCommentInput"') || !domLookupSource.includes(
   console.error("Timeline markers must support comments from creation through editing and project zip manifest output.");
   failed = true;
 }
-if (!appSource.includes("data-play-version") || !appSource.includes("data-best-version") || !appSource.includes("data-comp-version") || !appSource.includes("data-delete-version") || !appSource.includes('download="${makeTakeFilename(versionTake)}"') || !appSource.includes("selectVocalVersion") || !appSource.includes("playVocalVersion") || !appSource.includes("deleteVocalVersion") || !readFileSync("styles.css", "utf8").includes(".version-actions")) {
+if (!vocalUsageSource.includes("data-play-version") || !vocalUsageSource.includes("data-best-version") || !vocalUsageSource.includes("data-comp-version") || !vocalUsageSource.includes("data-delete-version") || !vocalUsageSource.includes('download="${makeTakeFilename(versionTake)}"') || !vocalUsageSource.includes("selectVocalVersion") || !vocalUsageSource.includes("playVocalVersion") || !vocalUsageSource.includes("deleteVocalVersion") || !readFileSync("styles.css", "utf8").includes(".version-actions")) {
   console.error("Vocal render version history must support separate select, audition, and delete actions.");
   failed = true;
 }
