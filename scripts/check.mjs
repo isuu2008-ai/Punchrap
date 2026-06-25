@@ -7,6 +7,9 @@ const syntaxFiles = [
   "scripts/desktop-doctor.mjs",
   "scripts/build-desktop-dist.mjs",
   "scripts/start-desktop-dev-server.mjs",
+  "src/runtime-guard.js",
+  "src/studio-state.js",
+  "src/beat-playback.js",
   "src/ui-elements.js",
   "src/ui-renderers.js",
   "src/ui-events.js",
@@ -71,6 +74,9 @@ const requiredScripts = [
   "src/storage.js",
   "src/platform.js",
   "src/desktop.js",
+  "src/runtime-guard.js",
+  "src/studio-state.js",
+  "src/beat-playback.js",
   "src/ui-elements.js",
   "src/ui-renderers.js",
   "src/ui-events.js",
@@ -86,6 +92,9 @@ const requiredFiles = [
   "scripts/desktop-doctor.mjs",
   "scripts/build-desktop-dist.mjs",
   "scripts/start-desktop-dev-server.mjs",
+  "src/runtime-guard.js",
+  "src/studio-state.js",
+  "src/beat-playback.js",
   "src-tauri/tauri.conf.json",
   "src-tauri/Cargo.lock",
   "src-tauri/Cargo.toml",
@@ -123,6 +132,9 @@ if (desktopContractResult.status !== 0) {
 
 const indexHtml = readFileSync("index.html", "utf8");
 const appSource = readFileSync("app.js", "utf8");
+const runtimeGuardSource = readFileSync("src/runtime-guard.js", "utf8");
+const studioStateSource = readFileSync("src/studio-state.js", "utf8");
+const beatPlaybackSource = readFileSync("src/beat-playback.js", "utf8");
 const uiElementsSource = readFileSync("src/ui-elements.js", "utf8");
 const uiRenderersSource = readFileSync("src/ui-renderers.js", "utf8");
 const uiEventsSource = readFileSync("src/ui-events.js", "utf8");
@@ -171,15 +183,31 @@ if (!uiEventsSource.includes("PunchLab UI event handler missing")) {
   console.error("UI event binding must fail loudly when a visible control has no handler.");
   failed = true;
 }
+if (!studioStateSource.includes("window.PunchLabStudioState") || !appSource.includes("PunchLabStudioState.createState") || appSource.includes("const state = {") || appSource.includes("const tracks = [") || appSource.includes("const presets = [")) {
+  console.error("Initial state, tracks, and presets must live in src/studio-state.js.");
+  failed = true;
+}
+if (!runtimeGuardSource.includes("window.PunchLabRuntimeGuard") || !runtimeGuardSource.includes("unhandledrejection") || !appSource.includes("PunchLabRuntimeGuard.bindGlobalErrorHandlers")) {
+  console.error("Global runtime error guard must live in src/runtime-guard.js and be installed by app.js.");
+  failed = true;
+}
+if (!beatPlaybackSource.includes("window.PunchLabBeatPlayback") || !appSource.includes("PunchLabBeatPlayback.createBeatPlayback") || appSource.includes("function prepareBeatPlayback(") || appSource.includes("function updateBeatGain(")) {
+  console.error("Beat playback and gain control must live in src/beat-playback.js.");
+  failed = true;
+}
+if (!uiElementsSource.includes("validateElementMap") || !uiElementsSource.includes("PunchLab UI missing required elements")) {
+  console.error("UI element lookup must fail loudly when required DOM is missing.");
+  failed = true;
+}
 if (!indexHtml.includes("beatGainSlider") || !uiElementsSource.includes("beatGainSlider") || !uiEventsSource.includes("updateBeatGain")) {
   console.error("Beat playback gain control must be present and wired.");
   failed = true;
 }
-if (!appSource.includes("beatGain: 1.4") || !appSource.includes("prepareBeatPlayback") || !mixSource.includes("beatVolume")) {
-  console.error("Beat playback/export boost must stay wired through app.js and src/mix.js.");
+if (!studioStateSource.includes("beatGain: 1.4") || !beatPlaybackSource.includes("prepareBeatPlayback") || !mixSource.includes("beatVolume")) {
+  console.error("Beat playback/export boost must stay wired through studio-state, beat-playback, and mix modules.");
   failed = true;
 }
-if (!appSource.includes("inputGain: 1.25") || !indexHtml.includes('id="inputGainSlider" type="range" min="0.5" max="4" step="0.1" value="1.25"')) {
+if (!studioStateSource.includes("inputGain: 1.25") || !indexHtml.includes('id="inputGainSlider" type="range" min="0.5" max="4" step="0.1" value="1.25"')) {
   console.error("Default input gain must stay below the old noisy +6 dB default.");
   failed = true;
 }
@@ -423,8 +451,8 @@ if (!storageSource.includes("window.PunchLabStorage") || !storageSource.includes
   failed = true;
 }
 const shortcutsSource = readFileSync("src/shortcuts.js", "utf8");
-if (!shortcutsSource.includes("window.PunchLabShortcuts") || !shortcutsSource.includes("isTypingTarget") || !shortcutsSource.includes("getShortcutTabIndex") || !appSource.includes("PunchLabShortcuts.isTypingTarget") || !appSource.includes("PunchLabShortcuts.getShortcutTabIndex")) {
-  console.error("Global shortcut input guards and tab-index mapping must live in src/shortcuts.js and be used by app.js.");
+if (!shortcutsSource.includes("window.PunchLabShortcuts") || !shortcutsSource.includes("createGlobalShortcutHandler") || !shortcutsSource.includes("isTypingTarget") || !shortcutsSource.includes("getShortcutTabIndex") || !appSource.includes("PunchLabShortcuts.createGlobalShortcutHandler") || appSource.includes("function handleGlobalShortcut(")) {
+  console.error("Global shortcut handler, input guards, and tab-index mapping must live in src/shortcuts.js and be installed by app.js.");
   failed = true;
 }
 if (!indexHtml.includes("quickTakeList") || !appSource.includes("data-quick-play-take") || !appSource.includes("data-quick-vocal-take") || !appSource.includes("sendTakeToVocal")) {

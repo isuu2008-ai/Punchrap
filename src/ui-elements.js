@@ -1,6 +1,19 @@
 (() => {
+  function isElementList(value) {
+    return typeof NodeList !== "undefined" && value instanceof NodeList;
+  }
+
+  function validateElementMap(elements) {
+    const missing = Object.entries(elements)
+      .filter(([, value]) => isElementList(value) ? value.length === 0 : !value)
+      .map(([name]) => name);
+    if (missing.length) {
+      throw new Error(`PunchLab UI missing required elements: ${missing.join(", ")}`);
+    }
+  }
+
   function createElements() {
-    return {
+    const elements = {
       viewTabs: document.querySelectorAll("[data-view]"),
       viewPanels: document.querySelectorAll("[data-view-panel]"),
       projectInput: document.querySelector("#projectInput"),
@@ -190,6 +203,8 @@
       sessionNotesInput: document.querySelector("#sessionNotesInput"),
       lyricSectionList: document.querySelector("#lyricSectionList"),
     };
+    validateElementMap(elements);
+    return elements;
   }
 
   window.PunchLabUIElements = {

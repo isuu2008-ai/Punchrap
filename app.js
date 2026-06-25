@@ -1,129 +1,16 @@
-const state = {
-  audioContext: null,
-  stream: null,
-  processedStream: null,
-  analyser: null,
-  gainNode: null,
-  monitorGain: null,
-  beatSourceNode: null,
-  beatGainNode: null,
-  monitorConnected: false,
-  monitorMode: null,
-  nativeMonitorActive: false,
-  recorderDestination: null,
-  mediaRecorder: null,
-  chunks: [],
-  isRecording: false,
-  recordStart: 0,
-  recordStartPosition: 0,
-  recordLatencyMs: 0,
-  timerFrame: 0,
-  waveFrame: 0,
-  recordWaveform: [],
-  latestTake: null,
-  activeView: "record",
-  armedTrackId: "main",
-  trackFolderCollapsed: {
-    lead: false,
-    adlibs: false,
-    hook: false,
-  },
-  selectedPresetId: "trap-hard",
-  selectedVocalTakeId: null,
-  isAnalyzingVocal: false,
-  isBatchRendering: false,
-  beatUrl: "",
-  beatArrayBuffer: null,
-  beatFileName: "",
-  mimeType: "",
-  inputGain: 1.25,
-  beatGain: 1.4,
-  audioInputDeviceId: "",
-  audioOutputDeviceId: "",
-  nativeBufferSize: 128,
-  monitorEnabled: false,
-  isExportingMix: false,
-  isExportingAssets: false,
-  isExportQueueRunning: false,
-  exportQueue: [],
-  exportJobSeq: 1,
-  exportPreviewAudio: null,
-  lastExportNormalizeGain: 1,
-  lastExportLoudnessGain: 1,
-  isAnalyzingLoudness: false,
-  loudnessReport: null,
-  isRenderingVocal: false,
-  autosaveTimer: 0,
-  isAutosaving: false,
-  lastBackupAt: 0,
-  hasAutosave: false,
-  backupHistory: [],
-  currentTakeAudio: null,
-  currentTakeId: null,
-  currentTakeResolve: null,
-  pluginScanResult: null,
-  loadedProjectEnvironment: null,
-  loadedProjectExportHistory: [],
-  isPluginScanning: false,
-  isRefreshingNativeStats: false,
-  isQueuePlaying: false,
-  queueMode: "all",
-  queueTakeIds: [],
-  queueIndex: -1,
-  isSessionPlaying: false,
-  sessionOrigin: 0,
-  sessionStartedAt: 0,
-  sessionEndTimer: 0,
-  sessionTimers: [],
-  sessionPlayers: [],
-  sessionPlayingTakeIds: new Set(),
-  punchEnabled: false,
-  loopEnabled: false,
-  metronomeEnabled: false,
-  metronomeTimer: 0,
-  metronomeBeat: 0,
-  isCountInActive: false,
-  countInToken: 0,
-  punchIn: 0,
-  punchOut: 4,
-  punchTimers: [],
-  isPunchWaiting: false,
-  isPunchRecording: false,
-  isLoopRecording: false,
-  currentLoopCycle: false,
-  loopRecordTakeCount: 0,
-  markers: [
-    { id: "marker-intro", type: "Intro", time: 0 },
-    { id: "marker-verse", type: "Verse", time: 16 },
-    { id: "marker-hook", type: "Hook", time: 48 },
-  ],
-  customScaleIntervals: window.PunchLabPitch.getDefaultCustomScaleIntervals(),
-  timelineUndoStack: [],
-  timelineRedoStack: [],
-};
+if (!window.PunchLabStudioState?.createState) {
+  throw new Error("PunchLab studio state module failed to load.");
+}
+if (!window.PunchLabRuntimeGuard?.bindGlobalErrorHandlers) {
+  throw new Error("PunchLab runtime guard module failed to load.");
+}
 
-const tracks = [
-  { id: "main", name: "Main", color: "#c8ff4d", volume: 0.9, pan: 0, muted: false, solo: false, takes: [] },
-  { id: "double", name: "Double", color: "#41e6d0", volume: 0.72, pan: 0, muted: false, solo: false, takes: [] },
-  { id: "adlib-l", name: "Adlib L", color: "#ffb74a", volume: 0.68, pan: -0.45, muted: false, solo: false, takes: [] },
-  { id: "adlib-r", name: "Adlib R", color: "#7db2ff", volume: 0.68, pan: 0.45, muted: false, solo: false, takes: [] },
-  { id: "hook", name: "Hook", color: "#ff4f64", volume: 0.82, pan: 0, muted: false, solo: false, takes: [] },
-];
-
-const TRACK_FOLDERS = [
-  { id: "lead", name: "Lead stack", trackIds: ["main", "double"], color: "#c8ff4d" },
-  { id: "adlibs", name: "Adlib stack", trackIds: ["adlib-l", "adlib-r"], color: "#ffb74a" },
-  { id: "hook", name: "Hook stack", trackIds: ["hook"], color: "#ff4f64" },
-];
-
-const presets = [
-  { id: "trap-hard", name: "Trap Hard", retune: 88, humanize: 10, vibrato: 42, formant: 10, gate: 18, deEss: 28, comp: 72, saturation: 38, space: 18, width: 42 },
-  { id: "drill-dark", name: "Drill Dark", retune: 72, humanize: 18, vibrato: 38, formant: -12, gate: 24, deEss: 34, comp: 82, saturation: 46, space: 12, width: 28 },
-  { id: "clean-rap", name: "Clean Rap", retune: 22, humanize: 60, vibrato: 72, formant: 0, gate: 10, deEss: 20, comp: 62, saturation: 18, space: 8, width: 18 },
-  { id: "rage-wide", name: "Rage Wide", retune: 95, humanize: 5, vibrato: 30, formant: 18, gate: 16, deEss: 38, comp: 76, saturation: 58, space: 34, width: 86 },
-  { id: "radio-hook", name: "Radio Hook", retune: 58, humanize: 30, vibrato: 64, formant: 8, gate: 12, deEss: 30, comp: 68, saturation: 32, space: 45, width: 72 },
-  { id: "lofi-demo", name: "Lo-Fi Demo", retune: 36, humanize: 55, vibrato: 78, formant: -18, gate: 4, deEss: 14, comp: 54, saturation: 62, space: 22, width: 12 },
-];
+const state = window.PunchLabStudioState.createState({
+  getDefaultCustomScaleIntervals: () => window.PunchLabPitch.getDefaultCustomScaleIntervals(),
+});
+const tracks = window.PunchLabStudioState.createTracks();
+const TRACK_FOLDERS = window.PunchLabStudioState.createTrackFolders();
+const presets = window.PunchLabStudioState.createPresets();
 
 if (!window.PunchLabUIElements?.createElements) {
   throw new Error("PunchLab UI elements module failed to load.");
@@ -164,6 +51,44 @@ const {
   renderPluginScanStatus,
   formatPluginScanStatusTitle,
 } = uiRenderers;
+
+if (!window.PunchLabBeatPlayback?.createBeatPlayback) {
+  throw new Error("PunchLab beat playback module failed to load.");
+}
+
+const beatPlayback = window.PunchLabBeatPlayback.createBeatPlayback({
+  els,
+  state,
+  applyPlaybackOutput,
+  ensureAudioContext,
+  formatGainDb,
+  scheduleAutosave,
+});
+
+const {
+  normalizeBeatGain,
+  prepareBeatPlayback,
+  playBeatAudio,
+  updateBeatGain,
+} = beatPlayback;
+
+if (!window.PunchLabShortcuts?.createGlobalShortcutHandler) {
+  throw new Error("PunchLab shortcuts module failed to load.");
+}
+
+const handleGlobalShortcut = window.PunchLabShortcuts.createGlobalShortcutHandler({
+  els,
+  state,
+  actions: {
+    redoTimelineEdit,
+    setActiveView,
+    stopAll,
+    toggleMetronome,
+    toggleRecord,
+    toggleSessionPlayback,
+    undoTimelineEdit,
+  },
+});
 
 if (!window.PunchLabUIEvents?.createEvents) {
   throw new Error("PunchLab UI events module failed to load.");
@@ -244,6 +169,9 @@ const uiEvents = window.PunchLabUIEvents.createEvents({
 const { bindEvents } = uiEvents;
 
 function init() {
+  window.PunchLabRuntimeGuard.bindGlobalErrorHandlers({
+    getStatusElement: () => els.sessionState,
+  });
   state.mimeType = getBestMimeType();
   renderTargetMidiOptions();
   bindEvents();
@@ -418,74 +346,6 @@ async function refreshNativeLatencyStats() {
     state.isRefreshingNativeStats = false;
     renderEngineStatus();
   }
-}
-
-function handleGlobalShortcut(event) {
-  const isTyping = isTypingTarget(event.target) || isTypingTarget(document.activeElement);
-  if ((event.ctrlKey || event.metaKey) && !event.altKey && !isTyping && state.activeView === "timeline") {
-    if (event.code === "KeyZ" && event.shiftKey) {
-      event.preventDefault();
-      redoTimelineEdit();
-      return;
-    }
-
-    if (event.code === "KeyZ") {
-      event.preventDefault();
-      undoTimelineEdit();
-      return;
-    }
-
-    if (event.code === "KeyY") {
-      event.preventDefault();
-      redoTimelineEdit();
-      return;
-    }
-  }
-
-  if (event.ctrlKey || event.metaKey || event.altKey || isTyping) {
-    return;
-  }
-
-  if (event.code === "Space") {
-    event.preventDefault();
-    toggleSessionPlayback();
-    return;
-  }
-
-  if (event.code === "KeyR") {
-    event.preventDefault();
-    toggleRecord();
-    return;
-  }
-
-  if (event.code === "KeyS") {
-    event.preventDefault();
-    stopAll();
-    return;
-  }
-
-  if (event.code === "KeyM") {
-    event.preventDefault();
-    toggleMetronome();
-    return;
-  }
-
-  const tabIndex = getShortcutTabIndex(event.code, els.viewTabs.length);
-  if (tabIndex >= 0) {
-    const tab = Array.from(els.viewTabs)[tabIndex];
-    if (tab) {
-      event.preventDefault();
-      setActiveView(tab.dataset.view);
-    }
-  }
-}
-
-function isTypingTarget(target) {
-  return window.PunchLabShortcuts.isTypingTarget(target);
-}
-
-function getShortcutTabIndex(code, maxTabs) {
-  return window.PunchLabShortcuts.getShortcutTabIndex(code, maxTabs);
 }
 
 function setActiveView(view) {
@@ -671,33 +531,6 @@ async function ensureAudioContext() {
   await applyAudioContextOutput();
   await applyNativePlaybackOutput();
   return state.audioContext;
-}
-
-function normalizeBeatGain(value) {
-  const gain = Number(value);
-  return Number.isFinite(gain) ? Math.max(0.5, Math.min(2.5, gain)) : 1.4;
-}
-
-function ensureBeatPlaybackChain() {
-  if (!state.audioContext || !els.beatAudio || state.beatSourceNode) {
-    return;
-  }
-
-  state.beatSourceNode = state.audioContext.createMediaElementSource(els.beatAudio);
-  state.beatGainNode = state.audioContext.createGain();
-  state.beatSourceNode.connect(state.beatGainNode).connect(state.audioContext.destination);
-}
-
-async function prepareBeatPlayback() {
-  await ensureAudioContext();
-  ensureBeatPlaybackChain();
-  updateBeatGain(false);
-  await applyPlaybackOutput(els.beatAudio);
-}
-
-async function playBeatAudio() {
-  await prepareBeatPlayback();
-  await els.beatAudio.play();
 }
 
 async function enableMic() {
@@ -1755,27 +1588,6 @@ function updateInputGain() {
 
   if (state.gainNode && state.audioContext) {
     state.gainNode.gain.setTargetAtTime(state.inputGain, state.audioContext.currentTime, 0.01);
-  }
-}
-
-function updateBeatGain(shouldAutosave = true) {
-  state.beatGain = normalizeBeatGain(els.beatGainSlider?.value ?? state.beatGain);
-  if (els.beatGainSlider) {
-    els.beatGainSlider.value = String(state.beatGain);
-  }
-  if (els.beatGainText) {
-    els.beatGainText.textContent = formatGainDb(state.beatGain);
-  }
-
-  if (state.beatGainNode && state.audioContext) {
-    state.beatGainNode.gain.setTargetAtTime(state.beatGain, state.audioContext.currentTime, 0.01);
-    els.beatAudio.volume = 1;
-  } else {
-    els.beatAudio.volume = Math.min(1, state.beatGain);
-  }
-
-  if (shouldAutosave) {
-    scheduleAutosave();
   }
 }
 

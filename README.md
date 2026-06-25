@@ -188,6 +188,10 @@ npm run desktop:check
 - Top-level UI event binding lives in `src/ui-events.js`; `app.js` provides the handler map
 - Beat playback gain is controlled separately and passed into mix/export rendering
 - Browser mic constraints default to noise suppression and echo cancellation while keeping auto gain disabled
+- Beat playback gain node setup and beat play handoff live in `src/beat-playback.js`
+- Initial app state, default tracks, and vocal presets are created in `src/studio-state.js`
+- Global runtime error reporting lives in `src/runtime-guard.js`
+- Required UI element lookups fail loudly through `src/ui-elements.js`
 - Export mastering finalize logic for loudness normalize, peak normalize, and true-peak ceiling lives in `src/export-mastering.js`
 - Export filename, single group, stem group, WAV bit-depth options, compressed-format, queue row count, status label, clipping risk, compressed-status, and job-detail planning lives in `src/export-plan.js`
 - Timeline snap, grid, marker normalization, region trim, fade, color, region group, input formatting, numeric comparison, undo snapshot, and percent mapping policy lives in `src/timeline.js`
@@ -196,7 +200,7 @@ npm run desktop:check
 - Track folder membership, default names, solo/mute audibility, and output-volume policy live in `src/tracks.js`
 - Pitch scale normalization, manual target overlays, lane sampling, note labels, and correction summaries live in `src/pitch.js`
 - Device enumeration, recording MIME selection, mic constraints, and output routing live in `src/devices.js`
-- Global shortcut input guards and tab-index mapping live in `src/shortcuts.js`
+- Global shortcut handling, input guards, and tab-index mapping live in `src/shortcuts.js`
 - Autosave, rolling backup, recovery listing, and backup-history labels live in `src/storage.js`
 - Shared display formatting for durations, dB values, pan, percentages, LUFS, native latency/sample-rate timestamps, and HTML escaping lives in `src/format.js`
 - Project zip preview beat, marker, and comp rows are formatted in `src/project-zip.js`
