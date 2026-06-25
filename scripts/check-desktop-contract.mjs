@@ -199,6 +199,9 @@ for (const artifact of [wrapper.shell?.cargoManifest, wrapper.shell?.rustEntry, 
 if (!packageArtifacts.includes("src-tauri/capabilities/main.json")) {
   fail("Desktop package manifest must list the Tauri main capability artifact.");
 }
+if (!packageArtifacts.includes("scripts/desktop-doctor.mjs")) {
+  fail("Desktop package manifest must list the desktop doctor script.");
+}
 
 const packageStageIds = new Set((packageManifest.packagingStages || []).map((stage) => stage.id));
 for (const stageId of ["wrapper-scaffold", "file-association", "native-audio-bridge", "plugin-host-bridge"]) {
@@ -219,7 +222,7 @@ for (const boundary of ["src/engine-contract.js", "src/chain-params.js", "src/pr
   }
 }
 const verificationCommands = packageManifest.verificationCommands || [];
-for (const command of ["node scripts/check.mjs", "node scripts/check-desktop-contract.mjs", "npm run desktop:check"]) {
+for (const command of ["node scripts/check.mjs", "node scripts/check-desktop-contract.mjs", "node scripts/desktop-doctor.mjs", "npm run desktop:check"]) {
   if (!verificationCommands.includes(command)) {
     fail(`Desktop package verification command missing: ${command}`);
   }
@@ -228,6 +231,7 @@ for (const command of ["node scripts/check.mjs", "node scripts/check-desktop-con
 const packageScripts = nodePackage.scripts || {};
 const requiredPackageScripts = {
   "desktop:check": "node scripts/check-desktop-contract.mjs",
+  "desktop:doctor": "node scripts/desktop-doctor.mjs",
   "desktop:dev": "tauri dev",
   "desktop:build": "tauri build",
   "tauri:dev": "tauri dev",
@@ -247,6 +251,7 @@ if (tooling.tauriCliVersion !== nodePackage.devDependencies?.["@tauri-apps/cli"]
 }
 for (const [toolingKey, scriptName] of Object.entries({
   desktopCheck: "desktop:check",
+  desktopDoctor: "desktop:doctor",
   desktopDev: "desktop:dev",
   desktopBuild: "desktop:build",
   tauriDev: "tauri:dev",

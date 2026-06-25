@@ -24,6 +24,7 @@ node .\scripts\check.mjs
 
 ```powershell
 npm install
+npm run desktop:doctor
 npm run desktop:dev
 npm run desktop:build
 npm run desktop:check
@@ -103,6 +104,7 @@ npm run desktop:check
 - Tauri plugin-scan handoff command for `scanPluginHosts`, returning an empty VST3/AU scan until a real plugin host exists
 - Tauri main-window capability scaffold at `src-tauri/capabilities/main.json`
 - Tauri desktop npm scripts for `desktop:dev`, `desktop:build`, `tauri:dev`, and `tauri:build`
+- Desktop doctor script for Node/npm/Rust/Cargo and Tauri shell prerequisite checks
 - Desktop wrapper contract check for shell, permission, bridge, plugin, and handoff-stage requirements
 - Desktop contract check validates the Tauri app id, dev server, main window, and bundled manifest resources
 - Desktop contract check validates the Tauri Rust entry, library, build script, and dialog/fs plugin initialization

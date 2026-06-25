@@ -108,6 +108,8 @@
 - `src-tauri/capabilities/main.json`에 main window, core/dialog/fs 기본 permission 계약을 추가
 - Tauri desktop npm scripts 1차
 - `package.json`에 `desktop:dev`, `desktop:build`, `tauri:dev`, `tauri:build`와 `@tauri-apps/cli` devDependency를 추가
+- Tauri desktop doctor 1차
+- `scripts/desktop-doctor.mjs`로 Node/npm/Rust/Cargo와 Tauri shell config 준비 상태를 확인
 - Desktop package tooling contract check 1차
 - `desktop-package-manifest.json`과 `scripts/check-desktop-contract.mjs`에서 Tauri CLI/scripts/verification command 정합성을 검증
 - Desktop wrapper contract check 1차

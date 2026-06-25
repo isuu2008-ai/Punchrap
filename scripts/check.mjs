@@ -4,6 +4,7 @@ import { existsSync, readFileSync } from "node:fs";
 const syntaxFiles = [
   "server.mjs",
   "scripts/check-desktop-contract.mjs",
+  "scripts/desktop-doctor.mjs",
   "src/ui-elements.js",
   "src/ui-renderers.js",
   "app.js",
@@ -78,6 +79,7 @@ const requiredFiles = [
   "desktop-wrapper-manifest.json",
   "plugin-host-manifest.json",
   "desktop-package-manifest.json",
+  "scripts/desktop-doctor.mjs",
   "src-tauri/tauri.conf.json",
   "src-tauri/Cargo.toml",
   "src-tauri/build.rs",

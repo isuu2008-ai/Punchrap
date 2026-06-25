@@ -7,6 +7,7 @@
     "start": "node server.mjs",
     "check": "node scripts/check.mjs",
     "desktop:check": "node scripts/check-desktop-contract.mjs",
+    "desktop:doctor": "node scripts/desktop-doctor.mjs",
     "desktop:dev": "tauri dev",
     "desktop:build": "tauri build",
     "tauri:dev": "tauri dev",
