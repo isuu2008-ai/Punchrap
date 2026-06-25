@@ -166,6 +166,7 @@ const timelinePanel = window.PunchLabTimelinePanel.createTimelinePanel({
     makeTimelineTicks,
     normalizeMarkers,
     renderTimelineCursor,
+    renderTimelineRecordingPreview,
     renderRegionGroupOptions,
     timelinePercent,
     updateTimelineGridMeta,
@@ -365,6 +366,7 @@ const uiEvents = window.PunchLabUIEvents.createEvents({
     exportFullMix,
     playLatestTake,
     sendLatestTakeToVocal,
+    addLatestTakeToComp,
     downloadLatestTake,
     updateTuneControls,
     syncCompDetailDefaults,
@@ -2260,6 +2262,25 @@ function sendLatestTakeToVocal() {
   sendTakeToVocal(latestTake.id);
 }
 
+function addLatestTakeToComp() {
+  const latestTake = state.latestTake || getAllTakes().at(-1);
+  if (!latestTake) {
+    els.sessionState.textContent = "No take";
+    return;
+  }
+
+  if (latestTake.compSelected) {
+    els.sessionState.textContent = "Already in comp";
+    renderCompView();
+    renderQuickTakeReview();
+    return;
+  }
+
+  addCompTake(latestTake.id);
+  els.sessionState.textContent = "Latest added to comp";
+  renderQuickTakeReview();
+}
+
 function sendTakeToVocal(takeId) {
   const take = findTake(takeId);
   if (!take) {
@@ -2631,6 +2652,7 @@ function stopRecording() {
   state.currentLoopCycle = false;
   els.recordButton.classList.remove("active");
   updateTimelineTransportButtons();
+  renderTimelineRecordingPreview();
   els.sessionState.textContent = wasLoopCycle ? "Loop take saved" : wasPunchRecording ? "Punch saved" : "Take saved";
   if (!state.isSessionPlaying) {
     stopMetronome();
@@ -2680,6 +2702,7 @@ function saveTake() {
   renderTracks();
   renderArmTracks();
   renderTakes();
+  renderTimeline();
   updateQueueButton();
   updateExportButtons();
   scheduleAutosave();
@@ -3937,6 +3960,29 @@ function renderTimelineCursor(timelineEnd = getTimelineEndPosition(), position =
     els.timelineCursorText.textContent = formatDuration(cursor);
   }
   updateTimelineTransportButtons();
+  renderTimelineRecordingPreview(timelineEnd);
+}
+
+function renderTimelineRecordingPreview(timelineEnd = getTimelineEndPosition()) {
+  if (!els.timelineRecordingPreview) {
+    return;
+  }
+
+  if (!state.isRecording) {
+    els.timelineRecordingPreview.hidden = true;
+    els.timelineRecordingPreview.style.width = "0%";
+    return;
+  }
+
+  const start = Math.max(0, Number(state.recordStartPosition) || 0);
+  const current = start + Math.max(0, (performance.now() - state.recordStart) / 1000);
+  const width = Math.max(0.6, timelinePercent(current - start, timelineEnd));
+  const track = findTrack(state.armedTrackId);
+  els.timelineRecordingPreview.hidden = false;
+  els.timelineRecordingPreview.style.left = `${timelinePercent(start, timelineEnd)}%`;
+  els.timelineRecordingPreview.style.width = `${width}%`;
+  els.timelineRecordingPreview.style.setProperty("--track-color", track?.color || "#ff4f64");
+  els.timelineRecordingPreview.textContent = `${track?.name || "Recording"} ${formatDuration(current - start)}`;
 }
 
 function updateTimelineTransportButtons() {
@@ -4004,6 +4050,11 @@ async function recordFromTimelineCursor() {
   }
 
   const startPosition = setTimelineCursor(getTimelineCursorPosition(), { announce: false, render: false });
+  if (els.beatAudio.src && getCountInSeconds() > 0) {
+    await startTimelinePreRollRecording(startPosition);
+    return;
+  }
+
   const bars = Number(els.countInSelect.value);
   if (bars > 0) {
     const completed = await countIn(bars);
@@ -4016,6 +4067,43 @@ async function recordFromTimelineCursor() {
     els.beatAudio.currentTime = startPosition;
   }
   startRecording({ startPosition });
+}
+
+async function startTimelinePreRollRecording(startPosition) {
+  stopTakeQueue(false);
+  stopSessionPlayback(false);
+  stopCurrentTake(false);
+  clearPunchTimers();
+  await ensureAudioContext();
+
+  const preRoll = getCountInSeconds();
+  const playStart = Math.max(0, startPosition - preRoll);
+  const waitMs = Math.max(0, (startPosition - playStart) * 1000);
+  state.isPunchWaiting = true;
+  els.recordButton.classList.add("armed");
+  updateTimelineTransportButtons();
+  els.sessionState.textContent = "Pre-roll armed";
+
+  els.beatAudio.currentTime = playStart;
+  playBeatAudio().catch((error) => {
+    console.error(error);
+  });
+
+  if (waitMs > 0) {
+    startPunchCountdown(waitMs);
+  }
+
+  const startTimer = window.setTimeout(() => {
+    state.isPunchWaiting = false;
+    els.recordButton.classList.remove("armed");
+    els.countdown.hidden = true;
+    updateTimelineTransportButtons();
+    startRecording({
+      startPosition,
+      keepBeat: true,
+    });
+  }, waitMs);
+  state.punchTimers.push(startTimer);
 }
 
 function addTimelineMarker() {

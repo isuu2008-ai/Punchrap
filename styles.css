@@ -413,6 +413,27 @@ h1 {
   transform: translateX(-50%);
 }
 
+.timeline-recording-preview {
+  position: absolute;
+  top: 72px;
+  z-index: 2;
+  height: 36px;
+  min-width: 8px;
+  display: grid;
+  align-content: center;
+  padding: 0 10px;
+  overflow: hidden;
+  color: #050706;
+  background: color-mix(in srgb, var(--track-color) 82%, #ffffff);
+  border: 1px solid color-mix(in srgb, var(--track-color) 72%, #050706);
+  border-radius: 7px;
+  box-shadow: 0 12px 24px rgba(255, 79, 100, 0.2);
+  font-size: 11px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .timeline-marker {
   position: absolute;
   top: 0;

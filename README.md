@@ -171,7 +171,10 @@ npm run desktop:check
 - Timeline view with marker management and take region start/nudge controls
 - BPM-based timeline grid with optional beat/bar snap for markers and region starts
 - Timeline playhead click/seek with play-from-cursor and record-from-cursor controls
+- Record-from-cursor supports beat pre-roll from the count-in setting
+- Timeline shows an in-progress recording preview region while capturing
 - Timeline side controls can set punch in/out from the current playhead
+- Latest-take review can add the take directly into the comp lane
 - Region rename, color, clip gain, and fade in/out controls persisted in project files
 - Region grouping tags for verse, hook, adlib, intro, bridge, and outro
 - Track folder headers for lead, adlib, and hook stacks with group mute/solo

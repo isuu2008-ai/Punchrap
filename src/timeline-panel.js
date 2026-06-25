@@ -41,6 +41,7 @@
     const makeTimelineTicks = requireHelper(helpers, "makeTimelineTicks");
     const normalizeMarkers = requireHelper(helpers, "normalizeMarkers");
     const renderTimelineCursor = requireHelper(helpers, "renderTimelineCursor");
+    const renderTimelineRecordingPreview = requireHelper(helpers, "renderTimelineRecordingPreview");
     const renderRegionGroupOptions = requireHelper(helpers, "renderRegionGroupOptions");
     const timelinePercent = requireHelper(helpers, "timelinePercent");
     const updateTimelineGridMeta = requireHelper(helpers, "updateTimelineGridMeta");
@@ -90,6 +91,7 @@
 
       els.timelineRegions.innerHTML = renderBeatRegion(beatDuration, timelineEnd) + renderTakeRegions(takes, timelineEnd);
       renderTimelineCursor(timelineEnd, getTimelineCursorPosition());
+      renderTimelineRecordingPreview(timelineEnd);
       renderTimelineMarkerSummary(markers);
       renderRegionList(takes);
       bindRegionListActions();

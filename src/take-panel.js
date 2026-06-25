@@ -137,6 +137,9 @@
       if (els.sendLatestToVocalButton) {
         els.sendLatestToVocalButton.disabled = !latestTake || state.isRecording;
       }
+      if (els.addLatestToCompButton) {
+        els.addLatestToCompButton.disabled = !latestTake || state.isRecording || Boolean(latestTake.compSelected);
+      }
       els.quickTakeList.innerHTML = recentTakes.length
         ? recentTakes.map(renderQuickTakeCard).join("")
         : `<span class="empty-takes">Recent takes will appear here</span>`;

@@ -122,6 +122,8 @@
 - `scripts/start-desktop-dev-server.mjs`가 `localhost:4173`의 기존 PunchLab 서버를 재사용하고 없을 때만 `server.mjs`를 시작
 - Timeline-first recording workflow 1차
 - timeline playhead 클릭/seek, play-from-cursor, record-from-cursor, playhead 기반 punch in/out 설정을 추가
+- Timeline-first recording workflow 2차
+- count-in 기반 beat pre-roll 녹음, 녹음 중 timeline preview region, latest take one-click comp 투입을 추가
 - Tauri production dist 1차
 - `scripts/build-desktop-dist.mjs`가 `dist/`에 web asset만 복사하고 Tauri build가 `node_modules/src-tauri/target`을 포함하지 않게 분리
 - Desktop wrapper contract check 1차

@@ -85,6 +85,7 @@
       on(els.exportMixButton, "click", actions.exportFullMix);
       on(els.playLatestTakeButton, "click", actions.playLatestTake);
       on(els.sendLatestToVocalButton, "click", actions.sendLatestTakeToVocal);
+      on(els.addLatestToCompButton, "click", actions.addLatestTakeToComp);
       on(els.downloadLatestButton, "click", actions.downloadLatestTake);
 
       for (const elementName of [

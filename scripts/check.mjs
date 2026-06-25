@@ -230,8 +230,12 @@ if (!timelinePanelSource.includes("window.PunchLabTimelinePanel") || !appSource.
   console.error("Timeline panel rendering must live in src/timeline-panel.js.");
   failed = true;
 }
-if (!indexHtml.includes("timelineRecordFromCursorButton") || !indexHtml.includes("timelinePlayhead") || !uiEventsSource.includes("recordFromTimelineCursor") || !appSource.includes("function recordFromTimelineCursor") || !timelinePanelSource.includes("renderTimelineCursor(timelineEnd") || !studioStateSource.includes("timelineCursor: 0")) {
+if (!indexHtml.includes("timelineRecordFromCursorButton") || !indexHtml.includes("timelinePlayhead") || !indexHtml.includes("timelineRecordingPreview") || !uiEventsSource.includes("recordFromTimelineCursor") || !appSource.includes("function recordFromTimelineCursor") || !appSource.includes("function startTimelinePreRollRecording") || !appSource.includes("function renderTimelineRecordingPreview") || !timelinePanelSource.includes("renderTimelineCursor(timelineEnd") || !timelinePanelSource.includes("renderTimelineRecordingPreview(timelineEnd)") || !studioStateSource.includes("timelineCursor: 0")) {
   console.error("Timeline playhead recording controls must stay wired from UI through app state.");
+  failed = true;
+}
+if (!indexHtml.includes("addLatestToCompButton") || !uiElementsSource.includes("addLatestToCompButton") || !uiEventsSource.includes("addLatestTakeToComp") || !appSource.includes("function addLatestTakeToComp") || !takePanelSource.includes("addLatestToCompButton")) {
+  console.error("Latest-take review must support one-click comp insertion.");
   failed = true;
 }
 if (!trackPanelSource.includes("window.PunchLabTrackPanel") || !appSource.includes("PunchLabTrackPanel.createTrackPanel") || appSource.includes("function renderTracks(") || appSource.includes("function renderTrackRow(") || appSource.includes("function renderArmTracks(")) {
