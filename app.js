@@ -211,6 +211,46 @@ const {
   renderTracks,
 } = trackPanel;
 
+if (!window.PunchLabTakePanel?.createTakePanel) {
+  throw new Error("PunchLab take panel module failed to load.");
+}
+
+const takePanel = window.PunchLabTakePanel.createTakePanel({
+  els,
+  state,
+  actions: {
+    deleteTake,
+    downloadTakeWav,
+    playTake,
+    renderCompView,
+    renderExportPanel,
+    renderTimeline,
+    renderVocalPanel,
+    sendTakeToVocal,
+    setTakeName,
+    toggleBestTake,
+    toggleCompTake,
+    updateExportButtons,
+    updateQueueButton,
+  },
+  helpers: {
+    escapeHtml,
+    findTake,
+    formatDuration,
+    getAllTakes,
+    getTakeShortName,
+    getTakeSubtitle,
+    getTakeTitle,
+    makeTakeFilename,
+    renderTakeWaveform,
+  },
+});
+
+const {
+  renderQuickTakeReview,
+  renderTakes,
+} = takePanel;
+
 if (!window.PunchLabUIEvents?.createEvents) {
   throw new Error("PunchLab UI events module failed to load.");
 }
@@ -3774,139 +3814,6 @@ function getAverageCorrection(frames) {
 
 function clampMidi(midi) {
   return window.PunchLabPitch.clampMidi(midi);
-}
-
-function renderTakes() {
-  const allTakes = getAllTakes();
-  els.takesList.innerHTML = allTakes.length
-    ? allTakes
-    .map(
-      (take, index) => {
-        const isPlaying = take.id === state.currentTakeId || state.sessionPlayingTakeIds.has(take.id);
-        return `
-        <div class="take-item">
-          <div class="take-main">
-            <strong>${escapeHtml(getTakeTitle(take, index))}</strong>
-            <small>${getTakeSubtitle(take)}</small>
-            <input class="take-name-input" type="text" value="${escapeHtml(getTakeTitle(take, index))}" data-take-name="${take.id}" aria-label="Take name" maxlength="48" />
-            ${renderTakeWaveform(take)}
-          </div>
-          <div class="take-controls">
-            <button class="mini-button ${isPlaying ? "active" : ""}" type="button" data-play-take="${take.id}">
-              ${isPlaying ? "Pause" : "Play"}
-            </button>
-            <button class="mini-button ${take.compSelected ? "active" : ""}" type="button" data-comp-take="${take.id}">
-              Comp
-            </button>
-            <button class="mini-button ${take.bestTake ? "active" : ""}" type="button" data-best-take="${take.id}">
-              Best
-            </button>
-            <button class="mini-button" type="button" data-download-take="${take.id}" title="Download WAV">Download WAV</button>
-            <a href="${take.url}" download="${makeTakeFilename(take)}">Save</a>
-            <button class="mini-button danger" type="button" data-delete-take="${take.id}">Del</button>
-          </div>
-        </div>
-      `;
-      },
-    )
-    .join("")
-    : `<span class="empty-takes">No takes yet</span>`;
-
-  els.takesList.querySelectorAll("[data-play-take]").forEach((button) => {
-    button.addEventListener("click", () => {
-      playTake(button.dataset.playTake);
-    });
-  });
-
-  els.takesList.querySelectorAll("[data-delete-take]").forEach((button) => {
-    button.addEventListener("click", () => {
-      deleteTake(button.dataset.deleteTake);
-    });
-  });
-  els.takesList.querySelectorAll("[data-comp-take]").forEach((button) => {
-    button.addEventListener("click", () => {
-      toggleCompTake(button.dataset.compTake);
-    });
-  });
-  els.takesList.querySelectorAll("[data-best-take]").forEach((button) => {
-    button.addEventListener("click", () => {
-      toggleBestTake(button.dataset.bestTake);
-    });
-  });
-  els.takesList.querySelectorAll("[data-download-take]").forEach((button) => {
-    button.addEventListener("click", () => {
-      downloadTakeWav(button.dataset.downloadTake);
-    });
-  });
-  els.takesList.querySelectorAll("[data-take-name]").forEach((input) => {
-    input.addEventListener("change", () => {
-      setTakeName(input.dataset.takeName, input.value, "Take renamed");
-    });
-    input.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") {
-        input.blur();
-      }
-    });
-  });
-
-  updateQueueButton();
-  updateExportButtons();
-  renderQuickTakeReview(allTakes);
-  renderCompView();
-  renderVocalPanel();
-  renderTimeline();
-  renderExportPanel();
-}
-
-function renderQuickTakeReview(allTakes = getAllTakes()) {
-  if (!els.quickTakeTitle || !els.quickTakeMeta || !els.playLatestTakeButton || !els.quickTakeList) {
-    return;
-  }
-
-  const latestTake = state.latestTake || allTakes.at(-1);
-  const recentTakes = allTakes.slice(-4).reverse();
-  const latestIsPlaying = latestTake && (state.currentTakeId === latestTake.id || state.sessionPlayingTakeIds.has(latestTake.id));
-
-  els.quickTakeTitle.textContent = latestTake ? getTakeShortName(latestTake) : "No take yet";
-  els.quickTakeMeta.textContent = latestTake
-    ? `${latestTake.trackName} / ${getTakeSubtitle(latestTake)}`
-    : "Record a take to review it here.";
-  els.playLatestTakeButton.disabled = !latestTake || state.isRecording;
-  els.playLatestTakeButton.textContent = latestIsPlaying ? "Pause latest" : "Play latest";
-  els.playLatestTakeButton.classList.toggle("active", Boolean(latestIsPlaying));
-  if (els.sendLatestToVocalButton) {
-    els.sendLatestToVocalButton.disabled = !latestTake || state.isRecording;
-  }
-  els.quickTakeList.innerHTML = recentTakes.length
-    ? recentTakes
-      .map((take) => {
-        const isPlaying = take.id === state.currentTakeId || state.sessionPlayingTakeIds.has(take.id);
-        const disabled = state.isRecording ? "disabled" : "";
-        return `
-          <article class="quick-take-card">
-            <button class="quick-take-button ${isPlaying ? "active" : ""}" type="button" data-quick-play-take="${take.id}" ${disabled}>
-              <strong>${escapeHtml(getTakeShortName(take))}</strong>
-              <span>${escapeHtml(formatDuration(take.duration))}</span>
-            </button>
-            <button class="mini-button quick-take-vocal" type="button" data-quick-vocal-take="${take.id}" ${disabled}>Vocal</button>
-          </article>
-        `;
-      })
-      .join("")
-    : `<span class="empty-takes">Recent takes will appear here</span>`;
-
-  els.quickTakeList.querySelectorAll("[data-quick-play-take]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const take = findTake(button.dataset.quickPlayTake);
-      if (take) {
-        state.latestTake = take;
-      }
-      playTake(button.dataset.quickPlayTake);
-    });
-  });
-  els.quickTakeList.querySelectorAll("[data-quick-vocal-take]").forEach((button) => {
-    button.addEventListener("click", () => sendTakeToVocal(button.dataset.quickVocalTake));
-  });
 }
 
 function renderCompView() {

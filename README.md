@@ -189,6 +189,7 @@ npm run desktop:check
 - Export panel source rows, loudness report, queue rows, and queue action binding live in `src/export-panel.js`
 - Timeline ruler, grid, marker summary, region rows, and timeline edit action binding live in `src/timeline-panel.js`
 - Track folder rows, track rows, arm buttons, and track action binding live in `src/track-panel.js`
+- Take list rows, take review cards, and take action binding live in `src/take-panel.js`
 - Beat playback gain is controlled separately and passed into mix/export rendering
 - Browser mic constraints default to noise suppression and echo cancellation while keeping auto gain disabled
 - Beat playback gain node setup and beat play handoff live in `src/beat-playback.js`

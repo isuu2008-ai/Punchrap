@@ -11,6 +11,7 @@ const syntaxFiles = [
   "src/studio-state.js",
   "src/beat-playback.js",
   "src/track-panel.js",
+  "src/take-panel.js",
   "src/ui-elements.js",
   "src/ui-renderers.js",
   "src/ui-events.js",
@@ -83,6 +84,7 @@ const requiredScripts = [
   "src/studio-state.js",
   "src/beat-playback.js",
   "src/track-panel.js",
+  "src/take-panel.js",
   "src/ui-elements.js",
   "src/ui-renderers.js",
   "src/ui-events.js",
@@ -104,6 +106,7 @@ const requiredFiles = [
   "src/export-panel.js",
   "src/timeline-panel.js",
   "src/track-panel.js",
+  "src/take-panel.js",
   "src-tauri/tauri.conf.json",
   "src-tauri/Cargo.lock",
   "src-tauri/Cargo.toml",
@@ -145,6 +148,7 @@ const runtimeGuardSource = readFileSync("src/runtime-guard.js", "utf8");
 const studioStateSource = readFileSync("src/studio-state.js", "utf8");
 const beatPlaybackSource = readFileSync("src/beat-playback.js", "utf8");
 const trackPanelSource = readFileSync("src/track-panel.js", "utf8");
+const takePanelSource = readFileSync("src/take-panel.js", "utf8");
 const uiElementsSource = readFileSync("src/ui-elements.js", "utf8");
 const uiRenderersSource = readFileSync("src/ui-renderers.js", "utf8");
 const uiEventsSource = readFileSync("src/ui-events.js", "utf8");
@@ -157,6 +161,7 @@ const projectZipSource = readFileSync("src/project-zip.js", "utf8");
 const domLookupSource = `${appSource}\n${uiElementsSource}`;
 const appRendererSource = `${appSource}\n${uiRenderersSource}`;
 const trackUsageSource = `${appSource}\n${trackPanelSource}`;
+const takeUsageSource = `${appSource}\n${takePanelSource}`;
 const zipSource = `${appSource}\n${projectZipSource}`;
 for (const script of requiredScripts) {
   if (!indexHtml.includes(script)) {
@@ -218,6 +223,10 @@ if (!timelinePanelSource.includes("window.PunchLabTimelinePanel") || !appSource.
 }
 if (!trackPanelSource.includes("window.PunchLabTrackPanel") || !appSource.includes("PunchLabTrackPanel.createTrackPanel") || appSource.includes("function renderTracks(") || appSource.includes("function renderTrackRow(") || appSource.includes("function renderArmTracks(")) {
   console.error("Track panel rendering must live in src/track-panel.js.");
+  failed = true;
+}
+if (!takePanelSource.includes("window.PunchLabTakePanel") || !appSource.includes("PunchLabTakePanel.createTakePanel") || appSource.includes("function renderTakes(") || appSource.includes("function renderQuickTakeReview(")) {
+  console.error("Take panel rendering must live in src/take-panel.js.");
   failed = true;
 }
 if (!uiElementsSource.includes("validateElementMap") || !uiElementsSource.includes("PunchLab UI missing required elements")) {
@@ -480,7 +489,7 @@ if (!shortcutsSource.includes("window.PunchLabShortcuts") || !shortcutsSource.in
   console.error("Global shortcut handler, input guards, and tab-index mapping must live in src/shortcuts.js and be installed by app.js.");
   failed = true;
 }
-if (!indexHtml.includes("quickTakeList") || !appSource.includes("data-quick-play-take") || !appSource.includes("data-quick-vocal-take") || !appSource.includes("sendTakeToVocal")) {
+if (!indexHtml.includes("quickTakeList") || !takeUsageSource.includes("data-quick-play-take") || !takeUsageSource.includes("data-quick-vocal-take") || !takeUsageSource.includes("sendTakeToVocal")) {
   console.error("Record view must support immediate recent-take audition and Vocal handoff.");
   failed = true;
 }
@@ -584,7 +593,7 @@ if (!appSource.includes("data-play-version") || !appSource.includes("data-best-v
   console.error("Vocal render version history must support separate select, audition, and delete actions.");
   failed = true;
 }
-if (!appSource.includes("data-download-take") || !appSource.includes("downloadTakeWav") || !appSource.includes("buildTakeWavBlob") || !appSource.includes("makeTakeWavFilename") || !appSource.includes('accept: { "audio/wav": [".wav"] }')) {
+if (!takeUsageSource.includes("data-download-take") || !takeUsageSource.includes("downloadTakeWav") || !appSource.includes("buildTakeWavBlob") || !appSource.includes("makeTakeWavFilename") || !appSource.includes('accept: { "audio/wav": [".wav"] }')) {
   console.error("Recorded takes must support direct WAV save/download from latest and take cards.");
   failed = true;
 }
