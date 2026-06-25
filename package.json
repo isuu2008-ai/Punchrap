@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node server.mjs",
     "check": "node scripts/check.mjs",
-    "desktop:check": "node scripts/check-desktop-contract.mjs"
+    "desktop:check": "node scripts/check-desktop-contract.mjs",
+    "tauri:dev": "cargo tauri dev",
+    "tauri:build": "cargo tauri build"
   },
   "engines": {
     "node": ">=18"
