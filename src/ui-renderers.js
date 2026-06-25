@@ -30,6 +30,8 @@
     const getTakeSubtitle = requireHelper(deps, "getTakeSubtitle");
     const downsampleWaveform = requireHelper(deps, "downsampleWaveform");
     const formatBackupHistoryLabel = requireHelper(deps, "formatBackupHistoryLabel", window.PunchLabStorage?.formatBackupHistoryLabel);
+    const formatDisplayTimestamp = requireHelper(deps, "formatDisplayTimestamp", window.PunchLabFormat?.formatDisplayTimestamp);
+    const getDesktopReadiness = requireHelper(deps, "getDesktopReadiness", () => window.PunchLabDesktop?.getReadiness?.());
     const listTemplates = deps.listTemplates || (() => window.PunchLabTemplates?.listTemplates?.() || null);
     const getTemplate = deps.getTemplate || ((templateId) => window.PunchLabTemplates?.getTemplate?.(templateId) || null);
 
@@ -154,6 +156,39 @@
       updateTemplateMeta();
     }
 
+    function renderPluginScanStatus(desktopReadiness = getDesktopReadiness()) {
+      if (!els.pluginScanStatus || !els.pluginScanStatusText) {
+        return;
+      }
+
+      const pluginHost = desktopReadiness?.pluginHost || {};
+      const scanAvailable = Boolean(pluginHost.scanAvailable);
+      const pluginHostReady = Boolean(pluginHost.ready);
+      const resultCount = Array.isArray(state.pluginScanResult?.plugins) ? state.pluginScanResult.plugins.length : null;
+      els.pluginScanStatus.disabled = !scanAvailable || state.isPluginScanning;
+      els.pluginScanStatus.dataset.scan = pluginHostReady ? "ready" : scanAvailable ? "pending" : "fallback";
+      els.pluginScanStatusText.textContent = state.isPluginScanning
+        ? "Scanning"
+        : resultCount === null ? "Plugin" : `Plugin ${resultCount}`;
+      els.pluginScanStatus.title = formatPluginScanStatusTitle({ pluginHost, scanAvailable, pluginHostReady, resultCount });
+    }
+
+    function formatPluginScanStatusTitle({ pluginHost = {}, scanAvailable = false, pluginHostReady = false, resultCount = null }) {
+      if (!scanAvailable) {
+        return `Plugin scan unavailable: ${(pluginHost.missingMethods || ["scanPluginHosts"]).join(", ")}`;
+      }
+      if (resultCount === null) {
+        return pluginHostReady ? "Scan VST3/AU plugins" : "Scan VST3/AU locations; plugin hosting pending";
+      }
+
+      const formats = Array.isArray(state.pluginScanResult?.formats) && state.pluginScanResult.formats.length
+        ? ` / ${state.pluginScanResult.formats.join(", ")}`
+        : "";
+      const scannedAt = formatDisplayTimestamp(state.pluginScanResult?.scannedAt);
+      const hostState = state.pluginScanResult?.pluginHostReady || pluginHostReady ? " / Host ready" : " / Host pending";
+      return `${resultCount} plugin(s) found${formats}${scannedAt ? ` / ${scannedAt}` : ""}${hostState}`;
+    }
+
     return {
       renderRegionGroupOptions,
       renderCompPoolRow,
@@ -163,6 +198,8 @@
       updateTemplateMeta,
       renderRecoverySelect,
       renderProjectTemplates,
+      renderPluginScanStatus,
+      formatPluginScanStatusTitle,
     };
   }
 

@@ -139,6 +139,8 @@ const uiRendererNames = [
   "updateTemplateMeta",
   "renderRecoverySelect",
   "renderProjectTemplates",
+  "renderPluginScanStatus",
+  "formatPluginScanStatusTitle",
 ];
 if (!uiRenderersSource.includes("window.PunchLabUIRenderers") || !appSource.includes("window.PunchLabUIRenderers.createRenderers")) {
   console.error("app.js must create small UI renderers through src/ui-renderers.js.");

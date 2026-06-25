@@ -143,6 +143,8 @@ const uiRenderers = window.PunchLabUIRenderers.createRenderers({
   getTakeSubtitle,
   downsampleWaveform,
   formatBackupHistoryLabel,
+  formatDisplayTimestamp,
+  getDesktopReadiness: () => window.PunchLabDesktop?.getReadiness?.(),
   getTemplate: (templateId) => window.PunchLabTemplates?.getTemplate?.(templateId) || null,
   listTemplates: () => window.PunchLabTemplates?.listTemplates?.() || null,
 });
@@ -156,6 +158,8 @@ const {
   updateTemplateMeta,
   renderRecoverySelect,
   renderProjectTemplates,
+  renderPluginScanStatus,
+  formatPluginScanStatusTitle,
 } = uiRenderers;
 
 function init() {
@@ -278,39 +282,6 @@ function getDisplayLatencyStatsUpdatedAt(desktopReadiness) {
 
 function formatDisplayTimestamp(value) {
   return window.PunchLabFormat.formatDisplayTimestamp(value);
-}
-
-function renderPluginScanStatus(desktopReadiness = window.PunchLabDesktop?.getReadiness?.()) {
-  if (!els.pluginScanStatus || !els.pluginScanStatusText) {
-    return;
-  }
-
-  const pluginHost = desktopReadiness?.pluginHost || {};
-  const scanAvailable = Boolean(pluginHost.scanAvailable);
-  const pluginHostReady = Boolean(pluginHost.ready);
-  const resultCount = Array.isArray(state.pluginScanResult?.plugins) ? state.pluginScanResult.plugins.length : null;
-  els.pluginScanStatus.disabled = !scanAvailable || state.isPluginScanning;
-  els.pluginScanStatus.dataset.scan = pluginHostReady ? "ready" : scanAvailable ? "pending" : "fallback";
-  els.pluginScanStatusText.textContent = state.isPluginScanning
-    ? "Scanning"
-    : resultCount === null ? "Plugin" : `Plugin ${resultCount}`;
-  els.pluginScanStatus.title = formatPluginScanStatusTitle({ pluginHost, scanAvailable, pluginHostReady, resultCount });
-}
-
-function formatPluginScanStatusTitle({ pluginHost = {}, scanAvailable = false, pluginHostReady = false, resultCount = null }) {
-  if (!scanAvailable) {
-    return `Plugin scan unavailable: ${(pluginHost.missingMethods || ["scanPluginHosts"]).join(", ")}`;
-  }
-  if (resultCount === null) {
-    return pluginHostReady ? "Scan VST3/AU plugins" : "Scan VST3/AU locations; plugin hosting pending";
-  }
-
-  const formats = Array.isArray(state.pluginScanResult?.formats) && state.pluginScanResult.formats.length
-    ? ` / ${state.pluginScanResult.formats.join(", ")}`
-    : "";
-  const scannedAt = formatDisplayTimestamp(state.pluginScanResult?.scannedAt);
-  const hostState = state.pluginScanResult?.pluginHostReady || pluginHostReady ? " / Host ready" : " / Host pending";
-  return `${resultCount} plugin(s) found${formats}${scannedAt ? ` / ${scannedAt}` : ""}${hostState}`;
 }
 
 async function scanPluginHosts() {
