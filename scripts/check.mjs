@@ -4,6 +4,7 @@ import { existsSync, readFileSync } from "node:fs";
 const syntaxFiles = [
   "server.mjs",
   "scripts/check-desktop-contract.mjs",
+  "src/ui-elements.js",
   "app.js",
   "src/chain-params.js",
   "src/presets.js",
@@ -65,6 +66,7 @@ const requiredScripts = [
   "src/storage.js",
   "src/platform.js",
   "src/desktop.js",
+  "src/ui-elements.js",
   "app.js",
 ];
 
@@ -105,8 +107,10 @@ if (desktopContractResult.status !== 0) {
 
 const indexHtml = readFileSync("index.html", "utf8");
 const appSource = readFileSync("app.js", "utf8");
+const uiElementsSource = readFileSync("src/ui-elements.js", "utf8");
 const tauriBridgeSource = readFileSync("src/tauri-bridge.js", "utf8");
 const projectZipSource = readFileSync("src/project-zip.js", "utf8");
+const domLookupSource = `${appSource}\n${uiElementsSource}`;
 const zipSource = `${appSource}\n${projectZipSource}`;
 for (const script of requiredScripts) {
   if (!indexHtml.includes(script)) {
@@ -130,8 +134,8 @@ for (const id of staticButtonIds) {
     `getElementById("${id}")`,
     `getElementById('${id}')`,
   ];
-  if (!lookupPatterns.some((pattern) => appSource.includes(pattern))) {
-    console.error(`Static button is missing an app.js DOM lookup: #${id}`);
+  if (!lookupPatterns.some((pattern) => domLookupSource.includes(pattern))) {
+    console.error(`Static button is missing a DOM lookup: #${id}`);
     failed = true;
   }
 }
@@ -452,7 +456,7 @@ if (!projectZipSource.includes("createProjectZipMarkerManifestEntries") || !appS
   console.error("Project zip marker manifest entry policy must live in src/project-zip.js.");
   failed = true;
 }
-if (!indexHtml.includes('id="markerCommentInput"') || !appSource.includes('markerCommentInput: document.querySelector("#markerCommentInput")') || !appSource.includes('comment: els.markerCommentInput?.value.trim() || ""') || !appSource.includes('els.markerCommentInput.value = ""') || !appSource.includes("data-marker-comment") || !projectZipSource.includes('comment: String(marker.comment || "")')) {
+if (!indexHtml.includes('id="markerCommentInput"') || !domLookupSource.includes('markerCommentInput: document.querySelector("#markerCommentInput")') || !appSource.includes('comment: els.markerCommentInput?.value.trim() || ""') || !appSource.includes('els.markerCommentInput.value = ""') || !appSource.includes("data-marker-comment") || !projectZipSource.includes('comment: String(marker.comment || "")')) {
   console.error("Timeline markers must support comments from creation through editing and project zip manifest output.");
   failed = true;
 }
