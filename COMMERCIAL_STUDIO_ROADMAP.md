@@ -113,7 +113,9 @@
 - Desktop package tooling contract check 1차
 - `desktop-package-manifest.json`과 `scripts/check-desktop-contract.mjs`에서 Tauri CLI/scripts/verification command 정합성을 검증
 - Tauri dev server command fix 1차
-- `beforeDevCommand`를 project root 기준 `node server.mjs`로 고정하고 contract/doctor에서 검증
+- `beforeDevCommand`의 project root 기준 dev server 실행 경로를 contract/doctor에서 검증
+- Tauri existing dev server reuse 1차
+- `scripts/start-desktop-dev-server.mjs`가 `localhost:4173`의 기존 PunchLab 서버를 재사용하고 없을 때만 `server.mjs`를 시작
 - Desktop wrapper contract check 1차
 - shell size, local-first permission, native bridge, plugin host, handoff stage 조건을 `scripts/check-desktop-contract.mjs`에서 검증
 - Tauri shell contract check 1차

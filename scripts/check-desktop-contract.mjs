@@ -202,6 +202,9 @@ if (!packageArtifacts.includes("src-tauri/capabilities/main.json")) {
 if (!packageArtifacts.includes("scripts/desktop-doctor.mjs")) {
   fail("Desktop package manifest must list the desktop doctor script.");
 }
+if (!packageArtifacts.includes("scripts/start-desktop-dev-server.mjs")) {
+  fail("Desktop package manifest must list the desktop dev server launcher.");
+}
 
 const packageStageIds = new Set((packageManifest.packagingStages || []).map((stage) => stage.id));
 for (const stageId of ["wrapper-scaffold", "file-association", "native-audio-bridge", "plugin-host-bridge"]) {
@@ -232,6 +235,7 @@ const packageScripts = nodePackage.scripts || {};
 const requiredPackageScripts = {
   "desktop:check": "node scripts/check-desktop-contract.mjs",
   "desktop:doctor": "node scripts/desktop-doctor.mjs",
+  "desktop:serve": "node scripts/start-desktop-dev-server.mjs",
   "desktop:dev": "tauri dev",
   "desktop:build": "tauri build",
   "tauri:dev": "tauri dev",
@@ -252,6 +256,7 @@ if (tooling.tauriCliVersion !== nodePackage.devDependencies?.["@tauri-apps/cli"]
 for (const [toolingKey, scriptName] of Object.entries({
   desktopCheck: "desktop:check",
   desktopDoctor: "desktop:doctor",
+  desktopServe: "desktop:serve",
   desktopDev: "desktop:dev",
   desktopBuild: "desktop:build",
   tauriDev: "tauri:dev",
@@ -395,8 +400,12 @@ if (tauriConfig.productName !== wrapper.appName || tauriConfig.productName !== p
 if (tauriConfig.build?.devUrl !== wrapper.shell?.devServer) {
   fail("Tauri config devUrl must match the desktop wrapper dev server.");
 }
-if (tauriConfig.build?.beforeDevCommand !== "node server.mjs") {
-  fail("Tauri config beforeDevCommand must start server.mjs from the project root.");
+if (tauriConfig.build?.beforeDevCommand !== "node scripts/start-desktop-dev-server.mjs") {
+  fail("Tauri config beforeDevCommand must use the desktop dev server launcher.");
+}
+const desktopDevServerLauncher = readFileSync("scripts/start-desktop-dev-server.mjs", "utf8");
+if (!desktopDevServerLauncher.includes("probePunchLabServer") || !desktopDevServerLauncher.includes("<title>PunchLab</title>") || !desktopDevServerLauncher.includes("process.env.PORT ||= devPort") || !desktopDevServerLauncher.includes("await import(SERVER_SCRIPT)")) {
+  fail("Desktop dev server launcher must reuse an existing PunchLab server or start server.mjs.");
 }
 if (tauriConfig.build?.frontendDist !== "../") {
   fail("Tauri config frontendDist must point to the static PunchLab shell.");

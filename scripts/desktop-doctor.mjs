@@ -65,6 +65,7 @@ const scripts = nodePackage.scripts || {};
 
 checkScript(scripts, "desktop:check", "node scripts/check-desktop-contract.mjs");
 checkScript(scripts, "desktop:doctor", "node scripts/desktop-doctor.mjs");
+checkScript(scripts, "desktop:serve", "node scripts/start-desktop-dev-server.mjs");
 checkScript(scripts, "desktop:dev", "tauri dev");
 checkScript(scripts, "desktop:build", "tauri build");
 checkScript(scripts, "tauri:dev", "tauri dev");
@@ -82,7 +83,7 @@ if (tauriConfig.build?.devUrl !== packageManifest.entry?.devServer) {
   pass(`Tauri dev URL: ${tauriConfig.build.devUrl}`);
 }
 
-if (tauriConfig.build?.beforeDevCommand !== "node server.mjs") {
+if (tauriConfig.build?.beforeDevCommand !== "node scripts/start-desktop-dev-server.mjs") {
   fail("tauri.conf.json build.beforeDevCommand must start the local PunchLab server");
 } else {
   pass(`Tauri beforeDevCommand: ${tauriConfig.build.beforeDevCommand}`);

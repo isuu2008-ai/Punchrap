@@ -30,7 +30,7 @@ npm run desktop:build
 npm run desktop:check
 ```
 
-`desktop:dev` opens the Tauri shell from `src-tauri/tauri.conf.json`; Tauri starts `node server.mjs` from the project root and loads `http://localhost:4173`. Desktop builds require Node/npm plus the Rust/Cargo toolchain.
+`desktop:dev` opens the Tauri shell from `src-tauri/tauri.conf.json`; Tauri runs `node scripts/start-desktop-dev-server.mjs`, reuses an existing PunchLab server on `http://localhost:4173` when one is already open, or starts `server.mjs` when the port is free. Desktop builds require Node/npm plus the Rust/Cargo toolchain.
 
 ## Current MVP
 
@@ -105,6 +105,7 @@ npm run desktop:check
 - Tauri main-window capability scaffold at `src-tauri/capabilities/main.json`
 - Tauri desktop npm scripts for `desktop:dev`, `desktop:build`, `tauri:dev`, and `tauri:build`
 - Desktop doctor script for Node/npm/Rust/Cargo and Tauri shell prerequisite checks
+- Desktop dev server launcher reuses an existing PunchLab `localhost:4173` server before starting a new one
 - Desktop wrapper contract check for shell, permission, bridge, plugin, and handoff-stage requirements
 - Desktop contract check validates the Tauri app id, dev server, main window, and bundled manifest resources
 - Desktop contract check validates the Tauri Rust entry, library, build script, and dialog/fs plugin initialization
