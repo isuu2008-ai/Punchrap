@@ -9,6 +9,7 @@ const syntaxFiles = [
   "scripts/start-desktop-dev-server.mjs",
   "src/ui-elements.js",
   "src/ui-renderers.js",
+  "src/ui-events.js",
   "app.js",
   "src/chain-params.js",
   "src/presets.js",
@@ -72,6 +73,7 @@ const requiredScripts = [
   "src/desktop.js",
   "src/ui-elements.js",
   "src/ui-renderers.js",
+  "src/ui-events.js",
   "app.js",
 ];
 
@@ -123,6 +125,7 @@ const indexHtml = readFileSync("index.html", "utf8");
 const appSource = readFileSync("app.js", "utf8");
 const uiElementsSource = readFileSync("src/ui-elements.js", "utf8");
 const uiRenderersSource = readFileSync("src/ui-renderers.js", "utf8");
+const uiEventsSource = readFileSync("src/ui-events.js", "utf8");
 const tauriBridgeSource = readFileSync("src/tauri-bridge.js", "utf8");
 const projectZipSource = readFileSync("src/project-zip.js", "utf8");
 const domLookupSource = `${appSource}\n${uiElementsSource}`;
@@ -156,6 +159,14 @@ const uiRendererNames = [
 ];
 if (!uiRenderersSource.includes("window.PunchLabUIRenderers") || !appSource.includes("window.PunchLabUIRenderers.createRenderers")) {
   console.error("app.js must create small UI renderers through src/ui-renderers.js.");
+  failed = true;
+}
+if (!uiEventsSource.includes("window.PunchLabUIEvents") || !appSource.includes("window.PunchLabUIEvents.createEvents") || appSource.includes("function bindEvents(")) {
+  console.error("app.js must wire top-level UI events through src/ui-events.js.");
+  failed = true;
+}
+if (!uiEventsSource.includes("PunchLab UI event handler missing")) {
+  console.error("UI event binding must fail loudly when a visible control has no handler.");
   failed = true;
 }
 for (const name of uiRendererNames) {

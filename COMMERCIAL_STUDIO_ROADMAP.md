@@ -292,6 +292,8 @@
 - project zip marker manifest entry와 lyric line count 계산을 `src/project-zip.js`로 분리
 - Project zip metadata file writer split 1차
 - project zip `preview.html`, `manifest.json`, `README.txt` final write 정책을 `src/project-zip.js`로 분리
+- UI event binding split 1차
+- top-level button/input event binding을 `src/ui-events.js`로 분리하고 `app.js`는 handler map만 제공
 - Recording quick take handoff 1차
 - 녹음 화면 최근 take 리스트에서 바로 듣기와 Vocal 탭 전송 제공
 - Desktop package manifest 1차

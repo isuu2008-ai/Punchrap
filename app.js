@@ -162,6 +162,83 @@ const {
   formatPluginScanStatusTitle,
 } = uiRenderers;
 
+if (!window.PunchLabUIEvents?.createEvents) {
+  throw new Error("PunchLab UI events module failed to load.");
+}
+
+const uiEvents = window.PunchLabUIEvents.createEvents({
+  els,
+  state,
+  actions: {
+    setActiveView,
+    enableMic,
+    toggleInputMonitor,
+    toggleSessionPlayback,
+    stopAll,
+    toggleRecord,
+    scanPluginHosts,
+    refreshNativeLatencyStats,
+    loadBeat,
+    updateTempoSettings,
+    scheduleAutosave,
+    updateTemplateMeta,
+    applySelectedTemplate,
+    updateInputGain,
+    changeAudioInputDevice,
+    changeAudioOutputDevice,
+    changeNativeBufferSize,
+    togglePunchMode,
+    toggleLoopMode,
+    toggleMetronome,
+    updatePunchFromInputs,
+    updateRecordLatency,
+    renderVocalPanel,
+    setPunchPoint,
+    maintainLoopPlayback,
+    toggleTakeQueue,
+    clearCompLane,
+    addBestTakesToComp,
+    exportFullMix,
+    playLatestTake,
+    sendLatestTakeToVocal,
+    downloadLatestTake,
+    updateTuneControls,
+    syncCompDetailDefaults,
+    previewSelectedVocalTake,
+    analyzeSelectedVocalTake,
+    renderSelectedVocalTake,
+    playComparisonTake,
+    handlePitchLaneClick,
+    clearManualPitchLane,
+    handleCustomScaleClick,
+    renderBatchVocalTakes,
+    saveProject,
+    saveProjectZip,
+    openProject,
+    loadProject,
+    recoverAutosave,
+    updateRecoveryButton,
+    addTimelineMarker,
+    updateTimelineSnapMode,
+    undoTimelineEdit,
+    redoTimelineEdit,
+    exportTrackStems,
+    exportBeatStem,
+    exportVocalStem,
+    exportCompVocal,
+    exportDryVocals,
+    exportTunedVocals,
+    analyzeLoudness,
+    updateExportMetadata,
+    updateProjectLyrics,
+    updateProjectNotes,
+    updateCustomPreset,
+    saveCustomPreset,
+  },
+});
+
+const { bindEvents } = uiEvents;
+
 function init() {
   state.mimeType = getBestMimeType();
   renderTargetMidiOptions();
@@ -336,180 +413,6 @@ async function refreshNativeLatencyStats() {
     state.isRefreshingNativeStats = false;
     renderEngineStatus();
   }
-}
-
-function bindEvents() {
-  els.viewTabs.forEach((button) => {
-    button.addEventListener("click", () => setActiveView(button.dataset.view));
-  });
-  els.micButton.addEventListener("click", enableMic);
-  els.monitorButton.addEventListener("click", toggleInputMonitor);
-  els.playButton.addEventListener("click", toggleSessionPlayback);
-  els.stopButton.addEventListener("click", stopAll);
-  els.recordButton.addEventListener("click", toggleRecord);
-  els.pluginScanStatus.addEventListener("click", scanPluginHosts);
-  els.nativeLatencyRefreshButton?.addEventListener("click", refreshNativeLatencyStats);
-  els.beatInput.addEventListener("change", loadBeat);
-  els.bpmInput.addEventListener("input", updateTempoSettings);
-  els.countInSelect.addEventListener("change", scheduleAutosave);
-  els.templateSelect.addEventListener("change", updateTemplateMeta);
-  els.applyTemplateButton.addEventListener("click", applySelectedTemplate);
-  els.inputGainSlider.addEventListener("input", updateInputGain);
-  els.audioInputSelect.addEventListener("change", changeAudioInputDevice);
-  els.audioOutputSelect.addEventListener("change", changeAudioOutputDevice);
-  els.nativeBufferSizeSelect.addEventListener("change", changeNativeBufferSize);
-  els.punchToggle.addEventListener("click", togglePunchMode);
-  els.loopToggle.addEventListener("click", toggleLoopMode);
-  els.metronomeToggle.addEventListener("click", toggleMetronome);
-  els.punchInInput.addEventListener("input", updatePunchFromInputs);
-  els.punchOutInput.addEventListener("input", updatePunchFromInputs);
-  els.recordLatencyInput.addEventListener("input", updateRecordLatency);
-  els.keySelect.addEventListener("change", () => {
-    renderVocalPanel();
-    scheduleAutosave();
-  });
-  els.scaleModeSelect.addEventListener("change", () => {
-    renderVocalPanel();
-    scheduleAutosave();
-  });
-  els.targetMidiSelect.addEventListener("change", () => {
-    renderVocalPanel();
-    scheduleAutosave();
-  });
-  els.setPunchInButton.addEventListener("click", () => setPunchPoint("in"));
-  els.setPunchOutButton.addEventListener("click", () => setPunchPoint("out"));
-  els.beatAudio.addEventListener("timeupdate", maintainLoopPlayback);
-  els.playQueueButton.addEventListener("click", () => toggleTakeQueue("all"));
-  els.playCompButton.addEventListener("click", () => toggleTakeQueue("comp"));
-  els.compPlayButton.addEventListener("click", () => toggleTakeQueue("comp"));
-  els.compClearButton.addEventListener("click", clearCompLane);
-  els.compBestButton.addEventListener("click", addBestTakesToComp);
-  els.exportMixButton.addEventListener("click", exportFullMix);
-  els.playLatestTakeButton.addEventListener("click", playLatestTake);
-  els.sendLatestToVocalButton.addEventListener("click", sendLatestTakeToVocal);
-  els.downloadLatestButton.addEventListener("click", downloadLatestTake);
-  els.retuneSpeedSlider.addEventListener("input", () => {
-    updateTuneControls();
-    scheduleAutosave();
-  });
-  els.humanizeSlider.addEventListener("input", () => {
-    updateTuneControls();
-    scheduleAutosave();
-  });
-  els.vibratoSlider.addEventListener("input", () => {
-    updateTuneControls();
-    scheduleAutosave();
-  });
-  els.formantSlider.addEventListener("input", () => {
-    updateTuneControls();
-    scheduleAutosave();
-  });
-  els.gateSlider.addEventListener("input", () => {
-    updateTuneControls();
-    scheduleAutosave();
-  });
-  els.deEssSlider.addEventListener("input", () => {
-    updateTuneControls();
-    scheduleAutosave();
-  });
-  els.compSlider.addEventListener("input", () => {
-    syncCompDetailDefaults();
-    updateTuneControls();
-    scheduleAutosave();
-  });
-  els.compThresholdSlider.addEventListener("input", () => {
-    updateTuneControls();
-    scheduleAutosave();
-  });
-  els.compRatioSlider.addEventListener("input", () => {
-    updateTuneControls();
-    scheduleAutosave();
-  });
-  els.compAttackSlider.addEventListener("input", () => {
-    updateTuneControls();
-    scheduleAutosave();
-  });
-  els.compReleaseSlider.addEventListener("input", () => {
-    updateTuneControls();
-    scheduleAutosave();
-  });
-  els.saturationSlider.addEventListener("input", () => {
-    updateTuneControls();
-    scheduleAutosave();
-  });
-  els.spaceSlider.addEventListener("input", () => {
-    updateTuneControls();
-    scheduleAutosave();
-  });
-  els.delaySlider.addEventListener("input", () => {
-    updateTuneControls();
-    scheduleAutosave();
-  });
-  els.reverbSlider.addEventListener("input", () => {
-    updateTuneControls();
-    scheduleAutosave();
-  });
-  els.widthSlider.addEventListener("input", () => {
-    updateTuneControls();
-    scheduleAutosave();
-  });
-  els.lowEqSlider.addEventListener("input", () => {
-    updateTuneControls();
-    scheduleAutosave();
-  });
-  els.midEqSlider.addEventListener("input", () => {
-    updateTuneControls();
-    scheduleAutosave();
-  });
-  els.airEqSlider.addEventListener("input", () => {
-    updateTuneControls();
-    scheduleAutosave();
-  });
-  els.limiterCeilingSlider.addEventListener("input", () => {
-    updateTuneControls();
-    scheduleAutosave();
-  });
-  els.vocalTakeSelect.addEventListener("change", () => {
-    state.selectedVocalTakeId = els.vocalTakeSelect.value || null;
-    renderVocalPanel();
-  });
-  els.previewVocalButton.addEventListener("click", previewSelectedVocalTake);
-  els.analyzeVocalButton.addEventListener("click", analyzeSelectedVocalTake);
-  els.renderVocalButton.addEventListener("click", renderSelectedVocalTake);
-  els.compareSourceButton.addEventListener("click", () => playComparisonTake("source"));
-  els.compareProcessedButton.addEventListener("click", () => playComparisonTake("processed"));
-  els.pitchLane.addEventListener("click", handlePitchLaneClick);
-  els.resetPitchLaneButton.addEventListener("click", clearManualPitchLane);
-  els.customScaleGrid.addEventListener("click", handleCustomScaleClick);
-  els.batchScopeSelect.addEventListener("change", renderVocalPanel);
-  els.batchSkipRenderedInput.addEventListener("change", renderVocalPanel);
-  els.batchRenderButton.addEventListener("click", renderBatchVocalTakes);
-  els.saveProjectButton.addEventListener("click", saveProject);
-  els.saveProjectZipButton.addEventListener("click", saveProjectZip);
-  els.openProjectButton.addEventListener("click", openProject);
-  els.projectInput.addEventListener("change", loadProject);
-  els.recoverProjectButton.addEventListener("click", recoverAutosave);
-  els.recoverySelect.addEventListener("change", updateRecoveryButton);
-  els.addMarkerButton.addEventListener("click", addTimelineMarker);
-  els.timelineSnapSelect.addEventListener("change", updateTimelineSnapMode);
-  els.timelineUndoButton.addEventListener("click", undoTimelineEdit);
-  els.timelineRedoButton.addEventListener("click", redoTimelineEdit);
-  els.exportStemsButton.addEventListener("click", exportTrackStems);
-  els.exportBeatStemButton.addEventListener("click", exportBeatStem);
-  els.exportVocalStemButton.addEventListener("click", exportVocalStem);
-  els.exportCompVocalButton.addEventListener("click", exportCompVocal);
-  els.exportDryVocalsButton.addEventListener("click", exportDryVocals);
-  els.exportTunedVocalsButton.addEventListener("click", exportTunedVocals);
-  els.analyzeLoudnessButton.addEventListener("click", analyzeLoudness);
-  els.exportArtistInput.addEventListener("input", updateExportMetadata);
-  els.exportTitleInput.addEventListener("input", updateExportMetadata);
-  els.exportBitDepthSelect.addEventListener("change", updateExportMetadata);
-  els.exportNormalizeInput.addEventListener("change", updateExportMetadata);
-  els.exportLoudnessNormalizeInput.addEventListener("change", updateExportMetadata);
-  els.lyricsInput.addEventListener("input", updateProjectLyrics);
-  els.sessionNotesInput.addEventListener("input", updateProjectNotes);
-  els.updateCustomPresetButton.addEventListener("click", updateCustomPreset);
-  els.saveCustomPresetButton.addEventListener("click", saveCustomPreset);
 }
 
 function handleGlobalShortcut(event) {
