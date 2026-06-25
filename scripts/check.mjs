@@ -23,6 +23,7 @@ const syntaxFiles = [
   "src/export-plan.js",
   "src/export-panel.js",
   "src/timeline.js",
+  "src/timeline-panel.js",
   "src/takes.js",
   "src/format.js",
   "src/dsp.js",
@@ -57,6 +58,7 @@ const requiredScripts = [
   "src/export-plan.js",
   "src/export-panel.js",
   "src/timeline.js",
+  "src/timeline-panel.js",
   "src/takes.js",
   "src/format.js",
   "src/files.js",
@@ -98,6 +100,7 @@ const requiredFiles = [
   "src/studio-state.js",
   "src/beat-playback.js",
   "src/export-panel.js",
+  "src/timeline-panel.js",
   "src-tauri/tauri.conf.json",
   "src-tauri/Cargo.lock",
   "src-tauri/Cargo.toml",
@@ -144,6 +147,7 @@ const uiEventsSource = readFileSync("src/ui-events.js", "utf8");
 const devicesSource = readFileSync("src/devices.js", "utf8");
 const mixSource = readFileSync("src/mix.js", "utf8");
 const exportPanelSource = readFileSync("src/export-panel.js", "utf8");
+const timelinePanelSource = readFileSync("src/timeline-panel.js", "utf8");
 const tauriBridgeSource = readFileSync("src/tauri-bridge.js", "utf8");
 const projectZipSource = readFileSync("src/project-zip.js", "utf8");
 const domLookupSource = `${appSource}\n${uiElementsSource}`;
@@ -201,6 +205,10 @@ if (!beatPlaybackSource.includes("window.PunchLabBeatPlayback") || !appSource.in
 }
 if (!exportPanelSource.includes("window.PunchLabExportPanel") || !appSource.includes("PunchLabExportPanel.createExportPanel") || appSource.includes("function renderExportPanel(") || appSource.includes("function renderLoudnessReport(")) {
   console.error("Export panel rendering must live in src/export-panel.js.");
+  failed = true;
+}
+if (!timelinePanelSource.includes("window.PunchLabTimelinePanel") || !appSource.includes("PunchLabTimelinePanel.createTimelinePanel") || appSource.includes("function renderTimeline(") || appSource.includes("function renderTimelineMarkerSummary(")) {
+  console.error("Timeline panel rendering must live in src/timeline-panel.js.");
   failed = true;
 }
 if (!uiElementsSource.includes("validateElementMap") || !uiElementsSource.includes("PunchLab UI missing required elements")) {
@@ -559,7 +567,7 @@ if (!projectZipSource.includes("createProjectZipMarkerManifestEntries") || !appS
   console.error("Project zip marker manifest entry policy must live in src/project-zip.js.");
   failed = true;
 }
-if (!indexHtml.includes('id="markerCommentInput"') || !domLookupSource.includes('markerCommentInput: document.querySelector("#markerCommentInput")') || !appSource.includes('comment: els.markerCommentInput?.value.trim() || ""') || !appSource.includes('els.markerCommentInput.value = ""') || !appSource.includes("data-marker-comment") || !projectZipSource.includes('comment: String(marker.comment || "")')) {
+if (!indexHtml.includes('id="markerCommentInput"') || !domLookupSource.includes('markerCommentInput: document.querySelector("#markerCommentInput")') || !appSource.includes('comment: els.markerCommentInput?.value.trim() || ""') || !appSource.includes('els.markerCommentInput.value = ""') || !timelinePanelSource.includes("data-marker-comment") || !projectZipSource.includes('comment: String(marker.comment || "")')) {
   console.error("Timeline markers must support comments from creation through editing and project zip manifest output.");
   failed = true;
 }

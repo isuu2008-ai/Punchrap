@@ -122,6 +122,59 @@ const exportPanel = window.PunchLabExportPanel.createExportPanel({
 
 const { renderExportPanel } = exportPanel;
 
+if (!window.PunchLabTimelinePanel?.createTimelinePanel) {
+  throw new Error("PunchLab timeline panel module failed to load.");
+}
+
+const timelinePanel = window.PunchLabTimelinePanel.createTimelinePanel({
+  els,
+  state,
+  actions: {
+    deleteTake,
+    deleteTimelineMarker,
+    duplicateTimelineRegion,
+    nudgeRegionStart,
+    setRegionClipGain,
+    setRegionColor,
+    setRegionDuration,
+    setRegionFade,
+    setRegionGroup,
+    setRegionName,
+    setRegionSourceOffset,
+    setRegionStart,
+    updateMarkerComment,
+  },
+  helpers: {
+    escapeHtml,
+    formatDuration,
+    formatTimelineInputTime,
+    getAllTakes,
+    getLyricLineCount,
+    getRegionGroupLabel,
+    getTakeClipGain,
+    getTakeFadeIn,
+    getTakeFadeOut,
+    getTakeRegionColor,
+    getTakeRegionGroup,
+    getTakeShortName,
+    getTakeSourceOffset,
+    getTakeTitle,
+    getTakeVisibleDuration,
+    getTimelineEndPosition,
+    makeTimelineGridLines,
+    makeTimelineTicks,
+    normalizeMarkers,
+    renderRegionGroupOptions,
+    timelinePercent,
+    updateTimelineGridMeta,
+  },
+});
+
+const {
+  renderTimeline,
+  renderTimelineMarkerSummary,
+} = timelinePanel;
+
 if (!window.PunchLabUIEvents?.createEvents) {
   throw new Error("PunchLab UI events module failed to load.");
 }
@@ -4202,213 +4255,6 @@ function getMixSourceSignature() {
         track?.solo ? 1 : 0,
       ];
     }),
-  });
-}
-
-function renderTimeline() {
-  if (!els.timelineRegions) {
-    return;
-  }
-
-  const timelineEnd = getTimelineEndPosition();
-  const beatDuration = els.beatAudio.src && Number.isFinite(els.beatAudio.duration) ? els.beatAudio.duration : 0;
-  const takes = getAllTakes();
-  const markers = normalizeMarkers(state.markers);
-  state.markers = markers;
-  els.timelineLength.textContent = formatDuration(timelineEnd);
-
-  els.timelineRuler.innerHTML = makeTimelineTicks(timelineEnd)
-    .map(
-      (tick) => `
-        <span class="timeline-tick" style="left: ${timelinePercent(tick, timelineEnd)}%">
-          <span>${formatDuration(tick)}</span>
-        </span>
-      `,
-    )
-    .join("");
-
-  els.timelineGrid.innerHTML = makeTimelineGridLines(timelineEnd)
-    .map(
-      (line) => `
-        <span class="timeline-grid-line ${line.isBar ? "bar" : "beat"}" style="left: ${timelinePercent(line.time, timelineEnd)}%">
-          ${line.label ? `<span>${line.label}</span>` : ""}
-        </span>
-      `,
-    )
-    .join("");
-  updateTimelineGridMeta();
-
-  els.timelineMarkers.innerHTML = markers
-    .map(
-      (marker) => `
-        <span class="timeline-marker" style="left: ${timelinePercent(marker.time, timelineEnd)}%">
-          <span title="${escapeHtml(marker.comment || marker.type)}">${escapeHtml(marker.type)}</span>
-        </span>
-      `,
-    )
-    .join("");
-
-  const beatRegion = beatDuration
-    ? `
-      <div class="timeline-region beat-region" style="left: 0%; width: ${timelinePercent(beatDuration, timelineEnd)}%; --track-color: var(--lime);">
-        <strong>${escapeHtml(state.beatFileName || "Beat")}</strong>
-      </div>
-    `
-    : "";
-  const takeRegions = takes
-    .map((take, index) => {
-      const start = take.startTime || 0;
-      const width = Math.max(1.2, timelinePercent(take.duration || 0.2, timelineEnd));
-      const left = timelinePercent(start, timelineEnd);
-      const regionColor = getTakeRegionColor(take);
-      return `
-        <div class="timeline-region take-region" style="left: ${left}%; width: ${width}%; --row-index: ${index}; --track-color: ${regionColor};">
-          <strong>${escapeHtml(getTakeShortName(take))}</strong>
-          <small>${escapeHtml(getRegionGroupLabel(getTakeRegionGroup(take)))}</small>
-        </div>
-      `;
-    })
-    .join("");
-  els.timelineRegions.innerHTML = beatRegion + takeRegions;
-
-  renderTimelineMarkerSummary(markers);
-
-  els.regionList.innerHTML = takes.length
-    ? takes
-      .map(
-        (take, index) => `
-          <div class="region-row">
-            <header>
-              <strong>${escapeHtml(getTakeTitle(take, index))}</strong>
-              <div class="region-header-actions">
-                <small>${escapeHtml(take.trackName)}</small>
-                <button class="mini-button" type="button" data-duplicate-region="${take.id}">Copy</button>
-                <button class="mini-button danger" type="button" data-delete-region="${take.id}">Del</button>
-              </div>
-            </header>
-            <input class="region-name-input" type="text" value="${escapeHtml(getTakeTitle(take, index))}" data-region-name="${take.id}" />
-            <label class="region-color-control">
-              Color
-              <span>
-                <i style="--region-color: ${getTakeRegionColor(take)};"></i>
-                <input type="color" value="${getTakeRegionColor(take)}" data-region-color="${take.id}" />
-              </span>
-            </label>
-            <label class="region-group-control">
-              Group
-              <select data-region-group="${take.id}">
-                ${renderRegionGroupOptions(getTakeRegionGroup(take))}
-              </select>
-            </label>
-            <div class="region-actions">
-              <button class="mini-button" type="button" data-nudge-region="${take.id}" data-delta="-0.1">-0.1</button>
-              <input type="number" min="0" step="0.1" value="${formatTimelineInputTime(take.startTime || 0)}" data-region-start="${take.id}" />
-              <button class="mini-button" type="button" data-nudge-region="${take.id}" data-delta="0.1">+0.1</button>
-            </div>
-            <div class="region-controls region-trim-controls">
-              <label>
-                Source
-                <input type="number" min="0" step="0.05" value="${getTakeSourceOffset(take).toFixed(2)}" data-region-source-offset="${take.id}" />
-              </label>
-              <label>
-                Length
-                <input type="number" min="0.05" step="0.05" value="${getTakeVisibleDuration(take).toFixed(2)}" data-region-duration="${take.id}" />
-              </label>
-            </div>
-            <div class="region-controls">
-              <label>
-                Gain
-                <input type="number" min="0" max="3" step="0.05" value="${getTakeClipGain(take).toFixed(2)}" data-region-gain="${take.id}" />
-              </label>
-              <label>
-                In
-                <input type="number" min="0" step="0.05" value="${getTakeFadeIn(take).toFixed(2)}" data-region-fade-in="${take.id}" />
-              </label>
-              <label>
-                Out
-                <input type="number" min="0" step="0.05" value="${getTakeFadeOut(take).toFixed(2)}" data-region-fade-out="${take.id}" />
-              </label>
-            </div>
-          </div>
-        `,
-      )
-      .join("")
-    : `<span class="empty-takes">No regions</span>`;
-
-  els.regionList.querySelectorAll("[data-region-start]").forEach((input) => {
-    input.addEventListener("change", () => setRegionStart(input.dataset.regionStart, input.value));
-  });
-  els.regionList.querySelectorAll("[data-region-name]").forEach((input) => {
-    input.addEventListener("change", () => setRegionName(input.dataset.regionName, input.value));
-  });
-  els.regionList.querySelectorAll("[data-region-gain]").forEach((input) => {
-    input.addEventListener("change", () => setRegionClipGain(input.dataset.regionGain, input.value));
-  });
-  els.regionList.querySelectorAll("[data-region-color]").forEach((input) => {
-    input.addEventListener("change", () => setRegionColor(input.dataset.regionColor, input.value));
-  });
-  els.regionList.querySelectorAll("[data-region-group]").forEach((select) => {
-    select.addEventListener("change", () => setRegionGroup(select.dataset.regionGroup, select.value));
-  });
-  els.regionList.querySelectorAll("[data-region-source-offset]").forEach((input) => {
-    input.addEventListener("change", () => setRegionSourceOffset(input.dataset.regionSourceOffset, input.value));
-  });
-  els.regionList.querySelectorAll("[data-region-duration]").forEach((input) => {
-    input.addEventListener("change", () => setRegionDuration(input.dataset.regionDuration, input.value));
-  });
-  els.regionList.querySelectorAll("[data-region-fade-in]").forEach((input) => {
-    input.addEventListener("change", () => setRegionFade(input.dataset.regionFadeIn, "in", input.value));
-  });
-  els.regionList.querySelectorAll("[data-region-fade-out]").forEach((input) => {
-    input.addEventListener("change", () => setRegionFade(input.dataset.regionFadeOut, "out", input.value));
-  });
-  els.regionList.querySelectorAll("[data-nudge-region]").forEach((button) => {
-    button.addEventListener("click", () => nudgeRegionStart(button.dataset.nudgeRegion, Number(button.dataset.delta)));
-  });
-  els.regionList.querySelectorAll("[data-duplicate-region]").forEach((button) => {
-    button.addEventListener("click", () => duplicateTimelineRegion(button.dataset.duplicateRegion));
-  });
-  els.regionList.querySelectorAll("[data-delete-region]").forEach((button) => {
-    button.addEventListener("click", () => deleteTake(button.dataset.deleteRegion));
-  });
-}
-
-function renderTimelineMarkerSummary(markers = normalizeMarkers(state.markers)) {
-  if (!els.markerList) {
-    return;
-  }
-
-  els.markerList.innerHTML = markers.length
-    ? markers
-      .map((marker) => {
-        const lyricLineCount = getLyricLineCount(marker.lyrics);
-        const lyricMeta = lyricLineCount ? ` / ${lyricLineCount} lines` : "";
-        const commentMeta = marker.comment ? " / note" : "";
-        return `
-          <div class="marker-row">
-            <header>
-              <strong>${escapeHtml(marker.type)}</strong>
-              <button class="mini-button danger" type="button" data-delete-marker="${marker.id}">Del</button>
-            </header>
-            <small>${formatDuration(marker.time)}${lyricMeta}${commentMeta}</small>
-            <textarea class="marker-comment-input" spellcheck="false" data-marker-comment="${marker.id}" placeholder="Marker comment...">${escapeHtml(marker.comment)}</textarea>
-          </div>
-        `;
-      })
-      .join("")
-    : `<span class="empty-takes">No markers</span>`;
-
-  els.markerList.querySelectorAll("[data-delete-marker]").forEach((button) => {
-    button.addEventListener("click", () => deleteTimelineMarker(button.dataset.deleteMarker));
-  });
-  els.markerList.querySelectorAll("[data-marker-comment]").forEach((textarea) => {
-    textarea.addEventListener("focus", () => {
-      textarea.dataset.historyRecorded = "0";
-    });
-    textarea.addEventListener("input", () => updateMarkerComment(textarea.dataset.markerComment, textarea.value, textarea));
-    textarea.addEventListener("blur", () => {
-      textarea.dataset.historyRecorded = "0";
-    });
   });
 }
 

@@ -187,6 +187,7 @@ npm run desktop:check
 - Project zip preview header summaries for export, plugin scan, native audio, and desktop readiness are formatted in `src/project-zip.js`
 - Top-level UI event binding lives in `src/ui-events.js`; `app.js` provides the handler map
 - Export panel source rows, loudness report, queue rows, and queue action binding live in `src/export-panel.js`
+- Timeline ruler, grid, marker summary, region rows, and timeline edit action binding live in `src/timeline-panel.js`
 - Beat playback gain is controlled separately and passed into mix/export rendering
 - Browser mic constraints default to noise suppression and echo cancellation while keeping auto gain disabled
 - Beat playback gain node setup and beat play handoff live in `src/beat-playback.js`
