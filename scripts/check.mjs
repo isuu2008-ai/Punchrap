@@ -242,6 +242,10 @@ if (!indexHtml.includes("recordTimelineSurface") || !indexHtml.includes("recordT
   console.error("Record view must expose a working compact playhead timeline.");
   failed = true;
 }
+if (!indexHtml.includes("clearTakesButton") || !uiElementsSource.includes("clearTakesButton") || !uiEventsSource.includes("clearAllTakes") || !appSource.includes("function clearAllTakes")) {
+  console.error("Timeline must support clearing all take regions at once.");
+  failed = true;
+}
 if (!indexHtml.includes("addLatestToCompButton") || !uiElementsSource.includes("addLatestToCompButton") || !uiEventsSource.includes("addLatestTakeToComp") || !appSource.includes("function addLatestTakeToComp") || !takePanelSource.includes("addLatestToCompButton")) {
   console.error("Latest-take review must support one-click comp insertion.");
   failed = true;

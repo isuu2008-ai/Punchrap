@@ -146,6 +146,7 @@
       on(els.timelineSetPunchInButton, "click", () => actions.setPunchPointFromTimeline("in"));
       on(els.timelineSetPunchOutButton, "click", () => actions.setPunchPointFromTimeline("out"));
       on(els.addMarkerButton, "click", actions.addTimelineMarker);
+      on(els.clearTakesButton, "click", actions.clearAllTakes);
       on(els.timelineSnapSelect, "change", actions.updateTimelineSnapMode);
       on(els.timelineUndoButton, "click", actions.undoTimelineEdit);
       on(els.timelineRedoButton, "click", actions.redoTimelineEdit);

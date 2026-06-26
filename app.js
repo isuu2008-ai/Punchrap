@@ -424,6 +424,7 @@ const uiEvents = window.PunchLabUIEvents.createEvents({
     recordFromTimelineCursor,
     setPunchPointFromTimeline,
     addTimelineMarker,
+    clearAllTakes,
     updateTimelineSnapMode,
     undoTimelineEdit,
     redoTimelineEdit,
@@ -5315,6 +5316,37 @@ function deleteTake(takeId) {
   renderVocalPanel();
   renderTimeline();
   renderLyrics();
+  updateQueueButton();
+  updateExportButtons();
+  scheduleAutosave();
+}
+
+function clearAllTakes() {
+  const allTakes = getAllTakes();
+  if (!allTakes.length) {
+    els.sessionState.textContent = "No takes to clear";
+    return;
+  }
+
+  stopSessionPlayback(false);
+  stopTakeQueue(false);
+  stopCurrentTake(false);
+  allTakes.forEach((take) => URL.revokeObjectURL(take.url));
+  tracks.forEach((track) => {
+    track.takes = [];
+  });
+  state.latestTake = null;
+  state.recordWaveform = [];
+  state.selectedVocalTakeId = null;
+  els.downloadLatestButton.disabled = true;
+  els.sessionState.textContent = "Takes cleared";
+  renderTracks();
+  renderArmTracks();
+  renderTakes();
+  renderVocalPanel();
+  renderCompView();
+  renderTimeline();
+  renderRecordTimeline();
   updateQueueButton();
   updateExportButtons();
   scheduleAutosave();

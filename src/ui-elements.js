@@ -204,6 +204,7 @@
       timelineGridMeta: document.querySelector("#timelineGridMeta"),
       markerList: document.querySelector("#markerList"),
       regionList: document.querySelector("#regionList"),
+      clearTakesButton: document.querySelector("#clearTakesButton"),
       timelineUndoButton: document.querySelector("#timelineUndoButton"),
       timelineRedoButton: document.querySelector("#timelineRedoButton"),
       exportStemsButton: document.querySelector("#exportStemsButton"),
