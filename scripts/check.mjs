@@ -28,6 +28,7 @@ const syntaxFiles = [
   "src/export-panel.js",
   "src/timeline.js",
   "src/timeline-panel.js",
+  "src/record-timeline.js",
   "src/takes.js",
   "src/format.js",
   "src/dsp.js",
@@ -63,6 +64,7 @@ const requiredScripts = [
   "src/export-panel.js",
   "src/timeline.js",
   "src/timeline-panel.js",
+  "src/record-timeline.js",
   "src/takes.js",
   "src/format.js",
   "src/files.js",
@@ -109,6 +111,7 @@ const requiredFiles = [
   "src/beat-playback.js",
   "src/export-panel.js",
   "src/timeline-panel.js",
+  "src/record-timeline.js",
   "src/track-panel.js",
   "src/vocal-panel.js",
   "src/comp-panel.js",
@@ -164,6 +167,7 @@ const devicesSource = readFileSync("src/devices.js", "utf8");
 const mixSource = readFileSync("src/mix.js", "utf8");
 const exportPanelSource = readFileSync("src/export-panel.js", "utf8");
 const timelinePanelSource = readFileSync("src/timeline-panel.js", "utf8");
+const recordTimelineSource = readFileSync("src/record-timeline.js", "utf8");
 const tauriBridgeSource = readFileSync("src/tauri-bridge.js", "utf8");
 const projectZipSource = readFileSync("src/project-zip.js", "utf8");
 const domLookupSource = `${appSource}\n${uiElementsSource}`;
@@ -232,6 +236,10 @@ if (!timelinePanelSource.includes("window.PunchLabTimelinePanel") || !appSource.
 }
 if (!indexHtml.includes("timelineRecordFromCursorButton") || !indexHtml.includes("timelinePlayhead") || !indexHtml.includes("timelineRecordingPreview") || !uiEventsSource.includes("recordFromTimelineCursor") || !appSource.includes("function recordFromTimelineCursor") || !appSource.includes("function startTimelinePreRollRecording") || !appSource.includes("function renderTimelineRecordingPreview") || !timelinePanelSource.includes("renderTimelineCursor(timelineEnd") || !timelinePanelSource.includes("renderTimelineRecordingPreview(timelineEnd)") || !studioStateSource.includes("timelineCursor: 0")) {
   console.error("Timeline playhead recording controls must stay wired from UI through app state.");
+  failed = true;
+}
+if (!indexHtml.includes("recordTimelineSurface") || !indexHtml.includes("recordTimelineRecordButton") || !recordTimelineSource.includes("window.PunchLabRecordTimeline") || !appSource.includes("PunchLabRecordTimeline.createRecordTimeline") || !uiElementsSource.includes("recordTimelineSurface") || !uiEventsSource.includes("handleRecordTimelinePointer") || !appSource.includes("function handleRecordTimelinePointer") || !appSource.includes("function resetTimelineCursor")) {
+  console.error("Record view must expose a working compact playhead timeline.");
   failed = true;
 }
 if (!indexHtml.includes("addLatestToCompButton") || !uiElementsSource.includes("addLatestToCompButton") || !uiEventsSource.includes("addLatestTakeToComp") || !appSource.includes("function addLatestTakeToComp") || !takePanelSource.includes("addLatestToCompButton")) {

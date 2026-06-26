@@ -174,9 +174,42 @@ const timelinePanel = window.PunchLabTimelinePanel.createTimelinePanel({
 });
 
 const {
-  renderTimeline,
+  renderTimeline: renderArrangementTimeline,
   renderTimelineMarkerSummary,
 } = timelinePanel;
+
+if (!window.PunchLabRecordTimeline?.createRecordTimeline) {
+  throw new Error("PunchLab record timeline module failed to load.");
+}
+
+const recordTimeline = window.PunchLabRecordTimeline.createRecordTimeline({
+  els,
+  state,
+  tracks,
+  helpers: {
+    escapeHtml,
+    formatDuration,
+    getAllTakes,
+    getTakeRegionColor,
+    getTakeShortName,
+    getTakeVisibleDuration,
+    getTimelineCursorPosition,
+    getTimelineEndPosition,
+    makeTimelineTicks,
+    timelinePercent,
+  },
+});
+
+const {
+  renderRecordTimeline,
+  renderRecordTimelineCursor,
+  updateRecordTimelineButtons,
+} = recordTimeline;
+
+const renderTimeline = () => {
+  renderArrangementTimeline();
+  renderRecordTimeline();
+};
 
 if (!window.PunchLabTrackPanel?.createTrackPanel) {
   throw new Error("PunchLab track panel module failed to load.");
@@ -384,6 +417,8 @@ const uiEvents = window.PunchLabUIEvents.createEvents({
     loadProject,
     recoverAutosave,
     updateRecoveryButton,
+    handleRecordTimelinePointer,
+    resetTimelineCursor,
     handleTimelinePointer,
     playFromTimelineCursor,
     recordFromTimelineCursor,
@@ -599,6 +634,9 @@ function setActiveView(view) {
   });
   if (view === "timeline") {
     renderTimeline();
+  }
+  if (view === "record") {
+    renderRecordTimeline();
   }
   if (view === "comp") {
     renderCompView();
@@ -1977,7 +2015,7 @@ async function toggleSessionPlayback() {
     return;
   }
 
-  await playSession();
+  await playFromTimelineCursor();
 }
 
 async function playSession(options = {}) {
@@ -2000,7 +2038,7 @@ async function playSession(options = {}) {
   if (els.beatAudio.src && Number.isFinite(els.beatAudio.duration) && origin >= els.beatAudio.duration - 0.05) {
     origin = 0;
   }
-  if (!els.beatAudio.src && audibleTakes.length) {
+  if (!els.beatAudio.src && audibleTakes.length && !hasExplicitOrigin) {
     origin = Math.min(...audibleTakes.map((take) => take.startTime || 0));
   }
 
@@ -2206,6 +2244,9 @@ function updateActiveSessionMix() {
 function updateSessionPlayButton() {
   els.playButton.classList.toggle("session-active", state.isSessionPlaying);
   els.playButton.title = state.isSessionPlaying ? "Pause mix" : "Play mix";
+  if (els.recordTimelinePlayButton) {
+    els.recordTimelinePlayButton.classList.toggle("session-active", state.isSessionPlaying);
+  }
 }
 
 function maintainLoopPlayback() {
@@ -2504,6 +2545,12 @@ async function toggleRecord() {
     return;
   }
 
+  const startPosition = setTimelineCursor(getTimelineCursorPosition(), { announce: false, render: false });
+  if (els.beatAudio.src && getCountInSeconds() > 0) {
+    await startTimelinePreRollRecording(startPosition);
+    return;
+  }
+
   const bars = Number(els.countInSelect.value);
   if (bars > 0) {
     const completed = await countIn(bars);
@@ -2512,7 +2559,10 @@ async function toggleRecord() {
     }
   }
 
-  startRecording();
+  if (els.beatAudio.src) {
+    els.beatAudio.currentTime = startPosition;
+  }
+  startRecording({ startPosition });
 }
 
 async function startPunchRecording(options = {}) {
@@ -2653,6 +2703,7 @@ function stopRecording() {
   els.recordButton.classList.remove("active");
   updateTimelineTransportButtons();
   renderTimelineRecordingPreview();
+  renderRecordTimelineCursor();
   els.sessionState.textContent = wasLoopCycle ? "Loop take saved" : wasPunchRecording ? "Punch saved" : "Take saved";
   if (!state.isSessionPlaying) {
     stopMetronome();
@@ -3959,6 +4010,7 @@ function renderTimelineCursor(timelineEnd = getTimelineEndPosition(), position =
   if (els.timelineCursorText) {
     els.timelineCursorText.textContent = formatDuration(cursor);
   }
+  renderRecordTimelineCursor(timelineEnd, cursor);
   updateTimelineTransportButtons();
   renderTimelineRecordingPreview(timelineEnd);
 }
@@ -3986,33 +4038,61 @@ function renderTimelineRecordingPreview(timelineEnd = getTimelineEndPosition()) 
 }
 
 function updateTimelineTransportButtons() {
-  if (!els.timelineRecordFromCursorButton) {
-    return;
-  }
-
+  const recordButtons = [els.timelineRecordFromCursorButton, els.recordTimelineRecordButton].filter(Boolean);
   const isActive = state.isRecording || state.isPunchWaiting;
-  els.timelineRecordFromCursorButton.classList.toggle("active", isActive);
-  const label = els.timelineRecordFromCursorButton.querySelector(".button-label");
-  if (label) {
-    label.textContent = state.isRecording ? "Stop" : state.isPunchWaiting ? "Cancel" : "Record";
+  recordButtons.forEach((button) => {
+    button.classList.toggle("active", isActive);
+    const label = button.querySelector(".button-label");
+    if (label) {
+      label.textContent = state.isRecording ? "Stop" : state.isPunchWaiting ? "Cancel" : "Record";
+    }
+  });
+  if (els.recordTimelinePlayButton) {
+    els.recordTimelinePlayButton.classList.toggle("session-active", state.isSessionPlaying);
   }
+  updateRecordTimelineButtons();
 }
 
-function handleTimelinePointer(event) {
-  if (!els.timelineSurface || event.button > 0) {
-    return;
+function getTimelinePointerPosition(surface, event) {
+  if (!surface || event.button > 0) {
+    return null;
   }
 
-  const rect = els.timelineSurface.getBoundingClientRect();
+  const rect = surface.getBoundingClientRect();
   if (!rect.width) {
-    return;
+    return null;
   }
 
   const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
-  const next = setTimelineCursor(ratio * getTimelineEndPosition());
+  return ratio * getTimelineEndPosition();
+}
+
+function handleTimelinePointer(event) {
+  const position = getTimelinePointerPosition(els.timelineSurface, event);
+  if (position === null) {
+    return;
+  }
+
+  const next = setTimelineCursor(position);
   if (state.isSessionPlaying && !state.isRecording) {
     void playSession({ origin: next });
   }
+}
+
+function handleRecordTimelinePointer(event) {
+  const position = getTimelinePointerPosition(els.recordTimelineSurface, event);
+  if (position === null) {
+    return;
+  }
+
+  const next = setTimelineCursor(position);
+  if (state.isSessionPlaying && !state.isRecording) {
+    void playSession({ origin: next });
+  }
+}
+
+function resetTimelineCursor() {
+  setTimelineCursor(0);
 }
 
 async function playFromTimelineCursor() {
@@ -5453,7 +5533,7 @@ function getCurrentSessionPosition() {
     return els.beatAudio.currentTime;
   }
 
-  return 0;
+  return getTimelineCursorPosition();
 }
 
 function getSessionEndPosition() {
