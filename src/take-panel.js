@@ -134,6 +134,15 @@
       els.playLatestTakeButton.disabled = !latestTake || state.isRecording;
       els.playLatestTakeButton.textContent = latestIsPlaying ? "Pause latest" : "Play latest";
       els.playLatestTakeButton.classList.toggle("active", Boolean(latestIsPlaying));
+      if (els.keepLatestTakeButton) {
+        els.keepLatestTakeButton.disabled = !latestTake || state.isRecording;
+      }
+      if (els.deleteLatestTakeButton) {
+        els.deleteLatestTakeButton.disabled = !latestTake || state.isRecording;
+      }
+      if (els.recordAgainButton) {
+        els.recordAgainButton.disabled = !latestTake || state.isRecording;
+      }
       if (els.sendLatestToVocalButton) {
         els.sendLatestToVocalButton.disabled = !latestTake || state.isRecording;
       }

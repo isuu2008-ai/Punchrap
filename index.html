@@ -220,6 +220,13 @@
                   </div>
                   <small id="nativeAudioDetailText">128 samples / pending latency / pending rate</small>
                 </div>
+                <div class="record-health" aria-label="Recording readiness check">
+                  <div class="label-row">
+                    <span>Record check</span>
+                    <strong id="recordHealthSummary">Waiting</strong>
+                  </div>
+                  <div class="record-health-list" id="recordHealthList"></div>
+                </div>
                 <label class="gain-control">
                   <span class="label-row">
                     <span>Input gain</span>
@@ -327,6 +334,9 @@
                 </div>
                 <div class="record-review-actions">
                   <button id="playLatestTakeButton" class="mini-button" type="button" disabled>Play latest</button>
+                  <button id="keepLatestTakeButton" class="mini-button" type="button" disabled>Keep</button>
+                  <button id="deleteLatestTakeButton" class="mini-button danger" type="button" disabled>Delete</button>
+                  <button id="recordAgainButton" class="mini-button" type="button" disabled>Again</button>
                   <button id="sendLatestToVocalButton" class="mini-button" type="button" disabled>Vocal</button>
                   <button id="addLatestToCompButton" class="mini-button" type="button" disabled>Comp</button>
                 </div>

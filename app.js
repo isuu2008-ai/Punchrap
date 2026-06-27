@@ -398,6 +398,9 @@ const uiEvents = window.PunchLabUIEvents.createEvents({
     addBestTakesToComp,
     exportFullMix,
     playLatestTake,
+    keepLatestTake,
+    deleteLatestTake,
+    recordAgainFromLatest,
     sendLatestTakeToVocal,
     addLatestTakeToComp,
     downloadLatestTake,
@@ -462,6 +465,7 @@ function init() {
   renderLyrics();
   applyPreset("trap-hard");
   renderEngineStatus();
+  renderRecordHealth();
   refreshAudioDevices();
   updateTimelineHistoryButtons();
   updateInputGain();
@@ -539,6 +543,37 @@ function renderNativeAudioSummary(desktopReadiness = window.PunchLabDesktop?.get
       ? state.isRefreshingNativeStats ? "Refreshing native audio stats" : "Refresh native audio stats"
       : "Native latency refresh unavailable";
   }
+}
+
+function renderRecordHealth() {
+  if (!els.recordHealthSummary || !els.recordHealthList) {
+    return;
+  }
+
+  const micReady = Boolean(state.stream);
+  const recorderReady = typeof MediaRecorder !== "undefined" && Boolean(state.mimeType || state.stream || state.processedStream);
+  const hasRecentSignal = micReady && (
+    Number(state.lastInputDb) > -55
+    || performance.now() - Number(state.lastSignalAt || 0) < 1500
+  );
+  const saveReady = Boolean(window.PunchLabStorage && window.PunchLabProject);
+  const checks = [
+    { label: "Mic", value: micReady ? "Ready" : "Off", ready: micReady },
+    { label: "Signal", value: micReady ? hasRecentSignal ? "Live" : "Silent" : "Waiting", ready: hasRecentSignal },
+    { label: "Recorder", value: recorderReady ? "Ready" : "Blocked", ready: recorderReady },
+    { label: "Save", value: saveReady ? "Ready" : "Local", ready: saveReady },
+  ];
+  const readyCount = checks.filter((check) => check.ready).length;
+
+  els.recordHealthSummary.textContent = readyCount >= 3 ? "Ready" : micReady ? "Check signal" : "Waiting";
+  els.recordHealthList.innerHTML = checks
+    .map((check) => `
+      <div class="record-health-item" data-ready="${check.ready ? "true" : "false"}">
+        <span>${escapeHtml(check.label)}</span>
+        <strong>${escapeHtml(check.value)}</strong>
+      </div>
+    `)
+    .join("");
 }
 
 function formatRuntimeLatency(value) {
@@ -706,7 +741,10 @@ function releaseMicInput() {
   state.recorderDestination = null;
   state.monitorConnected = false;
   state.monitorMode = null;
+  state.lastInputDb = -Infinity;
+  state.lastSignalAt = 0;
   els.micStatus.classList.remove("ready");
+  renderRecordHealth();
 }
 
 async function changeAudioInputDevice() {
@@ -815,6 +853,7 @@ async function ensureAudioContext() {
 
 async function enableMic() {
   if (state.stream) {
+    renderRecordHealth();
     return;
   }
 
@@ -851,8 +890,10 @@ async function enableMic() {
     updateMonitorButton();
     updateInputGain();
     refreshAudioDevices();
+    renderRecordHealth();
     startMeter();
   } catch (error) {
+    renderRecordHealth();
     els.sessionState.textContent = "Mic blocked";
     console.error(error);
   }
@@ -2283,8 +2324,12 @@ async function playTake(takeId) {
   await playTakeAudio(take, `Playing ${take.trackName}`);
 }
 
+function getLatestTakeForReview() {
+  return state.latestTake || getAllTakes().at(-1) || null;
+}
+
 function playLatestTake() {
-  const latestTake = state.latestTake || getAllTakes().at(-1);
+  const latestTake = getLatestTakeForReview();
   if (!latestTake) {
     els.sessionState.textContent = "No take";
     return;
@@ -2294,8 +2339,51 @@ function playLatestTake() {
   playTake(latestTake.id);
 }
 
+function keepLatestTake() {
+  const latestTake = getLatestTakeForReview();
+  if (!latestTake) {
+    els.sessionState.textContent = "No take";
+    return;
+  }
+
+  state.latestTake = latestTake;
+  els.sessionState.textContent = "Take kept";
+  renderQuickTakeReview();
+  scheduleAutosave();
+}
+
+function deleteLatestTake() {
+  const latestTake = getLatestTakeForReview();
+  if (!latestTake) {
+    els.sessionState.textContent = "No take";
+    return;
+  }
+
+  deleteTake(latestTake.id);
+  els.sessionState.textContent = "Latest deleted";
+}
+
+async function recordAgainFromLatest() {
+  const latestTake = getLatestTakeForReview();
+  if (!latestTake) {
+    els.sessionState.textContent = "No take";
+    return;
+  }
+
+  const startPosition = Number.isFinite(latestTake.startTime) ? latestTake.startTime : getTimelineCursorPosition();
+  if (tracks.some((track) => track.id === latestTake.trackId)) {
+    state.armedTrackId = latestTake.trackId;
+    renderArmTracks();
+  }
+
+  deleteTake(latestTake.id);
+  setTimelineCursor(startPosition, { announce: false, snap: false });
+  els.sessionState.textContent = "Retaking latest";
+  await recordFromTimelineCursor();
+}
+
 function sendLatestTakeToVocal() {
-  const latestTake = state.latestTake || getAllTakes().at(-1);
+  const latestTake = getLatestTakeForReview();
   if (!latestTake) {
     els.sessionState.textContent = "No take";
     return;
@@ -2305,7 +2393,7 @@ function sendLatestTakeToVocal() {
 }
 
 function addLatestTakeToComp() {
-  const latestTake = state.latestTake || getAllTakes().at(-1);
+  const latestTake = getLatestTakeForReview();
   if (!latestTake) {
     els.sessionState.textContent = "No take";
     return;
@@ -2666,6 +2754,7 @@ function startRecording(options = {}) {
   state.mediaRecorder.start(250);
   state.isRecording = true;
   els.recordButton.classList.add("active");
+  renderRecordHealth();
   updateTimelineTransportButtons();
   renderQuickTakeReview();
   els.sessionState.textContent = options.loopCycle
@@ -2702,6 +2791,7 @@ function stopRecording() {
   state.isPunchRecording = false;
   state.currentLoopCycle = false;
   els.recordButton.classList.remove("active");
+  renderRecordHealth();
   updateTimelineTransportButtons();
   renderTimelineRecordingPreview();
   renderRecordTimelineCursor();
@@ -2888,6 +2978,14 @@ function startMeter() {
 
     const rms = Math.sqrt(sum / data.length);
     const db = rms > 0 ? 20 * Math.log10(rms) : -Infinity;
+    state.lastInputDb = db;
+    if (Number.isFinite(db) && db > -55) {
+      state.lastSignalAt = performance.now();
+    }
+    if (performance.now() - Number(state.lastHealthRenderAt || 0) > 400) {
+      state.lastHealthRenderAt = performance.now();
+      renderRecordHealth();
+    }
     const meterValue = Math.min(100, Math.max(0, (db + 60) * 1.9));
     els.inputMeter.style.width = `${meterValue}%`;
     els.inputLevelText.textContent = Number.isFinite(db) ? `${db.toFixed(1)} dBFS` : "-inf dBFS";

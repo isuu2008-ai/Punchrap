@@ -250,6 +250,14 @@ if (!indexHtml.includes("addLatestToCompButton") || !uiElementsSource.includes("
   console.error("Latest-take review must support one-click comp insertion.");
   failed = true;
 }
+if (!indexHtml.includes("recordHealthList") || !uiElementsSource.includes("recordHealthList") || !appSource.includes("function renderRecordHealth") || !studioStateSource.includes("lastInputDb")) {
+  console.error("Record view must expose mic/signal/recorder/save readiness checks.");
+  failed = true;
+}
+if (!indexHtml.includes("recordAgainButton") || !indexHtml.includes("deleteLatestTakeButton") || !uiElementsSource.includes("recordAgainButton") || !uiEventsSource.includes("recordAgainFromLatest") || !uiEventsSource.includes("deleteLatestTake") || !appSource.includes("function recordAgainFromLatest") || !appSource.includes("function keepLatestTake") || !appSource.includes("function deleteLatestTake") || !takePanelSource.includes("recordAgainButton")) {
+  console.error("Latest-take review must support keep/delete/retake decisions.");
+  failed = true;
+}
 if (!trackPanelSource.includes("window.PunchLabTrackPanel") || !appSource.includes("PunchLabTrackPanel.createTrackPanel") || appSource.includes("function renderTracks(") || appSource.includes("function renderTrackRow(") || appSource.includes("function renderArmTracks(")) {
   console.error("Track panel rendering must live in src/track-panel.js.");
   failed = true;
