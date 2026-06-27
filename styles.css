@@ -484,6 +484,16 @@ h1 {
   box-shadow: 0 0 0 1px rgba(200, 255, 77, 0.6), 0 14px 26px rgba(0, 0, 0, 0.32);
 }
 
+.timeline-region.compact {
+  grid-template-columns: 1fr;
+  min-width: 8px;
+}
+
+.timeline-region.compact .timeline-region-body,
+.timeline-region.compact .timeline-region-handle {
+  display: none;
+}
+
 .timeline-region-body {
   min-width: 0;
   display: grid;

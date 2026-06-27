@@ -40,6 +40,12 @@
         return;
       }
 
+      if (state.activeView === "timeline" && (event.code === "Delete" || event.code === "Backspace")) {
+        event.preventDefault();
+        actions.deleteSelectedTimelineRegion();
+        return;
+      }
+
       if (event.code === "Space") {
         event.preventDefault();
         actions.toggleSessionPlayback();

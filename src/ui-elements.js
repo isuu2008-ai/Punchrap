@@ -197,6 +197,7 @@
       timelineRecordFromCursorButton: document.querySelector("#timelineRecordFromCursorButton"),
       timelineSetPunchInButton: document.querySelector("#timelineSetPunchInButton"),
       timelineSetPunchOutButton: document.querySelector("#timelineSetPunchOutButton"),
+      deleteSelectedRegionButton: document.querySelector("#deleteSelectedRegionButton"),
       timelineRuler: document.querySelector("#timelineRuler"),
       timelineMarkers: document.querySelector("#timelineMarkers"),
       timelineRegions: document.querySelector("#timelineRegions"),

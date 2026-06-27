@@ -116,8 +116,9 @@
           const regionColor = getTakeRegionColor(take);
           const selected = state.selectedTimelineTakeId === take.id;
           const dragging = state.timelineRegionDrag?.takeId === take.id;
+          const compact = width < 4;
           return `
-        <div class="timeline-region take-region ${selected ? "selected" : ""} ${dragging ? "dragging" : ""}" data-timeline-region="${escapeHtml(take.id)}" style="left: ${left}%; width: ${width}%; --row-index: ${index}; --track-color: ${regionColor};">
+        <div class="timeline-region take-region ${selected ? "selected" : ""} ${dragging ? "dragging" : ""} ${compact ? "compact" : ""}" data-timeline-region="${escapeHtml(take.id)}" title="${escapeHtml(getTakeShortName(take))}" style="left: ${left}%; width: ${width}%; --row-index: ${index}; --track-color: ${regionColor};">
           <span class="timeline-region-handle start" data-region-trim="start" title="Trim start"></span>
           <span class="timeline-region-body" data-region-move="${escapeHtml(take.id)}">
             <strong>${escapeHtml(getTakeShortName(take))}</strong>

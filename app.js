@@ -81,6 +81,7 @@ const handleGlobalShortcut = window.PunchLabShortcuts.createGlobalShortcutHandle
   state,
   actions: {
     redoTimelineEdit,
+    deleteSelectedTimelineRegion,
     setActiveView,
     stopAll,
     toggleMetronome,
@@ -427,6 +428,7 @@ const uiEvents = window.PunchLabUIEvents.createEvents({
     playFromTimelineCursor,
     recordFromTimelineCursor,
     setPunchPointFromTimeline,
+    deleteSelectedTimelineRegion,
     addTimelineMarker,
     clearAllTakes,
     updateTimelineSnapMode,
@@ -4112,7 +4114,18 @@ function renderTimelineCursor(timelineEnd = getTimelineEndPosition(), position =
   }
   renderRecordTimelineCursor(timelineEnd, cursor);
   updateTimelineTransportButtons();
+  updateSelectedRegionControls();
   renderTimelineRecordingPreview(timelineEnd);
+}
+
+function updateSelectedRegionControls() {
+  if (!els.deleteSelectedRegionButton) {
+    return;
+  }
+
+  const selectedTake = findTake(state.selectedTimelineTakeId);
+  els.deleteSelectedRegionButton.disabled = !selectedTake || state.isRecording;
+  els.deleteSelectedRegionButton.textContent = selectedTake ? "Delete selected" : "Select a region";
 }
 
 function renderTimelineRecordingPreview(timelineEnd = getTimelineEndPosition()) {
@@ -4190,6 +4203,7 @@ function handleTimelinePointer(event) {
 function selectTimelineRegion(takeId, options = {}) {
   const take = findTake(takeId);
   if (!take) {
+    updateSelectedRegionControls();
     return null;
   }
 
@@ -4200,6 +4214,7 @@ function selectTimelineRegion(takeId, options = {}) {
     setTimelineCursor(take.startTime || 0, { announce: false, render: false, snap: false, syncBeat: true });
   }
   els.sessionState.textContent = statusText;
+  updateSelectedRegionControls();
   renderQuickTakeReview();
   if (render) {
     renderTimeline();
@@ -4355,6 +4370,20 @@ function cancelTimelineRegionDrag(event) {
   }
 
   finishTimelineRegionDrag(event);
+}
+
+function deleteSelectedTimelineRegion() {
+  const take = findTake(state.selectedTimelineTakeId);
+  if (!take) {
+    els.sessionState.textContent = "No region selected";
+    updateSelectedRegionControls();
+    return;
+  }
+
+  recordTimelineHistory();
+  deleteTake(take.id);
+  els.sessionState.textContent = "Selected region deleted";
+  updateTimelineHistoryButtons();
 }
 
 function handleRecordTimelinePointer(event) {

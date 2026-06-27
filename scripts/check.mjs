@@ -164,6 +164,7 @@ const takePanelSource = readFileSync("src/take-panel.js", "utf8");
 const uiElementsSource = readFileSync("src/ui-elements.js", "utf8");
 const uiRenderersSource = readFileSync("src/ui-renderers.js", "utf8");
 const uiEventsSource = readFileSync("src/ui-events.js", "utf8");
+const shortcutsSource = readFileSync("src/shortcuts.js", "utf8");
 const devicesSource = readFileSync("src/devices.js", "utf8");
 const mixSource = readFileSync("src/mix.js", "utf8");
 const exportPanelSource = readFileSync("src/export-panel.js", "utf8");
@@ -261,6 +262,10 @@ if (!indexHtml.includes("recordAgainButton") || !indexHtml.includes("deleteLates
 }
 if (!timelinePanelSource.includes("data-timeline-region") || !timelinePanelSource.includes("timeline-region-handle") || !appSource.includes("function startTimelineRegionDrag") || !appSource.includes("function applyTimelineRegionDrag") || !studioStateSource.includes("selectedTimelineTakeId") || !stylesSource.includes(".timeline-region.selected")) {
   console.error("Timeline regions must support direct select, drag move, and edge trim editing.");
+  failed = true;
+}
+if (!indexHtml.includes("deleteSelectedRegionButton") || !uiElementsSource.includes("deleteSelectedRegionButton") || !uiEventsSource.includes("deleteSelectedTimelineRegion") || !shortcutsSource.includes("deleteSelectedTimelineRegion") || !appSource.includes("function deleteSelectedTimelineRegion")) {
+  console.error("Timeline must support deleting the selected region from button and keyboard.");
   failed = true;
 }
 if (!trackPanelSource.includes("window.PunchLabTrackPanel") || !appSource.includes("PunchLabTrackPanel.createTrackPanel") || appSource.includes("function renderTracks(") || appSource.includes("function renderTrackRow(") || appSource.includes("function renderArmTracks(")) {
@@ -534,7 +539,6 @@ if (!storageSource.includes("window.PunchLabStorage") || !storageSource.includes
   console.error("Autosave, rolling backup, recovery list, and backup-history display policy must live in src/storage.js and be used by app.js.");
   failed = true;
 }
-const shortcutsSource = readFileSync("src/shortcuts.js", "utf8");
 if (!shortcutsSource.includes("window.PunchLabShortcuts") || !shortcutsSource.includes("createGlobalShortcutHandler") || !shortcutsSource.includes("isTypingTarget") || !shortcutsSource.includes("getShortcutTabIndex") || !appSource.includes("PunchLabShortcuts.createGlobalShortcutHandler") || appSource.includes("function handleGlobalShortcut(")) {
   console.error("Global shortcut handler, input guards, and tab-index mapping must live in src/shortcuts.js and be installed by app.js.");
   failed = true;
