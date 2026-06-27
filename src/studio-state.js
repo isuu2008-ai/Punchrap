@@ -104,6 +104,8 @@
         { id: "marker-hook", type: "Hook", time: 48 },
       ],
       customScaleIntervals: getDefaultCustomScaleIntervals(),
+      selectedTimelineTakeId: null,
+      timelineRegionDrag: null,
       timelineUndoStack: [],
       timelineRedoStack: [],
     };

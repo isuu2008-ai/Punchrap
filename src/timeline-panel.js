@@ -111,13 +111,19 @@
       return takes
         .map((take, index) => {
           const start = take.startTime || 0;
-          const width = Math.max(1.2, timelinePercent(take.duration || 0.2, timelineEnd));
+          const width = Math.max(1.2, timelinePercent(getTakeVisibleDuration(take) || 0.2, timelineEnd));
           const left = timelinePercent(start, timelineEnd);
           const regionColor = getTakeRegionColor(take);
+          const selected = state.selectedTimelineTakeId === take.id;
+          const dragging = state.timelineRegionDrag?.takeId === take.id;
           return `
-        <div class="timeline-region take-region" style="left: ${left}%; width: ${width}%; --row-index: ${index}; --track-color: ${regionColor};">
-          <strong>${escapeHtml(getTakeShortName(take))}</strong>
-          <small>${escapeHtml(getRegionGroupLabel(getTakeRegionGroup(take)))}</small>
+        <div class="timeline-region take-region ${selected ? "selected" : ""} ${dragging ? "dragging" : ""}" data-timeline-region="${escapeHtml(take.id)}" style="left: ${left}%; width: ${width}%; --row-index: ${index}; --track-color: ${regionColor};">
+          <span class="timeline-region-handle start" data-region-trim="start" title="Trim start"></span>
+          <span class="timeline-region-body" data-region-move="${escapeHtml(take.id)}">
+            <strong>${escapeHtml(getTakeShortName(take))}</strong>
+            <small>${escapeHtml(getRegionGroupLabel(getTakeRegionGroup(take)))}</small>
+          </span>
+          <span class="timeline-region-handle end" data-region-trim="end" title="Trim end"></span>
         </div>
       `;
         })
@@ -129,7 +135,7 @@
         ? takes
           .map(
             (take, index) => `
-          <div class="region-row">
+          <div class="region-row ${state.selectedTimelineTakeId === take.id ? "selected" : ""}" data-region-row="${escapeHtml(take.id)}">
             <header>
               <strong>${escapeHtml(getTakeTitle(take, index))}</strong>
               <div class="region-header-actions">
@@ -224,6 +230,15 @@
       });
       els.regionList.querySelectorAll("[data-delete-region]").forEach((button) => {
         button.addEventListener("click", () => actions.deleteTake(button.dataset.deleteRegion));
+      });
+      els.regionList.querySelectorAll("[data-region-row]").forEach((row) => {
+        row.addEventListener("pointerdown", (event) => {
+          if (event.target.closest("button, input, select, textarea")) {
+            return;
+          }
+
+          actions.selectTimelineRegion(row.dataset.regionRow);
+        });
       });
     }
 

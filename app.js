@@ -134,6 +134,7 @@ const timelinePanel = window.PunchLabTimelinePanel.createTimelinePanel({
     deleteTimelineMarker,
     duplicateTimelineRegion,
     nudgeRegionStart,
+    selectTimelineRegion,
     setRegionClipGain,
     setRegionColor,
     setRegionDuration,
@@ -3982,8 +3983,8 @@ function getLyricLineCount(value) {
     .filter((line) => line.trim()).length;
 }
 
-function recordTimelineHistory() {
-  state.timelineUndoStack.push(createTimelineSnapshot());
+function recordTimelineHistory(snapshot = createTimelineSnapshot()) {
+  state.timelineUndoStack.push(snapshot);
   if (state.timelineUndoStack.length > 50) {
     state.timelineUndoStack.shift();
   }
@@ -4167,6 +4168,14 @@ function getTimelinePointerPosition(surface, event) {
 }
 
 function handleTimelinePointer(event) {
+  const regionElement = event.target instanceof Element
+    ? event.target.closest("[data-timeline-region]")
+    : null;
+  if (regionElement && els.timelineSurface?.contains(regionElement)) {
+    startTimelineRegionDrag(event, regionElement);
+    return;
+  }
+
   const position = getTimelinePointerPosition(els.timelineSurface, event);
   if (position === null) {
     return;
@@ -4176,6 +4185,176 @@ function handleTimelinePointer(event) {
   if (state.isSessionPlaying && !state.isRecording) {
     void playSession({ origin: next });
   }
+}
+
+function selectTimelineRegion(takeId, options = {}) {
+  const take = findTake(takeId);
+  if (!take) {
+    return null;
+  }
+
+  const { render = true, syncCursor = true, statusText = "Region selected" } = options;
+  state.selectedTimelineTakeId = take.id;
+  state.latestTake = take;
+  if (syncCursor) {
+    setTimelineCursor(take.startTime || 0, { announce: false, render: false, snap: false, syncBeat: true });
+  }
+  els.sessionState.textContent = statusText;
+  renderQuickTakeReview();
+  if (render) {
+    renderTimeline();
+    renderRecordTimeline();
+  }
+  return take;
+}
+
+function startTimelineRegionDrag(event, regionElement) {
+  if (event.button > 0 || state.isRecording) {
+    return;
+  }
+
+  const take = selectTimelineRegion(regionElement.dataset.timelineRegion, {
+    render: false,
+    syncCursor: false,
+  });
+  if (!take) {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+
+  const trimHandle = event.target instanceof Element
+    ? event.target.closest("[data-region-trim]")
+    : null;
+  const surfaceRect = els.timelineSurface.getBoundingClientRect();
+  const visibleDuration = getTakeVisibleDuration(take);
+  const sourceOffset = getTakeSourceOffset(take);
+  const sourceDuration = getTakeSourceDuration(take);
+  state.timelineRegionDrag = {
+    pointerId: event.pointerId,
+    takeId: take.id,
+    type: trimHandle?.dataset.regionTrim === "start" ? "trim-start" : trimHandle?.dataset.regionTrim === "end" ? "trim-end" : "move",
+    startClientX: event.clientX,
+    surfaceWidth: Math.max(1, surfaceRect.width),
+    timelineEnd: getTimelineEndPosition(),
+    originStart: Math.max(0, Number(take.startTime) || 0),
+    originDuration: visibleDuration,
+    originSourceOffset: sourceOffset,
+    sourceDuration,
+    historySnapshot: createTimelineSnapshot(),
+    historyRecorded: false,
+  };
+
+  els.timelineSurface.setPointerCapture?.(event.pointerId);
+  els.timelineSurface.addEventListener("pointermove", updateTimelineRegionDrag);
+  els.timelineSurface.addEventListener("pointerup", finishTimelineRegionDrag);
+  els.timelineSurface.addEventListener("pointercancel", cancelTimelineRegionDrag);
+  els.sessionState.textContent = state.timelineRegionDrag.type === "move" ? "Move region" : "Trim region";
+  renderTimeline();
+}
+
+function updateTimelineRegionDrag(event) {
+  const drag = state.timelineRegionDrag;
+  if (!drag || event.pointerId !== drag.pointerId) {
+    return;
+  }
+
+  const take = findTake(drag.takeId);
+  if (!take) {
+    cancelTimelineRegionDrag(event);
+    return;
+  }
+
+  const delta = ((event.clientX - drag.startClientX) / drag.surfaceWidth) * drag.timelineEnd;
+  const before = {
+    duration: getTakeVisibleDuration(take),
+    sourceOffset: getTakeSourceOffset(take),
+    startTime: take.startTime || 0,
+  };
+
+  applyTimelineRegionDrag(take, drag, delta);
+
+  const changed = !isSameTimelineNumber(before.startTime, take.startTime || 0)
+    || !isSameTimelineNumber(before.duration, getTakeVisibleDuration(take))
+    || !isSameTimelineNumber(before.sourceOffset, getTakeSourceOffset(take));
+  if (!changed) {
+    return;
+  }
+
+  if (!drag.historyRecorded) {
+    recordTimelineHistory(drag.historySnapshot);
+    drag.historyRecorded = true;
+  }
+
+  renderTimeline();
+  renderRecordTimeline();
+  if (state.isSessionPlaying) {
+    updateActiveSessionMix();
+  }
+}
+
+function applyTimelineRegionDrag(take, drag, delta) {
+  if (drag.type === "move") {
+    take.startTime = snapTimelineTime(drag.originStart + delta);
+    return;
+  }
+
+  if (drag.type === "trim-start") {
+    const rightEdge = drag.originStart + drag.originDuration;
+    const minStart = Math.max(0, drag.originStart - drag.originSourceOffset);
+    const maxStart = Math.max(minStart, rightEdge - 0.05);
+    const nextStart = Math.max(minStart, Math.min(maxStart, snapTimelineTime(drag.originStart + delta)));
+    take.startTime = nextStart;
+    take.sourceOffset = Math.max(0, Math.min(drag.originSourceOffset + nextStart - drag.originStart, Math.max(0, drag.sourceDuration - 0.05)));
+    take.duration = Math.max(0.05, rightEdge - nextStart);
+    normalizeTakeTrim(take);
+    return;
+  }
+
+  const maxEnd = drag.originStart + Math.max(0.05, drag.sourceDuration - drag.originSourceOffset);
+  const minEnd = drag.originStart + 0.05;
+  const nextEnd = Math.max(minEnd, Math.min(maxEnd, snapTimelineTime(drag.originStart + drag.originDuration + delta)));
+  take.duration = Math.max(0.05, nextEnd - drag.originStart);
+  normalizeTakeTrim(take);
+}
+
+function finishTimelineRegionDrag(event) {
+  const drag = state.timelineRegionDrag;
+  if (!drag || event.pointerId !== drag.pointerId) {
+    return;
+  }
+
+  try {
+    els.timelineSurface.releasePointerCapture?.(drag.pointerId);
+  } catch {
+    // Pointer capture can already be gone after a native cancel.
+  }
+  els.timelineSurface.removeEventListener("pointermove", updateTimelineRegionDrag);
+  els.timelineSurface.removeEventListener("pointerup", finishTimelineRegionDrag);
+  els.timelineSurface.removeEventListener("pointercancel", cancelTimelineRegionDrag);
+  state.timelineRegionDrag = null;
+  const take = findTake(drag.takeId);
+  if (take) {
+    setTimelineCursor(take.startTime || 0, { announce: false, render: false, snap: false, syncBeat: true });
+  }
+  els.sessionState.textContent = drag.historyRecorded ? "Region edited" : "Region selected";
+  if (drag.historyRecorded) {
+    refreshTimelineEdit();
+    return;
+  }
+
+  renderTimeline();
+  renderRecordTimeline();
+}
+
+function cancelTimelineRegionDrag(event) {
+  const drag = state.timelineRegionDrag;
+  if (!drag || event.pointerId !== drag.pointerId) {
+    return;
+  }
+
+  finishTimelineRegionDrag(event);
 }
 
 function handleRecordTimelinePointer(event) {
@@ -5396,6 +5575,9 @@ function deleteTake(takeId) {
   if (state.currentTakeId === takeId) {
     stopCurrentTake(false);
   }
+  if (state.selectedTimelineTakeId === takeId) {
+    state.selectedTimelineTakeId = null;
+  }
 
   const take = track.takes.find((item) => item.id === takeId);
   URL.revokeObjectURL(take.url);
@@ -5436,6 +5618,7 @@ function clearAllTakes() {
   state.latestTake = null;
   state.recordWaveform = [];
   state.selectedVocalTakeId = null;
+  state.selectedTimelineTakeId = null;
   els.downloadLatestButton.disabled = true;
   els.sessionState.textContent = "Takes cleared";
   renderTracks();

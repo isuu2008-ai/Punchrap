@@ -153,6 +153,7 @@ if (desktopContractResult.status !== 0) {
 
 const indexHtml = readFileSync("index.html", "utf8");
 const appSource = readFileSync("app.js", "utf8");
+const stylesSource = readFileSync("styles.css", "utf8");
 const runtimeGuardSource = readFileSync("src/runtime-guard.js", "utf8");
 const studioStateSource = readFileSync("src/studio-state.js", "utf8");
 const beatPlaybackSource = readFileSync("src/beat-playback.js", "utf8");
@@ -256,6 +257,10 @@ if (!indexHtml.includes("recordHealthList") || !uiElementsSource.includes("recor
 }
 if (!indexHtml.includes("recordAgainButton") || !indexHtml.includes("deleteLatestTakeButton") || !uiElementsSource.includes("recordAgainButton") || !uiEventsSource.includes("recordAgainFromLatest") || !uiEventsSource.includes("deleteLatestTake") || !appSource.includes("function recordAgainFromLatest") || !appSource.includes("function keepLatestTake") || !appSource.includes("function deleteLatestTake") || !takePanelSource.includes("recordAgainButton")) {
   console.error("Latest-take review must support keep/delete/retake decisions.");
+  failed = true;
+}
+if (!timelinePanelSource.includes("data-timeline-region") || !timelinePanelSource.includes("timeline-region-handle") || !appSource.includes("function startTimelineRegionDrag") || !appSource.includes("function applyTimelineRegionDrag") || !studioStateSource.includes("selectedTimelineTakeId") || !stylesSource.includes(".timeline-region.selected")) {
+  console.error("Timeline regions must support direct select, drag move, and edge trim editing.");
   failed = true;
 }
 if (!trackPanelSource.includes("window.PunchLabTrackPanel") || !appSource.includes("PunchLabTrackPanel.createTrackPanel") || appSource.includes("function renderTracks(") || appSource.includes("function renderTrackRow(") || appSource.includes("function renderArmTracks(")) {
