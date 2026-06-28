@@ -54,7 +54,8 @@
     <script src="./src/ui-elements.js?v=20260627-047" defer></script>
     <script src="./src/ui-renderers.js?v=20260625-033" defer></script>
     <script src="./src/ui-events.js?v=20260627-047" defer></script>
-    <script src="./app.js?v=20260627-047" defer></script>
+    <script src="./src/project-session.js?v=20260628-001" defer></script>
+    <script src="./app.js?v=20260628-001" defer></script>
   </head>
   <body>
     <main class="studio-shell">
@@ -79,6 +80,10 @@
         </nav>
 
         <div class="project-actions" aria-label="Project actions">
+          <button id="newProjectButton" class="mini-icon-button" type="button" title="New clean project">
+            <i data-lucide="file-plus-2"></i>
+            <span>New</span>
+          </button>
           <button id="saveProjectButton" class="mini-icon-button" type="button" title="Save project">
             <i data-lucide="save"></i>
             <span>Save</span>

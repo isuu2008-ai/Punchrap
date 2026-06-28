@@ -361,6 +361,50 @@ const {
   renderTakes,
 } = takePanel;
 
+if (!window.PunchLabProjectSession?.createProjectSession) {
+  throw new Error("PunchLab project session module failed to load.");
+}
+
+const projectSession = window.PunchLabProjectSession.createProjectSession({
+  els,
+  state,
+  tracks,
+  presets,
+  actions: {
+    applyPreset,
+    applyProjectSettings,
+    clearTimelineHistory,
+    drawIdleWave,
+    renderArmTracks,
+    renderCompView,
+    renderExportPanel,
+    renderLyrics,
+    renderPresets,
+    renderProjectTemplates,
+    renderRecoverySelect,
+    renderTakes,
+    renderTimeline,
+    renderTracks,
+    renderVocalPanel,
+    revokeCurrentProjectAssets,
+    stopAll,
+    updateExportButtons,
+    updatePunchControls,
+    updateQueueButton,
+    updateRecoveryButton,
+    updateSelectedRegionControls,
+    updateTemplateMeta,
+    updateTimelineHistoryButtons,
+  },
+  helpers: {
+    formatDuration,
+    normalizeMarkers,
+    normalizePreset,
+  },
+});
+
+const { newProject } = projectSession;
+
 if (!window.PunchLabUIEvents?.createEvents) {
   throw new Error("PunchLab UI events module failed to load.");
 }
@@ -416,6 +460,7 @@ const uiEvents = window.PunchLabUIEvents.createEvents({
     clearManualPitchLane,
     handleCustomScaleClick,
     renderBatchVocalTakes,
+    newProject,
     saveProject,
     saveProjectZip,
     openProject,

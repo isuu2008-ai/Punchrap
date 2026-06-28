@@ -14,6 +14,7 @@ const syntaxFiles = [
   "src/vocal-panel.js",
   "src/comp-panel.js",
   "src/take-panel.js",
+  "src/project-session.js",
   "src/ui-elements.js",
   "src/ui-renderers.js",
   "src/ui-events.js",
@@ -91,6 +92,7 @@ const requiredScripts = [
   "src/vocal-panel.js",
   "src/comp-panel.js",
   "src/take-panel.js",
+  "src/project-session.js",
   "src/ui-elements.js",
   "src/ui-renderers.js",
   "src/ui-events.js",
@@ -161,6 +163,7 @@ const trackPanelSource = readFileSync("src/track-panel.js", "utf8");
 const vocalPanelSource = readFileSync("src/vocal-panel.js", "utf8");
 const compPanelSource = readFileSync("src/comp-panel.js", "utf8");
 const takePanelSource = readFileSync("src/take-panel.js", "utf8");
+const projectSessionSource = readFileSync("src/project-session.js", "utf8");
 const uiElementsSource = readFileSync("src/ui-elements.js", "utf8");
 const uiRenderersSource = readFileSync("src/ui-renderers.js", "utf8");
 const uiEventsSource = readFileSync("src/ui-events.js", "utf8");
@@ -266,6 +269,10 @@ if (!timelinePanelSource.includes("data-timeline-region") || !timelinePanelSourc
 }
 if (!indexHtml.includes("deleteSelectedRegionButton") || !uiElementsSource.includes("deleteSelectedRegionButton") || !uiEventsSource.includes("deleteSelectedTimelineRegion") || !shortcutsSource.includes("deleteSelectedTimelineRegion") || !appSource.includes("function deleteSelectedTimelineRegion")) {
   console.error("Timeline must support deleting the selected region from button and keyboard.");
+  failed = true;
+}
+if (!indexHtml.includes("newProjectButton") || !indexHtml.includes("src/project-session.js") || !uiElementsSource.includes("newProjectButton") || !uiEventsSource.includes("newProject") || !appSource.includes("PunchLabProjectSession.createProjectSession") || !projectSessionSource.includes("function newProject") || !projectSessionSource.includes("function resetCurrentProjectState") || !readFileSync("src/storage.js", "utf8").includes("clearRecovery")) {
+  console.error("Project actions must support starting a clean session and clearing recovery state.");
   failed = true;
 }
 if (!trackPanelSource.includes("window.PunchLabTrackPanel") || !appSource.includes("PunchLabTrackPanel.createTrackPanel") || appSource.includes("function renderTracks(") || appSource.includes("function renderTrackRow(") || appSource.includes("function renderArmTracks(")) {

@@ -131,6 +131,7 @@
       on(els.batchScopeSelect, "change", actions.renderVocalPanel);
       on(els.batchSkipRenderedInput, "change", actions.renderVocalPanel);
       on(els.batchRenderButton, "click", actions.renderBatchVocalTakes);
+      on(els.newProjectButton, "click", actions.newProject);
       on(els.saveProjectButton, "click", actions.saveProject);
       on(els.saveProjectZipButton, "click", actions.saveProjectZip);
       on(els.openProjectButton, "click", actions.openProject);

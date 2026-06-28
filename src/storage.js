@@ -90,6 +90,25 @@
     db.close();
   }
 
+  async function clearBackups() {
+    const db = await openDb();
+    await requestToPromise(db.transaction(BACKUP_STORE_NAME, "readwrite").objectStore(BACKUP_STORE_NAME).clear());
+    db.close();
+  }
+
+  async function clearRecovery() {
+    const db = await openDb();
+    try {
+      const transaction = db.transaction([STORE_NAME, BACKUP_STORE_NAME], "readwrite");
+      const transactionDone = transactionToPromise(transaction);
+      transaction.objectStore(STORE_NAME).delete(AUTOSAVE_KEY);
+      transaction.objectStore(BACKUP_STORE_NAME).clear();
+      await transactionDone;
+    } finally {
+      db.close();
+    }
+  }
+
   function openDb() {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -150,6 +169,8 @@
 
   window.PunchLabStorage = {
     clearAutosave,
+    clearBackups,
+    clearRecovery,
     formatBackupHistoryLabel,
     hasAutosave,
     hasRecovery,

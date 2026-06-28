@@ -17,6 +17,7 @@
       viewTabs: document.querySelectorAll("[data-view]"),
       viewPanels: document.querySelectorAll("[data-view-panel]"),
       projectInput: document.querySelector("#projectInput"),
+      newProjectButton: document.querySelector("#newProjectButton"),
       openProjectButton: document.querySelector("#openProjectButton"),
       saveProjectButton: document.querySelector("#saveProjectButton"),
       saveProjectZipButton: document.querySelector("#saveProjectZipButton"),
