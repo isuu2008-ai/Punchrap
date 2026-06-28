@@ -61,6 +61,7 @@
       state.isBatchRendering = false;
       state.isAnalyzingVocal = false;
       state.lastBackupAt = 0;
+      state.autosaveDeferred = false;
       state.beatArrayBuffer = null;
       state.beatFileName = "";
       state.beatUrl = "";

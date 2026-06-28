@@ -60,6 +60,7 @@
       isRenderingVocal: false,
       autosaveTimer: 0,
       isAutosaving: false,
+      autosaveDeferred: false,
       lastBackupAt: 0,
       hasAutosave: false,
       backupHistory: [],

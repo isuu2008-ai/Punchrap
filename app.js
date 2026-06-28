@@ -1713,17 +1713,36 @@ function scheduleAutosave() {
   }
 
   window.clearTimeout(state.autosaveTimer);
+  if (shouldDeferAutosave()) {
+    state.autosaveTimer = 0;
+    state.autosaveDeferred = true;
+    updateRecordTimelineButtons();
+    updateRecoveryButton();
+    return;
+  }
+
+  state.autosaveDeferred = false;
   state.autosaveTimer = window.setTimeout(saveCurrentAutosave, 1400);
+  updateRecordTimelineButtons();
 }
 
 async function saveCurrentAutosave() {
   if (state.isAutosaving || !window.PunchLabProject || !window.PunchLabStorage) {
     return;
   }
+  if (shouldDeferAutosave()) {
+    state.autosaveDeferred = true;
+    state.autosaveTimer = 0;
+    updateRecordTimelineButtons();
+    updateRecoveryButton();
+    return;
+  }
 
   try {
     state.isAutosaving = true;
+    state.autosaveDeferred = false;
     updateRecoveryButton();
+    updateRecordTimelineButtons();
     const bundle = await window.PunchLabProject.buildProjectBundle({
       state,
       tracks,
@@ -1745,7 +1764,17 @@ async function saveCurrentAutosave() {
   } finally {
     state.isAutosaving = false;
     updateRecoveryButton();
+    updateRecordTimelineButtons();
   }
+}
+
+function shouldDeferAutosave() {
+  return Boolean(
+    state.isRecording ||
+    state.isPunchWaiting ||
+    state.isCountInActive ||
+    state.mediaRecorder?.state === "recording",
+  );
 }
 
 function updateRecoveryButton() {
@@ -2777,6 +2806,11 @@ function startPunchCountdown(waitMs) {
 }
 
 function startRecording(options = {}) {
+  if (state.autosaveTimer) {
+    window.clearTimeout(state.autosaveTimer);
+    state.autosaveTimer = 0;
+    state.autosaveDeferred = true;
+  }
   stopTakeQueue(false);
   if (!options.keepBeat) {
     stopSessionPlayback(false);
@@ -2861,11 +2895,26 @@ function stopRecording() {
 
 function saveTake() {
   const track = tracks.find((item) => item.id === state.armedTrackId);
+  if (!track) {
+    state.chunks = [];
+    els.sessionState.textContent = "Track missing";
+    renderQuickTakeReview();
+    return;
+  }
+
   const extension = state.mimeType.includes("mp4") ? "m4a" : "webm";
   const blob = new Blob(state.chunks, { type: state.mimeType || "audio/webm" });
+  const duration = (performance.now() - state.recordStart) / 1000;
+  if (!state.chunks.length || blob.size < 256 || duration < 0.15) {
+    state.chunks = [];
+    els.sessionState.textContent = "Empty take skipped";
+    renderQuickTakeReview();
+    scheduleAutosave();
+    return;
+  }
+
   const url = URL.createObjectURL(blob);
   const latencySeconds = state.recordLatencyMs / 1000;
-  const duration = (performance.now() - state.recordStart) / 1000;
   const take = {
     id: crypto.randomUUID(),
     trackId: track.id,

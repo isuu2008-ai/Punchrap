@@ -144,6 +144,9 @@
       on(els.recordTimelineRecordButton, "click", actions.recordFromTimelineCursor);
       on(els.recordTimelineSetPunchInButton, "click", () => actions.setPunchPointFromTimeline("in"));
       on(els.recordTimelineSetPunchOutButton, "click", () => actions.setPunchPointFromTimeline("out"));
+      on(els.capturePlayButton, "click", actions.playFromTimelineCursor);
+      on(els.captureRecordButton, "click", actions.recordFromTimelineCursor);
+      on(els.captureAgainButton, "click", actions.recordAgainFromLatest);
       on(els.timelineSurface, "pointerdown", actions.handleTimelinePointer);
       on(els.timelinePlayFromCursorButton, "click", actions.playFromTimelineCursor);
       on(els.timelineRecordFromCursorButton, "click", actions.recordFromTimelineCursor);

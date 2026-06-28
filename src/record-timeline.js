@@ -119,16 +119,64 @@
       if (els.recordTimelinePlayButton) {
         els.recordTimelinePlayButton.classList.toggle("session-active", state.isSessionPlaying);
       }
-      if (!els.recordTimelineRecordButton) {
+
+      const allTakes = getAllTakes();
+      const latestTake = state.latestTake || allTakes.at(-1);
+      const isTransportBusy = state.isRecording || state.isPunchWaiting || state.isCountInActive;
+      const isActive = state.isRecording || state.isPunchWaiting;
+      const recordLabel = state.isRecording ? "Stop" : state.isPunchWaiting || state.isCountInActive ? "Cancel" : "Record";
+      const canPlay = Boolean(els.beatAudio.src || allTakes.length);
+
+      updateRecordButton(els.recordTimelineRecordButton, isActive, recordLabel);
+      updateRecordButton(els.captureRecordButton, isActive, recordLabel);
+
+      if (els.capturePlayButton) {
+        els.capturePlayButton.disabled = state.isRecording || state.isPunchWaiting || !canPlay;
+        els.capturePlayButton.classList.toggle("session-active", state.isSessionPlaying);
+      }
+      if (els.captureAgainButton) {
+        els.captureAgainButton.disabled = !latestTake || isTransportBusy;
+      }
+      if (els.captureStatusText) {
+        const cursor = formatDuration(getTimelineCursorPosition());
+        const recordingElapsed = Math.max(0, (performance.now() - Number(state.recordStart || 0)) / 1000);
+        els.captureStatusText.textContent = state.isRecording
+          ? `Recording ${formatDuration(recordingElapsed)}`
+          : state.isPunchWaiting || state.isCountInActive
+            ? "Armed"
+            : state.isSessionPlaying
+              ? `Playing ${cursor}`
+              : `Ready at ${cursor}`;
+      }
+      if (els.captureDetailText) {
+        const track = (deps.tracks || []).find((item) => item.id === state.armedTrackId);
+        els.captureDetailText.textContent = `${track?.name || "Track"} / ${getAutosaveStatusText()}`;
+      }
+    }
+
+    function updateRecordButton(button, isActive, labelText) {
+      if (!button) {
         return;
       }
 
-      const isActive = state.isRecording || state.isPunchWaiting;
-      els.recordTimelineRecordButton.classList.toggle("active", isActive);
-      const label = els.recordTimelineRecordButton.querySelector(".button-label");
+      button.classList.toggle("active", isActive);
+      const label = button.querySelector(".button-label") || button.querySelector("span");
       if (label) {
-        label.textContent = state.isRecording ? "Stop" : state.isPunchWaiting ? "Cancel" : "Record";
+        label.textContent = labelText;
       }
+    }
+
+    function getAutosaveStatusText() {
+      if (state.isAutosaving) {
+        return "Saving";
+      }
+      if (state.autosaveDeferred) {
+        return "Save after take";
+      }
+      if (state.hasAutosave) {
+        return "Autosaved";
+      }
+      return "Clean session";
     }
 
     return {

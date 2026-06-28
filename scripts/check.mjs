@@ -243,8 +243,12 @@ if (!indexHtml.includes("timelineRecordFromCursorButton") || !indexHtml.includes
   console.error("Timeline playhead recording controls must stay wired from UI through app state.");
   failed = true;
 }
-if (!indexHtml.includes("recordTimelineSurface") || !indexHtml.includes("recordTimelineRecordButton") || !recordTimelineSource.includes("window.PunchLabRecordTimeline") || !appSource.includes("PunchLabRecordTimeline.createRecordTimeline") || !uiElementsSource.includes("recordTimelineSurface") || !uiEventsSource.includes("handleRecordTimelinePointer") || !appSource.includes("function handleRecordTimelinePointer") || !appSource.includes("function resetTimelineCursor")) {
+if (!indexHtml.includes("recordTimelineSurface") || !indexHtml.includes("recordTimelineRecordButton") || !indexHtml.includes("captureRecordButton") || !recordTimelineSource.includes("window.PunchLabRecordTimeline") || !recordTimelineSource.includes("captureStatusText") || !appSource.includes("PunchLabRecordTimeline.createRecordTimeline") || !uiElementsSource.includes("recordTimelineSurface") || !uiElementsSource.includes("captureRecordButton") || !uiEventsSource.includes("handleRecordTimelinePointer") || !uiEventsSource.includes("captureAgainButton") || !appSource.includes("function handleRecordTimelinePointer") || !appSource.includes("function resetTimelineCursor")) {
   console.error("Record view must expose a working compact playhead timeline.");
+  failed = true;
+}
+if (!studioStateSource.includes("autosaveDeferred") || !appSource.includes("function shouldDeferAutosave") || !appSource.includes("Empty take skipped")) {
+  console.error("Autosave must defer while recording and skip empty takes.");
   failed = true;
 }
 if (!indexHtml.includes("clearTakesButton") || !uiElementsSource.includes("clearTakesButton") || !uiEventsSource.includes("clearAllTakes") || !appSource.includes("function clearAllTakes")) {
